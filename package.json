@@ -4,9 +4,9 @@
   "description": "Progressive Web App for fitness tracking with TypeScript",
   "main": "dist/app.js",
   "scripts": {
-    "build": "npx tsc",
-    "dev": "npx tsc --watch",
-    "clean": "rm -rf dist",
+    "build": "vite build",
+    "dev": "vite",
+    "clean": "rm -rf _site",
     "type-check": "npx tsc --noEmit",
     "lint": "NODE_NO_WARNINGS=1 eslint src/**/*.ts --ext .ts",
     "lint:fix": "NODE_NO_WARNINGS=1 eslint src/**/*.ts --ext .ts --fix",
@@ -32,6 +32,7 @@
     "eslint": "^8.0.0",
     "happy-dom": "^20.8.9",
     "typescript": "^5.0.0",
+    "vite": "^8.0.8",
     "vitest": "^4.1.4"
   },
   "dependencies": {

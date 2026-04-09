@@ -36,15 +36,8 @@ jobs:
           sed -i "s|TU_PROJECT_ID.supabase.co|${SUPABASE_URL}|g" src/db.ts
           sed -i "s|TU_ANON_PUBLIC_KEY|${SUPABASE_ANON}|g" src/db.ts
 
-      - name: Build TypeScript
+      - name: Build
         run: npm run build
-
-      - name: Prepare deploy directory
-        run: |
-          mkdir -p _site
-          cp index.html _site/
-          cp -r css _site/
-          cp -r dist _site/
 
       - uses: actions/upload-pages-artifact@v3
         with:
