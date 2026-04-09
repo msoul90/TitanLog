@@ -38,6 +38,10 @@ const EXERCISE_FORM_IDS = {
   UNIT: 'fU'
 } as const;
 
+const CONFIG_GUIDE_IDS = {
+  LIST: 'cfgGuideList'
+} as const;
+
 // ── GUIDE DATA ──
 
 /**
@@ -891,6 +895,41 @@ const GUIDES: Record<string, ExerciseGuide> = {
  */
 let guideExName: string = '';
 
+function normalizeExerciseName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036f]/g, '');
+}
+
+function findGuideKey(name: string): string | null {
+  const normalizedName = normalizeExerciseName(name);
+  const match = Object.keys(GUIDES).find(key => normalizeExerciseName(key) === normalizedName);
+  return match || null;
+}
+
+function renderGuidesCatalog(): void {
+  const listElement = document.getElementById(CONFIG_GUIDE_IDS.LIST);
+  if (!listElement) return;
+
+  const guideEntries = Object.entries(GUIDES).sort(([nameA], [nameB]) =>
+    nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
+  );
+
+  listElement.innerHTML = guideEntries.map(([name, guide]) => {
+    const subtitle = [...(guide.primary || []).slice(0, 2), ...(guide.secondary || []).slice(0, 1)]
+      .filter(Boolean)
+      .join(' · ');
+
+    return `<button type="button" class="cfg-row" onclick='openGuide(${JSON.stringify(name)})'>
+      <span class="cfg-ic" style="background:var(--accent-dim)">${guide.emoji || '📖'}</span>
+      <span class="cfg-info"><span class="cfg-ttl">${name}</span><span class="cfg-sub">${subtitle || 'Ver técnica y consejos'}</span></span>
+      <span class="cfg-arr">›</span>
+    </button>`;
+  }).join('');
+}
+
 // ── FUNCTIONS ──
 
 /**
@@ -1020,7 +1059,7 @@ function openGuide(name: string): void {
   }
 
   guideExName = name.trim();
-  const key = Object.keys(GUIDES).find(k => k.toLowerCase() === guideExName.toLowerCase());
+  const key = findGuideKey(guideExName);
   const guide = key ? GUIDES[key] : null;
 
   renderGuideContent(guideExName, guide || null);
@@ -1082,6 +1121,7 @@ export {
   GUIDES,
   openGuide,
   addFromGuide,
+  renderGuidesCatalog,
   renderGuideContent,
   renderNoGuideAvailable,
   renderGuideDetails
@@ -1090,3 +1130,4 @@ export {
 // Make functions globally available for backward compatibility
 (globalThis as any).openGuide = openGuide;
 (globalThis as any).addFromGuide = addFromGuide;
+(globalThis as any).renderGuidesCatalog = renderGuidesCatalog;

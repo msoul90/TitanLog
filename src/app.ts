@@ -300,7 +300,7 @@ function renderTodayExerciseCard(exercise: Exercise, key: string): string {
           </svg>
         </span><span>Eliminar</span>
       </button>
-      <button type="button" class="act-btn act-guide" onclick="openGuide(${nameForGuide})" aria-label="Ver guía del ejercicio">
+      <button type="button" class="act-btn act-guide" onclick='openGuide(${nameForGuide})' aria-label="Ver guía del ejercicio">
         <span class="act-ic" aria-hidden="true">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
@@ -529,6 +529,8 @@ function showS(name: string, btn: HTMLElement): void {
     (globalThis as any).renderCal?.();
   } else if (name === 'progress') {
     (globalThis as any).renderProg?.();
+  } else if (name === 'export') {
+    (globalThis as any).renderGuidesCatalog?.();
   }
 
   // Update URL hash
