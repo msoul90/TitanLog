@@ -267,7 +267,16 @@ function initTheme(): void {
 function openM(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) {
+    if (modal instanceof HTMLDialogElement) {
+      if (!modal.open) {
+        modal.showModal();
+      }
+      requestAnimationFrame(() => modal.classList.add('open'));
+      return;
+    }
+
     modal.style.display = 'block';
+    requestAnimationFrame(() => modal.classList.add('open'));
   }
 }
 
@@ -278,7 +287,20 @@ function openM(modalId: string): void {
 function closeM(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) {
-    modal.style.display = 'none';
+    modal.classList.remove('open');
+
+    if (modal instanceof HTMLDialogElement) {
+      globalThis.setTimeout(() => {
+        if (modal.open) {
+          modal.close();
+        }
+      }, 200);
+      return;
+    }
+
+    globalThis.setTimeout(() => {
+      modal.style.display = 'none';
+    }, 200);
   }
 }
 
@@ -288,25 +310,27 @@ function closeM(modalId: string): void {
  * @param btn - Navigation button element
  */
 function showS(name: string, btn: HTMLElement): void {
-  // Hide all sections
-  document.querySelectorAll('.section').forEach((section: Element) => {
-    (section as HTMLElement).style.display = 'none';
+  // Hide all screens
+  document.querySelectorAll('.screen').forEach((screen: Element) => {
+    screen.classList.remove('active');
   });
 
-  // Show target section
-  const targetSection = document.getElementById(name);
-  if (targetSection) {
-    targetSection.style.display = 'block';
+  // Show target screen
+  const targetScreen = document.getElementById(`screen-${name}`);
+  if (targetScreen) {
+    targetScreen.classList.add('active');
   }
 
   // Update navigation
   document.querySelectorAll('.nav-btn').forEach((navBtn: Element) => {
     navBtn.classList.remove('active');
+    navBtn.removeAttribute('aria-current');
   });
   btn.classList.add('active');
+  btn.setAttribute('aria-current', 'page');
 
   // Update URL hash
-  globalThis.location.hash = name;
+  globalThis.location.hash = `#${name}`;
 }
 
 /**

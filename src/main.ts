@@ -104,10 +104,18 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   await (globalThis as any).initLogin();
 
+  const initialScreen = globalThis.location.hash.replace('#', '') || 'today';
+  const initialNavButton = document.querySelector(`.nav-btn[onclick*="showS('${initialScreen}'"]`) as HTMLElement | null;
+  if (initialNavButton && typeof (globalThis as any).showS === 'function') {
+    (globalThis as any).showS(initialScreen, initialNavButton);
+  }
+
   // Cierra modales al hacer click en el backdrop
   document.querySelectorAll('.overlay').forEach(overlay => {
     overlay.addEventListener('click', function(this: HTMLDialogElement, e: Event) {
-      if (e.target === this) this.close();
+      if (e.target === this && this.id) {
+        (globalThis as any).closeM?.(this.id);
+      }
     });
   });
 });

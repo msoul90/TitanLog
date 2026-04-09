@@ -1,4 +1,4 @@
-﻿import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { vi, describe, it, expect, beforeEach } from 'vitest';
 
 // Mock Supabase para que db.ts no falle al importar
 vi.mock('@supabase/supabase-js', () => ({
@@ -7,9 +7,9 @@ vi.mock('@supabase/supabase-js', () => ({
 
 import { validateExerciseInput, escHtml, isPR, clearPerformanceCache } from '../app.js';
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 // escHtml
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 describe('escHtml', () => {
   it('escapa < y >', () => {
     expect(escHtml('<script>')).toBe('&lt;script&gt;');
@@ -23,16 +23,16 @@ describe('escHtml', () => {
     expect(escHtml('IronLog')).toBe('IronLog');
   });
 
-  it('escapa mÃºltiples caracteres especiales juntos', () => {
+  it('escapa multiples caracteres especiales juntos', () => {
     expect(escHtml('<b>peso & rep</b>')).toBe('&lt;b&gt;peso &amp; rep&lt;/b&gt;');
   });
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 // validateExerciseInput
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 describe('validateExerciseInput', () => {
-  it('retorna error cuando el nombre estÃ¡ vacÃ­o', () => {
+  it('retorna error cuando el nombre esta vacio', () => {
     const errs = validateExerciseInput('', 80, 3, '10');
     expect(errs).toHaveLength(1);
     expect(errs[0]).toMatch(/nombre/i);
@@ -45,40 +45,40 @@ describe('validateExerciseInput', () => {
 
   it('retorna error con peso negativo', () => {
     const errs = validateExerciseInput('Sentadilla', -1, 3, '10');
-    expect(errs.some(e => e.includes('negativo'))).toBe(true);
+    expect(errs.some(e => /negativo/i.test(e))).toBe(true);
   });
 
-  it('retorna error con peso mayor al lÃ­mite (9999)', () => {
+  it('retorna error con peso mayor al limite (9999)', () => {
     const errs = validateExerciseInput('Sentadilla', 10000, 3, '10');
     expect(errs.some(e => e.includes('9999'))).toBe(true);
   });
 
-  it('retorna error cuando el peso no es nÃºmero', () => {
+  it('retorna error cuando el peso no es numero', () => {
     const errs = validateExerciseInput('Sentadilla', 'abc', 3, '10');
-    expect(errs.some(e => e.includes('nÃºmero'))).toBe(true);
+    expect(errs.some(e => /peso/i.test(e))).toBe(true);
   });
 
   it('retorna error cuando las series son 0', () => {
     const errs = validateExerciseInput('Sentadilla', 80, 0, '10');
-    expect(errs.some(e => e.includes('serie') || e.includes('1'))).toBe(true);
+    expect(errs.some(e => /serie|1/i.test(e))).toBe(true);
   });
 
-  it('retorna error cuando las series superan el lÃ­mite (99)', () => {
+  it('retorna error cuando las series superan el limite (99)', () => {
     const errs = validateExerciseInput('Sentadilla', 80, 100, '10');
     expect(errs.some(e => e.includes('99'))).toBe(true);
   });
 
-  it('retorna error cuando las reps estÃ¡n vacÃ­as', () => {
+  it('retorna error cuando las reps estan vacias', () => {
     const errs = validateExerciseInput('Sentadilla', 80, 3, '');
-    expect(errs.some(e => e.includes('repeticion') || e.includes('obligatori'))).toBe(true);
+    expect(errs.some(e => /repeticion|obligatori/i.test(e))).toBe(true);
   });
 
-  it('retorna error con formato de tiempo invÃ¡lido', () => {
+  it('retorna error con formato de tiempo invalido', () => {
     const errs = validateExerciseInput('Plancha', 0, 3, 'abcs');
     expect(errs.length).toBeGreaterThan(0);
   });
 
-  it('acepta formato de tiempo vÃ¡lido (ej: 30s)', () => {
+  it('acepta formato de tiempo valido (ej: 30s)', () => {
     const errs = validateExerciseInput('Plancha', 0, 3, '30s');
     expect(errs).toHaveLength(0);
   });
@@ -88,20 +88,20 @@ describe('validateExerciseInput', () => {
     expect(errs.some(e => e.includes('3600'))).toBe(true);
   });
 
-  it('acepta un ejercicio completamente vÃ¡lido', () => {
+  it('acepta un ejercicio completamente valido', () => {
     const errs = validateExerciseInput('Sentadilla', 80, 4, '12');
     expect(errs).toHaveLength(0);
   });
 
-  it('acepta peso vacÃ­o/0 (ejercicio sin peso)', () => {
+  it('acepta peso vacio/0 (ejercicio sin peso)', () => {
     const errs = validateExerciseInput('Plancha', '', 3, '60s');
     expect(errs).toHaveLength(0);
   });
 });
 
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 // isPR
-// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// -----------------------------------------
 describe('isPR', () => {
   beforeEach(() => {
     localStorage.clear();
@@ -117,11 +117,11 @@ describe('isPR', () => {
   });
 
   it('retorna false en el primer registro (sin historial previo)', () => {
-    // Sin historial: max=0, condiciÃ³n w > max && max > 0 es false
+    // Sin historial: max=0, condicion w > max && max > 0 es false
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(false);
   });
 
-  it('retorna true cuando supera el mÃ¡ximo histÃ³rico', () => {
+  it('retorna true cuando supera el maximo historico', () => {
     // Historial: 80kg en fecha anterior
     localStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 80, reps: '10', ts: 0 }],
@@ -129,14 +129,14 @@ describe('isPR', () => {
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(true);
   });
 
-  it('retorna false cuando no supera el mÃ¡ximo histÃ³rico', () => {
+  it('retorna false cuando no supera el maximo historico', () => {
     localStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 120, reps: '5', ts: 0 }],
     }));
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(false);
   });
 
-  it('retorna false cuando iguala exactamente el mÃ¡ximo', () => {
+  it('retorna false cuando iguala exactamente el maximo', () => {
     localStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 100, reps: '5', ts: 0 }],
     }));
@@ -160,11 +160,10 @@ describe('isPR', () => {
     expect(isPR('Sentadilla', '2024-01-10', 80)).toBe(false);
   });
 
-  it('la comparaciÃ³n de nombre no distingue mayÃºsculas', () => {
+  it('la comparacion de nombre no distingue mayusculas', () => {
     localStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'SENTADILLA', weight: 80, reps: '10', ts: 0 }],
     }));
     expect(isPR('sentadilla', '2024-01-10', 100)).toBe(true);
   });
 });
-
