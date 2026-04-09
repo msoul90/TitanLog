@@ -267,6 +267,7 @@ function renderTodayExerciseCard(exercise: Exercise, key: string): string {
   const hasSets = exercise.sets !== null && exercise.sets !== undefined && exercise.sets !== '';
   const hasReps = exercise.reps !== null && exercise.reps !== undefined && exercise.reps !== '';
   const isPersonalRecord = hasWeight ? isPR(exercise.name, key, exercise.weight) : false;
+  const nameForGuide = JSON.stringify(exercise.name);
 
   return `<div class="ex-card ${hasWeight ? 'has-w' : ''} ${isPersonalRecord ? 'is-pr' : ''}">
     <div class="ex-top">
@@ -279,6 +280,35 @@ function renderTodayExerciseCard(exercise: Exercise, key: string): string {
       ${hasReps ? `<div class="chip"><span class="chip-v">${escHtml(String(exercise.reps))}</span><span class="chip-l">Reps</span></div>` : ''}
     </div>
     ${exercise.notes ? `<div class="ex-note">📝 ${escHtml(exercise.notes)}</div>` : ''}
+    <div class="ex-acts">
+      <button type="button" class="act-btn act-edit" onclick="editEx('${key}',${exercise.ts})" aria-label="Editar ejercicio">
+        <span class="act-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12 20h9"/>
+            <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5z"/>
+          </svg>
+        </span><span>Editar</span>
+      </button>
+      <button type="button" class="act-btn act-del" onclick="delEx('${key}',${exercise.ts})" aria-label="Eliminar ejercicio">
+        <span class="act-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M3 6h18"/>
+            <path d="M8 6V4h8v2"/>
+            <path d="M6 6l1 14h10l1-14"/>
+            <path d="M10 11v6"/>
+            <path d="M14 11v6"/>
+          </svg>
+        </span><span>Eliminar</span>
+      </button>
+      <button type="button" class="act-btn act-guide" onclick="openGuide(${nameForGuide})" aria-label="Ver guía del ejercicio">
+        <span class="act-ic" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/>
+            <path d="M6.5 2H20v18H6.5A2.5 2.5 0 0 1 4 17.5V4.5A2.5 2.5 0 0 1 6.5 2z"/>
+          </svg>
+        </span><span>Guía</span>
+      </button>
+    </div>
   </div>`;
 }
 
@@ -654,3 +684,4 @@ export {
 (globalThis as any).validateExerciseInput = validateExerciseInput;
 (globalThis as any).isPR = isPR;
 (globalThis as any).renderToday = renderToday;
+(globalThis as any).appState = appState;

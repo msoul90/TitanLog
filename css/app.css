@@ -269,7 +269,7 @@ body {
   border-radius: 6px; padding: 2px 7px;
   font-size: 0.65rem; font-weight: 800; color: var(--accent); white-space: nowrap;
 }
-[data-theme="light"] .pr-tag { color: #2a6e00; border-color: #2a6e00; background: rgba(61,158,0,0.09); }
+[data-theme="light"] .pr-tag { color: #153800; border-color: #2a6e00; background: #f2f7ee; }
 
 .ex-chips { display: flex; gap: 5px; margin-top: 8px; flex-wrap: wrap; }
 .chip {
@@ -280,11 +280,14 @@ body {
 .chip-l { font-size: 0.61rem; color: var(--text3); margin-top: 1px; text-transform: uppercase; letter-spacing: 0.4px; }
 
 .ex-note { margin-top: 8px; font-size: 0.78rem; color: var(--text2); line-height: 1.45; }
-.ex-acts { display: flex; gap: 5px; margin-top: 9px; }
+.ex-acts { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
 .act-btn {
-  padding: 5px 10px; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 6px 10px; border-radius: 7px; font-size: 0.73rem; font-weight: 700;
   transition: all 0.13s;
 }
+.act-ic { width: 14px; height: 14px; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.act-ic svg { width: 14px; height: 14px; display: block; }
 .act-btn:focus-visible { outline: 1px solid currentColor; outline-offset: 1px; }
 .act-btn:active { transform: scale(0.93); }
 .act-edit { background: var(--surface2); color: var(--text); }
@@ -306,7 +309,6 @@ body {
 }
 .metrics-bar:active { background: var(--surface2); }
 .metrics-bar:focus-visible { border-color: var(--accent); }
-.metrics-bar:active { background: var(--surface2); }
 .mb-metric { display: flex; align-items: center; gap: 7px; flex: 1; min-width: 0; }
 .mb-ic { font-size: 1rem; flex-shrink: 0; }
 .mb-info { display: flex; flex-direction: column; min-width: 0; }
@@ -648,7 +650,7 @@ dialog.overlay.open .guide-modal { transform:translateY(0); }
 .act-guide {
   background:var(--accent-dim); color:var(--accent); border:1px solid rgba(170,255,69,0.3);
 }
-[data-theme="light"] .act-guide { color:#2a6e00; border-color:rgba(61,158,0,0.3); background:rgba(61,158,0,0.08); }
+[data-theme="light"] .act-guide { color:#153800; border-color:#2a6e00; background:#f2f7ee; }
 
 /* WEEKLY STREAK CARD */
 .streak-week-card {
@@ -734,7 +736,6 @@ dialog.overlay.open .guide-modal { transform:translateY(0); }
 }
 .profile-btn:active { transform: scale(0.97); }
 .profile-btn:focus-visible { border-color: var(--accent); }
-.profile-btn:active { transform: scale(0.97); }
 .profile-btn.selected { border-color: var(--accent); background: var(--accent-dim); }
 .pb-avatar {
   width: 40px; height: 40px; border-radius: 50%;

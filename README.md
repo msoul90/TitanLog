@@ -20,7 +20,7 @@ App de fitness para registrar entrenamientos, composición corporal y sesiones H
 ## Stack
 
 | Capa | Tecnología |
-|---|---|
+| --- | --- |
 | Lenguaje | TypeScript 5 |
 | Backend / Auth | Supabase |
 | Build | `tsc` (sin bundler) |
@@ -33,7 +33,7 @@ App de fitness para registrar entrenamientos, composición corporal y sesiones H
 
 ## Estructura del proyecto
 
-```
+```text
 ironlog/
 ├── src/                      # Código fuente TypeScript
 │   ├── __tests__/            # Pruebas unitarias
@@ -210,7 +210,7 @@ El proyecto se despliega automáticamente al hacer push a `main` via GitHub Acti
 > Repo → Settings → Secrets and variables → Actions → New repository secret
 
 | Secret | Valor |
-|---|---|
+| --- | --- |
 | `SUPABASE_URL` | URL de tu proyecto (ej: `https://abc123.supabase.co`) |
 | `SUPABASE_ANON_KEY` | Anon/public key de Supabase |
 
@@ -223,16 +223,18 @@ El proyecto se despliega automáticamente al hacer push a `main` via GitHub Acti
 El proyecto requiere las siguientes tablas. Puedes crearlas desde el editor SQL de Supabase.
 
 ### `profiles`
+
 | Columna | Tipo |
-|---|---|
+| --- | --- |
 | `id` | uuid (FK → auth.users) |
 | `name` | text |
 | `color` | text |
 | `created_at` | timestamptz |
 
 ### `gym_sessions`
+
 | Columna | Tipo |
-|---|---|
+| --- | --- |
 | `id` | uuid |
 | `user_id` | uuid (FK → auth.users) |
 | `date` | date |
@@ -240,8 +242,9 @@ El proyecto requiere las siguientes tablas. Puedes crearlas desde el editor SQL 
 | `updated_at` | timestamptz |
 
 ### `body_metrics`
+
 | Columna | Tipo |
-|---|---|
+| --- | --- |
 | `id` | uuid |
 | `user_id` | uuid (FK → auth.users) |
 | `date` | date |
@@ -251,8 +254,9 @@ El proyecto requiere las siguientes tablas. Puedes crearlas desde el editor SQL 
 | `muscle_pct` | numeric |
 
 ### `hiit_sessions`
+
 | Columna | Tipo |
-|---|---|
+| --- | --- |
 | `id` | uuid |
 | `user_id` | uuid (FK → auth.users) |
 | `date` | date |
@@ -271,7 +275,7 @@ Habilita **Row Level Security (RLS)** en todas las tablas con políticas que res
 ## Scripts disponibles
 
 | Comando | Descripción |
-|---|---|
+| --- | --- |
 | `npm run build` | Compila TypeScript a `dist/` |
 | `npm run dev` | Compilación en modo watch |
 | `npm run type-check` | Verifica tipos sin emitir archivos |
