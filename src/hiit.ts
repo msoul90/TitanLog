@@ -33,6 +33,25 @@ export function initHiit(): void {
 }
 
 /**
+ * Renders the HIIT progress section (list of sessions)
+ */
+export function renderHiitProgress(): void {
+  const hiitList = document.getElementById('hiitList');
+  if (!hiitList) return;
+
+  const currentDate = dk(new Date());
+  const sessions = hiitCache[currentDate] || [];
+
+  if (sessions.length === 0) {
+    hiitList.innerHTML = '<div class="empty-hiit">No hay sesiones HIIT registradas para hoy.<br>¡Empieza tu primer entrenamiento!</div>';
+    return;
+  }
+
+  hiitList.innerHTML = sessions.map(session => renderHiitSession(session)).join('');
+}
+
+
+/**
  * Renders the HIIT section for a specific date
  * @param date - Date string in YYYY-MM-DD format
  */
@@ -329,6 +348,7 @@ export async function loadHiitSessions(startDate: string, endDate: string): Prom
 // Make functions available globally for onclick handlers
 (window as any).openHiitModal = openHiitModal;
 (window as any).editHiitSession = editHiitSession;
+(window as any).renderHiitProgress = renderHiitProgress;
 (window as any).deleteHiitSession = deleteHiitSession;
 (window as any).saveHiitSessionModal = saveHiitSessionModal;
 (window as any).selectRPE = selectRPE;
