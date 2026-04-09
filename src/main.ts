@@ -20,7 +20,6 @@ import './gym.js'
 import './calendar.js'
 import './progress.js'
 import './guides.js'
-import './hiit.js'
 
 type MainAppState = {
   viewDate: Date;
@@ -245,16 +244,25 @@ async function saveEx(): Promise<void> {
 
 // Backward compatibility aliases for legacy HTML handlers
 (globalThis as any).openHiitMod = () => (globalThis as any).openHiitModal?.();
-(globalThis as any).adjustHiitTimer = () => toast('Temporizador HIIT disponible pronto');
-(globalThis as any).toggleHiitTimer = () => toast('Temporizador HIIT disponible pronto');
-(globalThis as any).resetHiitTimer = () => toast('Temporizador HIIT disponible pronto');
+if (typeof (globalThis as any).adjustHiitTimer !== 'function') {
+  (globalThis as any).adjustHiitTimer = () => toast('Temporizador HIIT no disponible');
+}
+if (typeof (globalThis as any).toggleHiitTimer !== 'function') {
+  (globalThis as any).toggleHiitTimer = () => toast('Temporizador HIIT no disponible');
+}
+if (typeof (globalThis as any).resetHiitTimer !== 'function') {
+  (globalThis as any).resetHiitTimer = () => toast('Temporizador HIIT no disponible');
+}
 
 document.addEventListener('DOMContentLoaded', async () => {
   (globalThis as any).viewDate = new Date();
   (globalThis as any).calDate  = new Date();
   (globalThis as any).hiitDate = new Date();
 
+  await import('./hiit.js');
+
   await (globalThis as any).initLogin();
+  (globalThis as any).initHiit?.();
 
   const initialScreen = globalThis.location.hash.replace('#', '') || 'today';
   const initialNavButton = document.querySelector(`.nav-btn[onclick*="showS('${initialScreen}'"]`) as HTMLElement | null;

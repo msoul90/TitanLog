@@ -34,9 +34,10 @@ const renderToday = (): void => (globalThis as any).renderToday?.();
 const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
 
 function getPasswordResetRedirectUrl(): string | undefined {
-  if (typeof globalThis.location === 'undefined') return undefined;
+  const locationObject = (globalThis as { location?: Location }).location;
+  if (!locationObject) return undefined;
 
-  const { origin, pathname } = globalThis.location;
+  const { origin, pathname } = locationObject;
   if (!origin || !pathname) return undefined;
 
   return `${origin}${pathname}`;
