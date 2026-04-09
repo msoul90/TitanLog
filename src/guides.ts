@@ -1,5 +1,5 @@
-﻿// ============================================================
-// guides.ts â€” Base de datos de guÃ­as de ejercicios
+// ============================================================
+// guides.ts — Base de datos de guías de ejercicios
 // ============================================================
 
 import { ExerciseGuide } from './types.js';
@@ -8,7 +8,7 @@ const toast = (msg: string): void => (globalThis as any).toast?.(msg);
 const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
 const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 
-// â”€â”€ CONSTANTS â”€â”€
+// ── CONSTANTS ──
 
 /**
  * DOM element IDs for guide display
@@ -38,22 +38,22 @@ const EXERCISE_FORM_IDS = {
   UNIT: 'fU'
 } as const;
 
-// â”€â”€ GUIDE DATA â”€â”€
+// ── GUIDE DATA ──
 
 /**
  * Comprehensive exercise guides database
  */
 const GUIDES: Record<string, ExerciseGuide> = {
   'Sentadilla': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+    emoji: '🦵',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'PÃ¡rate con pies a la altura de los hombros, puntas ligeramente hacia afuera.',
-      'MantÃ©n el pecho arriba y la mirada al frente.',
+      'Párate con pies a la altura de los hombros, puntas ligeramente hacia afuera.',
+      'Mantén el pecho arriba y la mirada al frente.',
       'Empuja las rodillas hacia afuera mientras bajas, como si te sentaras en una silla.',
-      'Baja hasta que tus muslos queden paralelos al suelo o mÃ¡s abajo.',
-      'Empuja el suelo con los talones para subir, apretando los glÃºteos al llegar arriba.'
+      'Baja hasta que tus muslos queden paralelos al suelo o más abajo.',
+      'Empuja el suelo con los talones para subir, apretando los glúteos al llegar arriba.'
     ],
     errors: [
       'Dejar caer las rodillas hacia adentro (valgo de rodilla).',
@@ -62,20 +62,20 @@ const GUIDES: Record<string, ExerciseGuide> = {
     ],
     tips: [
       'Coloca tus talones sobre una superficie elevada si tienes poca movilidad de tobillo.',
-      'Imagina que empujas el suelo hacia afuera con los pies para activar glÃºteos.',
-      'La respiraciÃ³n: inhala al bajar, exhala al subir.'
+      'Imagina que empujas el suelo hacia afuera con los pies para activar glúteos.',
+      'La respiración: inhala al bajar, exhala al subir.'
     ]
   },
   'Sentadilla sumo': {
-    emoji: 'ðŸ¦µ',
-    primary: ['Aductores', 'GlÃºteos'],
-    secondary: ['CuÃ¡driceps', 'Core'],
+    emoji: '🦵',
+    primary: ['Aductores', 'Glúteos'],
+    secondary: ['Cuádriceps', 'Core'],
     steps: [
-      'Abre los pies mÃ¡s allÃ¡ del ancho de hombros, puntas apuntando 45Â° hacia afuera.',
-      'SostÃ©n la pesa (mancuerna o kettlebell) con ambas manos frente a ti.',
-      'MantÃ©n el torso erguido y baja empujando las rodillas hacia las puntas de los pies.',
+      'Abre los pies más allá del ancho de hombros, puntas apuntando 45° hacia afuera.',
+      'Sostén la pesa (mancuerna o kettlebell) con ambas manos frente a ti.',
+      'Mantén el torso erguido y baja empujando las rodillas hacia las puntas de los pies.',
       'Baja hasta que tus muslos queden paralelos al suelo.',
-      'Sube apretando los glÃºteos y la zona interna del muslo.'
+      'Sube apretando los glúteos y la zona interna del muslo.'
     ],
     errors: [
       'Dejar que las rodillas colapsen hacia adentro.',
@@ -83,87 +83,87 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'No abrir suficiente los pies.'
     ],
     tips: [
-      'Ideal para trabajar mÃ¡s la zona interna del muslo que la sentadilla convencional.',
-      'Prueba con diferentes anchos de apertura para encontrar tu posiciÃ³n cÃ³moda.'
+      'Ideal para trabajar más la zona interna del muslo que la sentadilla convencional.',
+      'Prueba con diferentes anchos de apertura para encontrar tu posición cómoda.'
     ]
   },
   'Goblet squat': {
-    emoji: 'ðŸº',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+    emoji: '🏺',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Core', 'Hombros'],
     steps: [
-      'SostÃ©n una mancuerna o kettlebell verticalmente contra el pecho con ambas manos.',
-      'Pies a la altura de los hombros o un poco mÃ¡s abiertos, puntas hacia afuera.',
-      'MantÃ©n los codos apuntando hacia abajo durante todo el movimiento.',
+      'Sostén una mancuerna o kettlebell verticalmente contra el pecho con ambas manos.',
+      'Pies a la altura de los hombros o un poco más abiertos, puntas hacia afuera.',
+      'Mantén los codos apuntando hacia abajo durante todo el movimiento.',
       'Baja profundo, usando la pesa como contrapeso para mantener el equilibrio.',
       'Sube empujando los talones, manteniendo el pecho arriba.'
     ],
     errors: [
       'Soltar los codos hacia los lados.',
       'No bajar lo suficiente.',
-      'Perder la tensiÃ³n en el core.'
+      'Perder la tensión en el core.'
     ],
     tips: [
-      'Excelente para aprender la mecÃ¡nica de la sentadilla con buena postura.',
+      'Excelente para aprender la mecánica de la sentadilla con buena postura.',
       'Usa los codos para separar las rodillas al fondo del movimiento.'
     ]
   },
   'Peso muerto': {
-    emoji: 'âš¡',
-    primary: ['Isquiotibiales', 'GlÃºteos', 'Espalda baja'],
-    secondary: ['Trapecios', 'Core', 'CuÃ¡driceps'],
+    emoji: '⚡',
+    primary: ['Isquiotibiales', 'Glúteos', 'Espalda baja'],
+    secondary: ['Trapecios', 'Core', 'Cuádriceps'],
     steps: [
-      'PÃ¡rate con los pies a la altura de las caderas, barra sobre el medio del pie.',
-      'Dobla las caderas hacia atrÃ¡s (no las rodillas primero) hasta agarrar la barra.',
+      'Párate con los pies a la altura de las caderas, barra sobre el medio del pie.',
+      'Dobla las caderas hacia atrás (no las rodillas primero) hasta agarrar la barra.',
       'Espalda recta, pecho arriba, hombros ligeramente delante de la barra.',
       'Empuja el suelo con los pies y extiende caderas y rodillas al mismo tiempo.',
-      'MantÃ©n la barra pegada al cuerpo durante todo el recorrido.',
+      'Mantén la barra pegada al cuerpo durante todo el recorrido.',
       'Baja de forma controlada invirtiendo el movimiento.'
     ],
     errors: [
-      'Redondear la espalda baja â€” el error mÃ¡s peligroso.',
-      'Doblar los brazos durante el jalÃ³n.',
+      'Redondear la espalda baja — el error más peligroso.',
+      'Doblar los brazos durante el jalón.',
       'Dejar que la barra se aleje del cuerpo.',
       'Bloquear las rodillas antes de las caderas al subir.'
     ],
     tips: [
       'La clave es empujar el suelo, no jalar la barra.',
-      'Lleva los hombros hacia atrÃ¡s y abajo antes de iniciar.',
-      'Usa cinturÃ³n solo cuando el peso es verdaderamente pesado, no de entrada.'
+      'Lleva los hombros hacia atrás y abajo antes de iniciar.',
+      'Usa cinturón solo cuando el peso es verdaderamente pesado, no de entrada.'
     ]
   },
   'Peso muerto rumano': {
-    emoji: 'âš¡',
-    primary: ['Isquiotibiales', 'GlÃºteos'],
+    emoji: '⚡',
+    primary: ['Isquiotibiales', 'Glúteos'],
     secondary: ['Espalda baja', 'Trapecios'],
     steps: [
-      'PÃ¡rate con pesas frente a los muslos, pies a la altura de la cadera.',
-      'MantÃ©n las rodillas ligeramente flexionadas durante todo el movimiento.',
-      'Lleva las caderas hacia atrÃ¡s mientras bajas las pesas por el frente de las piernas.',
+      'Párate con pesas frente a los muslos, pies a la altura de la cadera.',
+      'Mantén las rodillas ligeramente flexionadas durante todo el movimiento.',
+      'Lleva las caderas hacia atrás mientras bajas las pesas por el frente de las piernas.',
       'Siente el estiramiento en los isquiotibiales; baja hasta donde tu espalda no se redondee.',
-      'Contrae los glÃºteos para volver a la posiciÃ³n inicial.'
+      'Contrae los glúteos para volver a la posición inicial.'
     ],
     errors: [
       'Redondear la espalda baja.',
       'Doblar demasiado las rodillas (se convierte en sentadilla).',
-      'Bajar las pesas mÃ¡s allÃ¡ de tu rango de movimiento seguro.'
+      'Bajar las pesas más allá de tu rango de movimiento seguro.'
     ],
     tips: [
       'La diferencia con el peso muerto convencional: las rodillas casi no se doblan.',
-      'Empuja las caderas hacia atrÃ¡s como si quisieras tocar la pared detrÃ¡s tuyo.',
-      'Ideal para el dÃ­a de piernas con foco en posterior.'
+      'Empuja las caderas hacia atrás como si quisieras tocar la pared detrás tuyo.',
+      'Ideal para el día de piernas con foco en posterior.'
     ]
   },
-  'Desplantes hacia atrÃ¡s': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+  'Desplantes hacia atrás': {
+    emoji: '🦵',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'PÃ¡rate erguido con las pesas al costado o en los hombros.',
-      'Da un paso largo hacia atrÃ¡s con una pierna.',
-      'Baja la rodilla trasera hacia el suelo sin tocarlo, rodilla delantera a 90Â°.',
+      'Párate erguido con las pesas al costado o en los hombros.',
+      'Da un paso largo hacia atrás con una pierna.',
+      'Baja la rodilla trasera hacia el suelo sin tocarlo, rodilla delantera a 90°.',
       'La rodilla delantera no debe pasar la punta del pie.',
-      'Empuja con el talÃ³n delantero para volver a la posiciÃ³n inicial.'
+      'Empuja con el talón delantero para volver a la posición inicial.'
     ],
     errors: [
       'Dejar que la rodilla delantera colapse hacia adentro.',
@@ -171,21 +171,21 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Dar pasos demasiado cortos.'
     ],
     tips: [
-      'El desplante hacia atrÃ¡s es mÃ¡s amigable con las rodillas que hacia adelante.',
+      'El desplante hacia atrás es más amigable con las rodillas que hacia adelante.',
       'Activa el core para no perder el equilibrio al dar el paso.',
       'Alterna piernas o haz todas las reps de un lado antes de cambiar.'
     ]
   },
   'Desplantes hacia adelante': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+    emoji: '🦵',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'PÃ¡rate erguido con las pesas al costado.',
+      'Párate erguido con las pesas al costado.',
       'Da un paso largo hacia adelante con una pierna.',
-      'Baja el cuerpo hasta que ambas rodillas formen Ã¡ngulos de 90Â°.',
+      'Baja el cuerpo hasta que ambas rodillas formen ángulos de 90°.',
       'La rodilla trasera casi toca el suelo.',
-      'Empuja con el talÃ³n delantero para volver al inicio.'
+      'Empuja con el talón delantero para volver al inicio.'
     ],
     errors: [
       'Rodilla delantera pasando la punta del pie.',
@@ -194,19 +194,19 @@ const GUIDES: Record<string, ExerciseGuide> = {
     ],
     tips: [
       'Mira hacia adelante para mantener el torso erguido.',
-      'El talÃ³n trasero se levanta del suelo â€” es normal.'
+      'El talón trasero se levanta del suelo — es normal.'
     ]
   },
   'Curl de pierna acostado': {
-    emoji: 'ðŸ¦µ',
+    emoji: '🦵',
     primary: ['Isquiotibiales'],
     secondary: ['Pantorrillas'],
     steps: [
-      'AcuÃ©state boca abajo en la mÃ¡quina, tobillo bajo el rodillo.',
-      'MantÃ©n las caderas pegadas al banco durante todo el movimiento.',
-      'Curva las piernas hacia los glÃºteos de forma controlada.',
-      'Aprieta los isquiotibiales en el punto mÃ¡s alto.',
-      'Baja lentamente (el excÃ©ntrico es igual de importante).'
+      'Acuéstate boca abajo en la máquina, tobillo bajo el rodillo.',
+      'Mantén las caderas pegadas al banco durante todo el movimiento.',
+      'Curva las piernas hacia los glúteos de forma controlada.',
+      'Aprieta los isquiotibiales en el punto más alto.',
+      'Baja lentamente (el excéntrico es igual de importante).'
     ],
     errors: [
       'Levantar las caderas del banco al subir el peso.',
@@ -215,103 +215,103 @@ const GUIDES: Record<string, ExerciseGuide> = {
     ],
     tips: [
       'Hazlo con un pie a la vez para detectar desequilibrios.',
-      'La fase de bajada lenta (3-4 seg.) genera mÃ¡s estÃ­mulo muscular.'
+      'La fase de bajada lenta (3-4 seg.) genera más estímulo muscular.'
     ]
   },
   'Press de pecho': {
-    emoji: 'ðŸ’ª',
+    emoji: '💪',
     primary: ['Pectoral mayor'],
-    secondary: ['TrÃ­ceps', 'Hombro anterior'],
+    secondary: ['Tríceps', 'Hombro anterior'],
     steps: [
-      'AcuÃ©state en el banco con pies planos en el suelo.',
-      'Agarra las mancuernas con manos a la altura del pecho, codos a ~45Â° del torso.',
+      'Acuéstate en el banco con pies planos en el suelo.',
+      'Agarra las mancuernas con manos a la altura del pecho, codos a ~45° del torso.',
       'Empuja las pesas hacia arriba hasta casi extender los brazos completamente.',
       'Baja de forma controlada, sintiendo el estiramiento en el pecho.',
-      'MantÃ©n los omÃ³platos retraÃ­dos y el pecho elevado durante todo el movimiento.'
+      'Mantén los omóplatos retraídos y el pecho elevado durante todo el movimiento.'
     ],
     errors: [
-      'Dejar que los codos apunten hacia los lados (90Â°) â€” sobrecarga los hombros.',
+      'Dejar que los codos apunten hacia los lados (90°) — sobrecarga los hombros.',
       'Rebotar las pesas en el pecho.',
       'Levantar las caderas del banco.'
     ],
     tips: [
-      'Imagina que intentas doblar la barra/mancuernas hacia adentro para activar mÃ¡s el pecho.',
-      'Retrae los omÃ³platos antes de bajar para proteger los hombros.',
-      'Pausa de 1 segundo en el pecho maximiza el estÃ­mulo.'
+      'Imagina que intentas doblar la barra/mancuernas hacia adentro para activar más el pecho.',
+      'Retrae los omóplatos antes de bajar para proteger los hombros.',
+      'Pausa de 1 segundo en el pecho maximiza el estímulo.'
     ]
   },
   'Press banca con barra': {
-    emoji: 'ðŸ‹ï¸',
+    emoji: '🏋️',
     primary: ['Pectoral mayor'],
-    secondary: ['TrÃ­ceps', 'Hombro anterior'],
+    secondary: ['Tríceps', 'Hombro anterior'],
     steps: [
-      'AcuÃ©state con los ojos bajo la barra, pies en el suelo o en el banco.',
-      'Agarre ligeramente mÃ¡s ancho que los hombros, pulgar envuelve la barra.',
-      'Saca la barra y bÃ¡jala controladamente a la parte inferior del esternÃ³n.',
-      'MantÃ©n los codos a ~45-75Â° del torso, no a 90Â°.',
+      'Acuéstate con los ojos bajo la barra, pies en el suelo o en el banco.',
+      'Agarre ligeramente más ancho que los hombros, pulgar envuelve la barra.',
+      'Saca la barra y bájala controladamente a la parte inferior del esternón.',
+      'Mantén los codos a ~45-75° del torso, no a 90°.',
       'Empuja la barra hacia arriba y ligeramente hacia los pies.'
     ],
     errors: [
       'Grip demasiado ancho (lesiona hombros).',
       'Barra cae sobre el cuello en lugar del pecho.',
-      'Codos en 90Â° (crea impingement en hombros).',
+      'Codos en 90° (crea impingement en hombros).',
       'Levantar las caderas del banco.'
     ],
     tips: [
-      'La tÃ©cnica de arco lumbar (powerlifting) reduce el rango y protege los hombros.',
-      'Aprieta la barra con fuerza para activar mÃ¡s los trÃ­ceps.',
+      'La técnica de arco lumbar (powerlifting) reduce el rango y protege los hombros.',
+      'Aprieta la barra con fuerza para activar más los tríceps.',
       'Nunca hagas press banca pesado solo sin spotter o rack con safety bars.'
     ]
   },
   'Fondos en barras': {
-    emoji: 'ðŸ’ª',
-    primary: ['TrÃ­ceps', 'Pectoral inferior'],
+    emoji: '💪',
+    primary: ['Tríceps', 'Pectoral inferior'],
     secondary: ['Hombro anterior', 'Core'],
     steps: [
       'Agarra las barras paralelas y sube con brazos extendidos.',
-      'Para enfatizar el pecho: inclÃ­nate ligeramente hacia adelante.',
-      'Para enfatizar los trÃ­ceps: mantente mÃ¡s vertical.',
-      'Baja controladamente hasta que los codos estÃ©n a ~90Â°.',
+      'Para enfatizar el pecho: inclínate ligeramente hacia adelante.',
+      'Para enfatizar los tríceps: mantente más vertical.',
+      'Baja controladamente hasta que los codos estén a ~90°.',
       'Empuja hacia arriba extendiendo completamente los brazos.'
     ],
     errors: [
-      'Bajar en exceso (>90Â°) â€” sobrecarga los hombros.',
+      'Bajar en exceso (>90°) — sobrecarga los hombros.',
       'Balancearse.',
-      'No llegar a la extensiÃ³n completa.'
+      'No llegar a la extensión completa.'
     ],
     tips: [
       'Si no puedes hacer fondos con tu propio peso, usa una banda de asistencia.',
-      'Agrega peso con una cadena o cinturÃ³n para progresar.'
+      'Agrega peso con una cadena o cinturón para progresar.'
     ]
   },
   'Chin-ups': {
-    emoji: 'ðŸ”',
-    primary: ['Dorsal ancho', 'BÃ­ceps'],
-    secondary: ['Romboides', 'BÃ­ceps braquial'],
+    emoji: '🔝',
+    primary: ['Dorsal ancho', 'Bíceps'],
+    secondary: ['Romboides', 'Bíceps braquial'],
     steps: [
-      'Agarra la barra con palmas mirando hacia ti (supinaciÃ³n), ancho de hombros.',
+      'Agarra la barra con palmas mirando hacia ti (supinación), ancho de hombros.',
       'Cuelga con brazos completamente extendidos.',
-      'Tira de los codos hacia abajo y atrÃ¡s para subir.',
-      'Lleva el mentÃ³n por encima de la barra.',
-      'Baja lentamente hasta la extensiÃ³n completa.'
+      'Tira de los codos hacia abajo y atrás para subir.',
+      'Lleva el mentón por encima de la barra.',
+      'Baja lentamente hasta la extensión completa.'
     ],
     errors: [
       'Usar impulso o kipping.',
-      'No llegar a la extensiÃ³n completa abajo.',
+      'No llegar a la extensión completa abajo.',
       'Encogerse de hombros al subir.'
     ],
     tips: [
-      'El chin-up activa mÃ¡s el bÃ­ceps que el pull-up (agarre prono).',
-      'EnfÃ³cate en llevar los codos a las costillas, no en subir la barbilla.',
-      'Una bajada de 4 segundos construye fuerza rÃ¡pidamente.'
+      'El chin-up activa más el bíceps que el pull-up (agarre prono).',
+      'Enfócate en llevar los codos a las costillas, no en subir la barbilla.',
+      'Una bajada de 4 segundos construye fuerza rápidamente.'
     ]
   },
   'Pull-ups': {
-    emoji: 'ðŸ”',
+    emoji: '🔝',
     primary: ['Dorsal ancho'],
-    secondary: ['Romboides', 'BÃ­ceps', 'Core'],
+    secondary: ['Romboides', 'Bíceps', 'Core'],
     steps: [
-      'Agarra la barra con palmas mirando hacia afuera (pronaciÃ³n), mÃ¡s ancho que hombros.',
+      'Agarra la barra con palmas mirando hacia afuera (pronación), más ancho que hombros.',
       'Cuelga con brazos completamente extendidos y hombros activos.',
       'Deprime los hombros (bajarlos de las orejas) antes de empezar.',
       'Tira de los codos hacia el suelo para subir el cuerpo.',
@@ -319,43 +319,43 @@ const GUIDES: Record<string, ExerciseGuide> = {
     ],
     errors: [
       'Subir con los hombros encogidos hasta las orejas.',
-      'No llegar a la extensiÃ³n completa.',
+      'No llegar a la extensión completa.',
       'Balancear el cuerpo para ganar impulso.'
     ],
     tips: [
       'El pull-up es uno de los mejores ejercicios de espalda que existen.',
-      'VarÃ­a el agarre (ancho, neutro, prono) para distintos estÃ­mulos.'
+      'Varía el agarre (ancho, neutro, prono) para distintos estímulos.'
     ]
   },
   'Remo unilateral': {
-    emoji: 'ðŸ’ª',
+    emoji: '💪',
     primary: ['Dorsal ancho', 'Romboides'],
-    secondary: ['BÃ­ceps', 'Trapecio inferior'],
+    secondary: ['Bíceps', 'Trapecio inferior'],
     steps: [
       'Apoya una rodilla y mano del mismo lado en un banco.',
       'Agarra la mancuerna con la mano libre, brazo extendido.',
       'Tira de la mancuerna hacia la cadera, no hacia el hombro.',
-      'MantÃ©n la espalda paralela al suelo durante todo el movimiento.',
-      'Baja controladamente hasta la extensiÃ³n completa.'
+      'Mantén la espalda paralela al suelo durante todo el movimiento.',
+      'Baja controladamente hasta la extensión completa.'
     ],
     errors: [
       'Rotar el torso en exceso para usar impulso.',
       'Jalar hacia el hombro en lugar de la cadera.',
-      'No llegar a la extensiÃ³n completa abajo.'
+      'No llegar a la extensión completa abajo.'
     ],
     tips: [
-      'Imagina que tienes un lÃ¡piz entre los omÃ³platos y lo intentas apretar al subir.',
+      'Imagina que tienes un lápiz entre los omóplatos y lo intentas apretar al subir.',
       'El codo debe quedarse cerca del cuerpo durante el movimiento.'
     ]
   },
   'Press de hombro con barra': {
-    emoji: 'ðŸ‹ï¸',
+    emoji: '🏋️',
     primary: ['Deltoides anterior y lateral'],
-    secondary: ['TrÃ­ceps', 'Trapecio'],
+    secondary: ['Tríceps', 'Trapecio'],
     steps: [
-      'SiÃ©ntate con espalda apoyada o de pie, barra a la altura de los hombros.',
-      'Agarre ligeramente mÃ¡s ancho que los hombros.',
-      'Empuja la barra hacia arriba en lÃ­nea recta.',
+      'Siéntate con espalda apoyada o de pie, barra a la altura de los hombros.',
+      'Agarre ligeramente más ancho que los hombros.',
+      'Empuja la barra hacia arriba en línea recta.',
       'Extiende completamente los brazos sin bloquear los codos.',
       'Baja la barra de forma controlada hasta la altura de la barbilla.'
     ],
@@ -365,19 +365,19 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Bajar la barra hasta los hombros bruscamente.'
     ],
     tips: [
-      'El press militar de pie activa mÃ¡s el core que sentado.',
-      'Aprieta los glÃºteos para proteger la zona lumbar.',
-      'El agarre neutro (mancuernas) es mÃ¡s amigable con los hombros.'
+      'El press militar de pie activa más el core que sentado.',
+      'Aprieta los glúteos para proteger la zona lumbar.',
+      'El agarre neutro (mancuernas) es más amigable con los hombros.'
     ]
   },
   'Elevaciones laterales': {
-    emoji: 'ðŸ’«',
+    emoji: '💫',
     primary: ['Deltoides lateral'],
     secondary: ['Trapecio superior'],
     steps: [
-      'PÃ¡rate o siÃ©ntate con mancuernas a los costados.',
+      'Párate o siéntate con mancuernas a los costados.',
       'Levanta los brazos hacia los lados con codos ligeramente flexionados.',
-      'Sube hasta que los brazos estÃ©n paralelos al suelo (no mÃ¡s arriba).',
+      'Sube hasta que los brazos estén paralelos al suelo (no más arriba).',
       'Controla la bajada durante 2-3 segundos.'
     ],
     errors: [
@@ -386,19 +386,19 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Encogerse de hombros al subir.'
     ],
     tips: [
-      'El peso debe ser relativamente ligero â€” el deltoides lateral es pequeÃ±o.',
-      'Inclina ligeramente las mancuernas (el meÃ±ique arriba) para mejor aislamiento.',
-      'Las elevaciones en cable dan tensiÃ³n constante durante todo el rango.'
+      'El peso debe ser relativamente ligero — el deltoides lateral es pequeño.',
+      'Inclina ligeramente las mancuernas (el meñique arriba) para mejor aislamiento.',
+      'Las elevaciones en cable dan tensión constante durante todo el rango.'
     ]
   },
   'Martillo': {
-    emoji: 'ðŸ’ª',
-    primary: ['Braquiorradial', 'BÃ­ceps'],
+    emoji: '💪',
+    primary: ['Braquiorradial', 'Bíceps'],
     secondary: ['Antebrazo'],
     steps: [
-      'PÃ¡rate o siÃ©ntate con mancuernas a los costados, palmas mirÃ¡ndose.',
-      'MantÃ©n los codos fijos al costado del cuerpo.',
-      'Curva los antebrazos hacia los hombros sin rotar las muÃ±ecas.',
+      'Párate o siéntate con mancuernas a los costados, palmas mirándose.',
+      'Mantén los codos fijos al costado del cuerpo.',
+      'Curva los antebrazos hacia los hombros sin rotar las muñecas.',
       'Aprieta en la cima del movimiento.',
       'Baja de forma controlada.'
     ],
@@ -408,237 +408,237 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Bajar el peso sin control.'
     ],
     tips: [
-      'El agarre neutro (palmas mirÃ¡ndose) activa mÃ¡s el braquiorradial que el curl clÃ¡sico.',
+      'El agarre neutro (palmas mirándose) activa más el braquiorradial que el curl clásico.',
       'Excelente para desarrollar el grosor del brazo.'
     ]
   },
   'Copa (Skull crusher)': {
-    emoji: 'ðŸ’ª',
-    primary: ['TrÃ­ceps (cabeza larga)'],
-    secondary: ['TrÃ­ceps medial y lateral'],
+    emoji: '💪',
+    primary: ['Tríceps (cabeza larga)'],
+    secondary: ['Tríceps medial y lateral'],
     steps: [
-      'AcuÃ©state con la mancuerna sostenida con ambas manos sobre el pecho.',
+      'Acuéstate con la mancuerna sostenida con ambas manos sobre el pecho.',
       'Extiende los brazos hacia arriba, codos ligeramente hacia adentro.',
-      'Baja la mancuerna controladamente hacia la frente o detrÃ¡s de la cabeza.',
-      'Extiende los codos sin moverlos de su posiciÃ³n.',
+      'Baja la mancuerna controladamente hacia la frente o detrás de la cabeza.',
+      'Extiende los codos sin moverlos de su posición.',
       'El movimiento ocurre solo en los codos, no en los hombros.'
     ],
     errors: [
       'Mover los hombros durante el ejercicio.',
       'Dejar que los codos se abran hacia los lados.',
-      'Bajar demasiado rÃ¡pido.'
+      'Bajar demasiado rápido.'
     ],
     tips: [
-      'La cabeza larga del trÃ­ceps se activa mÃ¡s cuando el brazo estÃ¡ sobre la cabeza.',
-      'El skull crusher con barra EZ es una variaciÃ³n clÃ¡sica.',
-      'MantÃ©n el core activo para no arquear la espalda baja.'
+      'La cabeza larga del tríceps se activa más cuando el brazo está sobre la cabeza.',
+      'El skull crusher con barra EZ es una variación clásica.',
+      'Mantén el core activo para no arquear la espalda baja.'
     ]
   },
   'Plancha': {
-    emoji: 'ðŸ§±',
+    emoji: '🧱',
     primary: ['Core', 'Transverso abdominal'],
-    secondary: ['Hombros', 'GlÃºteos'],
+    secondary: ['Hombros', 'Glúteos'],
     steps: [
       'Apoya los antebrazos en el suelo, codos bajo los hombros.',
-      'Extiende las piernas hacia atrÃ¡s, apoyÃ¡ndote en las puntas de los pies.',
-      'Tu cuerpo debe formar una lÃ­nea recta de cabeza a talones.',
-      'Aprieta el abdomen, glÃºteos y cuÃ¡driceps.',
-      'MantÃ©n la posiciÃ³n sin dejar caer las caderas ni levantarlas.'
+      'Extiende las piernas hacia atrás, apoyándote en las puntas de los pies.',
+      'Tu cuerpo debe formar una línea recta de cabeza a talones.',
+      'Aprieta el abdomen, glúteos y cuádriceps.',
+      'Mantén la posición sin dejar caer las caderas ni levantarlas.'
     ],
     errors: [
-      'Dejar caer las caderas (posiciÃ³n de arco).',
-      'Levantar las caderas (posiciÃ³n de pirÃ¡mide).',
+      'Dejar caer las caderas (posición de arco).',
+      'Levantar las caderas (posición de pirámide).',
       'Mirar hacia arriba y comprimir el cuello.',
-      'Aguantar la respiraciÃ³n.'
+      'Aguantar la respiración.'
     ],
     tips: [
-      'Mira hacia el suelo, manteniendo el cuello en posiciÃ³n neutral.',
-      'Imagina que alguien va a darte un golpe en el abdomen â€” esa es la contracciÃ³n que necesitas.',
-      'Prueba la plancha con elevaciÃ³n de piernas o brazos para mÃ¡s dificultad.'
+      'Mira hacia el suelo, manteniendo el cuello en posición neutral.',
+      'Imagina que alguien va a darte un golpe en el abdomen — esa es la contracción que necesitas.',
+      'Prueba la plancha con elevación de piernas o brazos para más dificultad.'
     ]
   },
   'Curl con mancuernas': {
-    emoji: 'ðŸ’ª',
-    primary: ['BÃ­ceps'],
+    emoji: '💪',
+    primary: ['Bíceps'],
     secondary: ['Braquiorradial', 'Antebrazo'],
     steps: [
-      'PÃ¡rate o siÃ©ntate con mancuernas a los costados, palmas hacia adelante.',
-      'MantÃ©n los codos pegados al cuerpo.',
-      'Sube las mancuernas contrayendo el bÃ­ceps.',
-      'Supina ligeramente las muÃ±ecas (gÃ­ralas hacia afuera) al subir.',
-      'Baja lentamente hasta la extensiÃ³n completa.'
+      'Párate o siéntate con mancuernas a los costados, palmas hacia adelante.',
+      'Mantén los codos pegados al cuerpo.',
+      'Sube las mancuernas contrayendo el bíceps.',
+      'Supina ligeramente las muñecas (gíralas hacia afuera) al subir.',
+      'Baja lentamente hasta la extensión completa.'
     ],
     errors: [
-      'Mover los codos hacia adelante (usar el deltoides en vez del bÃ­ceps).',
-      'Bajar el peso sin control (perder el excÃ©ntrico).',
+      'Mover los codos hacia adelante (usar el deltoides en vez del bíceps).',
+      'Bajar el peso sin control (perder el excéntrico).',
       'Balancear el torso.'
     ],
     tips: [
-      'La supinaciÃ³n de muÃ±eca en la cima activa mÃ¡s el bÃ­ceps.',
+      'La supinación de muñeca en la cima activa más el bíceps.',
       'El curl alterno te permite concentrarte en un brazo a la vez.',
       'La bajada controlada (3 seg.) es igual de importante que la subida.'
     ]
   },
   'Curl predicador': {
-    emoji: 'ðŸ’ª',
-    primary: ['BÃ­ceps (cabeza corta)'],
+    emoji: '💪',
+    primary: ['Bíceps (cabeza corta)'],
     secondary: ['Braquiorradial'],
     steps: [
       'Ajusta el banco predicador para que los brazos queden bien apoyados.',
       'Agarra la barra o mancuernas con palmas hacia arriba.',
       'Sube controlando que los codos no se levanten del pad.',
-      'Baja hasta casi la extensiÃ³n completa â€” no bloquees los codos.',
+      'Baja hasta casi la extensión completa — no bloquees los codos.',
       'El movimiento es estrictamente en los codos.'
     ],
     errors: [
-      'Levantar los codos del apoyo para subir mÃ¡s.',
-      'Bajar el peso completamente (hiperextensiÃ³n del codo).',
+      'Levantar los codos del apoyo para subir más.',
+      'Bajar el peso completamente (hiperextensión del codo).',
       'Usar impulso.'
     ],
     tips: [
-      'El banco predicador elimina el impulso â€” trabaja el bÃ­ceps de forma estricta.',
-      'La cabeza corta del bÃ­ceps se activa preferentemente en este ejercicio.'
+      'El banco predicador elimina el impulso — trabaja el bíceps de forma estricta.',
+      'La cabeza corta del bíceps se activa preferentemente en este ejercicio.'
     ]
   },
-  'JalÃ³n al pecho': {
-    emoji: 'ðŸ”',
+  'Jalón al pecho': {
+    emoji: '🔝',
     primary: ['Dorsal ancho'],
-    secondary: ['Romboides', 'BÃ­ceps', 'Trapecio inferior'],
+    secondary: ['Romboides', 'Bíceps', 'Trapecio inferior'],
     steps: [
-      'SiÃ©ntate con los muslos bajo los rodillos de la mÃ¡quina.',
-      'Agarra la barra con agarre prono, ligeramente mÃ¡s ancho que los hombros.',
-      'InclÃ­nate ligeramente hacia atrÃ¡s y deprime los hombros.',
-      'Tira de la barra hacia el pecho llevando los codos hacia abajo y atrÃ¡s.',
-      'Vuelve a la posiciÃ³n inicial de forma controlada.'
+      'Siéntate con los muslos bajo los rodillos de la máquina.',
+      'Agarra la barra con agarre prono, ligeramente más ancho que los hombros.',
+      'Inclínate ligeramente hacia atrás y deprime los hombros.',
+      'Tira de la barra hacia el pecho llevando los codos hacia abajo y atrás.',
+      'Vuelve a la posición inicial de forma controlada.'
     ],
     errors: [
-      'Jalar hacia el cuello o detrÃ¡s de la cabeza (riesgo de lesiÃ³n).',
+      'Jalar hacia el cuello o detrás de la cabeza (riesgo de lesión).',
       'Encogerse de hombros al subir.',
-      'Inclinar el cuerpo demasiado hacia atrÃ¡s (se convierte en remo).'
+      'Inclinar el cuerpo demasiado hacia atrás (se convierte en remo).'
     ],
     tips: [
-      'EnfÃ³cate en llevar los codos al suelo, no en bajar la barra.',
-      'Un agarre neutro (manos mirÃ¡ndose) activa mÃ¡s el dorsal.',
-      'No bloquees los codos arriba â€” mantÃ©n un poco de tensiÃ³n.'
+      'Enfócate en llevar los codos al suelo, no en bajar la barra.',
+      'Un agarre neutro (manos mirándose) activa más el dorsal.',
+      'No bloquees los codos arriba — mantén un poco de tensión.'
     ]
   },
   'Face pull': {
-    emoji: 'ðŸ’«',
+    emoji: '💫',
     primary: ['Deltoides posterior', 'Trapecio medio'],
     secondary: ['Manguito rotador', 'Romboides'],
     steps: [
       'Ajusta la polea a la altura de la cara.',
-      'Agarra la cuerda con ambas manos, palmas hacia abajo, y da un paso atrÃ¡s.',
+      'Agarra la cuerda con ambas manos, palmas hacia abajo, y da un paso atrás.',
       'Tira de la cuerda hacia la cara separando las manos al llegar.',
-      'Los codos deben quedar mÃ¡s arriba que las muÃ±ecas.',
+      'Los codos deben quedar más arriba que las muñecas.',
       'Vuelve al inicio controladamente.'
     ],
     errors: [
       'Jalar hacia el cuello (muy bajo).',
       'No separar las manos al final del recorrido.',
-      'Usar demasiado peso y perder la tÃ©cnica.'
+      'Usar demasiado peso y perder la técnica.'
     ],
     tips: [
       'El face pull es uno de los mejores ejercicios para la salud del hombro.',
       'Hazlo con un peso ligero y volumen alto (15-20 reps).',
-      'Excelente como calentamiento o al final de cualquier sesiÃ³n.'
+      'Excelente como calentamiento o al final de cualquier sesión.'
     ]
   },
   'Hip thrust': {
-    emoji: 'ðŸ‘',
-    primary: ['GlÃºteo mayor'],
+    emoji: '🍑',
+    primary: ['Glúteo mayor'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'Apoya los omÃ³platos en un banco resistente.',
-      'Barra sobre las caderas con un foam pad para protecciÃ³n.',
+      'Apoya los omóplatos en un banco resistente.',
+      'Barra sobre las caderas con un foam pad para protección.',
       'Pies planos en el suelo, a la altura de las caderas.',
-      'Empuja la barra hacia arriba contrayendo los glÃºteos.',
-      'Al llegar arriba, tu cuerpo forma una lÃ­nea recta de hombros a rodillas.',
+      'Empuja la barra hacia arriba contrayendo los glúteos.',
+      'Al llegar arriba, tu cuerpo forma una línea recta de hombros a rodillas.',
       'Baja sin que las caderas toquen el suelo.'
     ],
     errors: [
       'Hipextender la columna lumbar al llegar arriba.',
-      'No apretar los glÃºteos en el punto mÃ¡ximo.',
+      'No apretar los glúteos en el punto máximo.',
       'Pies muy lejos o muy cerca.'
     ],
     tips: [
-      'Mete el mentÃ³n al pecho para proteger la columna.',
-      'El hip thrust es el rey para desarrollar glÃºteos.',
+      'Mete el mentón al pecho para proteger la columna.',
+      'El hip thrust es el rey para desarrollar glúteos.',
       'Prueba con una sola pierna para mayor intensidad.'
     ]
   },
-  'ExtensiÃ³n de cuÃ¡driceps': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps'],
+  'Extensión de cuádriceps': {
+    emoji: '🦵',
+    primary: ['Cuádriceps'],
     secondary: [],
     steps: [
-      'SiÃ©ntate en la mÃ¡quina, espalda apoyada y rodillas en el borde del asiento.',
+      'Siéntate en la máquina, espalda apoyada y rodillas en el borde del asiento.',
       'Ajusta el rodillo para que quede en la parte baja de las espinillas.',
       'Extiende las piernas hasta quedar casi rectas.',
-      'Aprieta los cuÃ¡driceps en la posiciÃ³n extendida.',
-      'Baja lentamente hasta 90Â° (no mÃ¡s abajo).'
+      'Aprieta los cuádriceps en la posición extendida.',
+      'Baja lentamente hasta 90° (no más abajo).'
     ],
     errors: [
-      'Bajar mÃ¡s allÃ¡ de 90Â° (sobrecarga el tendÃ³n rotuliano).',
+      'Bajar más allá de 90° (sobrecarga el tendón rotuliano).',
       'Usar impulso o balanceo.',
-      'No llegar a la extensiÃ³n completa.'
+      'No llegar a la extensión completa.'
     ],
     tips: [
-      'SeÃ±ala los pies ligeramente hacia adentro o afuera para variar el estÃ­mulo.',
-      'El control excÃ©ntrico (bajar lento) es muy efectivo para el desarrollo del cuÃ¡driceps.'
+      'Señala los pies ligeramente hacia adentro o afuera para variar el estímulo.',
+      'El control excéntrico (bajar lento) es muy efectivo para el desarrollo del cuádriceps.'
     ]
   },
   'Prensa de pierna': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+    emoji: '🦵',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Isquiotibiales'],
     steps: [
-      'SiÃ©ntate en la mÃ¡quina y coloca los pies en la plataforma a la altura de la cadera.',
-      'Suelta los seguros y baja la plataforma hasta que las rodillas formen ~90Â°.',
+      'Siéntate en la máquina y coloca los pies en la plataforma a la altura de la cadera.',
+      'Suelta los seguros y baja la plataforma hasta que las rodillas formen ~90°.',
       'Empuja con los talones para extender las piernas sin bloquear las rodillas.',
-      'MantÃ©n la espalda baja pegada al respaldo todo el tiempo.'
+      'Mantén la espalda baja pegada al respaldo todo el tiempo.'
     ],
     errors: [
       'Despegar la espalda baja al bajar (riesgo de hernias).',
       'Bloquear completamente las rodillas al extender.',
-      'Pies muy arriba (activa mÃ¡s los glÃºteos) o muy abajo (mÃ¡s cuÃ¡driceps) â€” elige segÃºn tu objetivo.'
+      'Pies muy arriba (activa más los glúteos) o muy abajo (más cuádriceps) — elige según tu objetivo.'
     ],
     tips: [
-      'MÃ¡s apertura entre pies activa mÃ¡s los aductores.',
-      'No pongas las manos en las rodillas â€” apÃ³yalas en los agarres laterales.'
+      'Más apertura entre pies activa más los aductores.',
+      'No pongas las manos en las rodillas — apóyalas en los agarres laterales.'
     ]
   },
-  'ElevaciÃ³n de talones': {
-    emoji: 'ðŸ¦¶',
+  'Elevación de talones': {
+    emoji: '🦶',
     primary: ['Pantorrilla (gastrocnemio)'],
-    secondary: ['SÃ³leo'],
+    secondary: ['Sóleo'],
     steps: [
-      'PÃ¡rate en un escalÃ³n o superficie elevada con los talones colgando.',
-      'SÃºbete de puntillas lo mÃ¡s alto posible.',
-      'MantÃ©n 1-2 segundos en la cima.',
+      'Párate en un escalón o superficie elevada con los talones colgando.',
+      'Súbete de puntillas lo más alto posible.',
+      'Mantén 1-2 segundos en la cima.',
       'Baja lentamente hasta sentir el estiramiento en las pantorrillas.'
     ],
     errors: [
-      'Hacer el movimiento muy rÃ¡pido sin control.',
+      'Hacer el movimiento muy rápido sin control.',
       'No bajar lo suficiente (perder el estiramiento).',
       'Doblar las rodillas.'
     ],
     tips: [
-      'Con rodillas rectas trabajas mÃ¡s el gastrocnemio; con rodillas flexionadas, mÃ¡s el sÃ³leo.',
+      'Con rodillas rectas trabajas más el gastrocnemio; con rodillas flexionadas, más el sóleo.',
       'Las pantorrillas responden bien al volumen alto (15-20 reps).',
       'Hazlo unilateral para mayor intensidad.'
     ]
   },
   'Russian twist': {
-    emoji: 'ðŸ”„',
+    emoji: '🔄',
     primary: ['Oblicuos'],
     secondary: ['Recto abdominal', 'Core'],
     steps: [
-      'SiÃ©ntate en el suelo con rodillas flexionadas y pies ligeramente elevados.',
-      'InclÃ­nate hacia atrÃ¡s hasta ~45Â°, manteniendo la espalda recta.',
-      'Entrelaza las manos o sostÃ©n un peso frente al pecho.',
+      'Siéntate en el suelo con rodillas flexionadas y pies ligeramente elevados.',
+      'Inclínate hacia atrás hasta ~45°, manteniendo la espalda recta.',
+      'Entrelaza las manos o sostén un peso frente al pecho.',
       'Gira el torso de lado a lado, sin mover la cadera.',
-      'MantÃ©n el abdomen contraÃ­do durante todo el movimiento.'
+      'Mantén el abdomen contraído durante todo el movimiento.'
     ],
     errors: [
       'Girar solo los brazos, no el torso.',
@@ -646,20 +646,20 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Mover la cadera al rotar.'
     ],
     tips: [
-      'Baja los pies al suelo si el equilibrio es difÃ­cil al inicio.',
-      'MantÃ©n la respiraciÃ³n constante â€” exhala al rotar.',
+      'Baja los pies al suelo si el equilibrio es difícil al inicio.',
+      'Mantén la respiración constante — exhala al rotar.',
       'Agrega una pelota medicinal o mancuerna para progresar.'
     ]
   },
   'Burpees': {
-    emoji: 'âš¡',
+    emoji: '⚡',
     primary: ['Cuerpo completo'],
     secondary: ['Cardio', 'Core', 'Piernas'],
     steps: [
-      'PÃ¡rate con pies a la altura de los hombros.',
-      'AgÃ¡chate y apoya las manos en el suelo.',
-      'Salta los pies hacia atrÃ¡s quedando en posiciÃ³n de plancha.',
-      'Haz una flexiÃ³n (opcional).',
+      'Párate con pies a la altura de los hombros.',
+      'Agáchate y apoya las manos en el suelo.',
+      'Salta los pies hacia atrás quedando en posición de plancha.',
+      'Haz una flexión (opcional).',
       'Salta los pies hacia las manos.',
       'Salta hacia arriba extendiendo los brazos sobre la cabeza.'
     ],
@@ -669,42 +669,42 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Apurar el movimiento perdiendo la forma.'
     ],
     tips: [
-      'Es un ejercicio de acondicionamiento â€” la intensidad es el objetivo.',
+      'Es un ejercicio de acondicionamiento — la intensidad es el objetivo.',
       'Puedes eliminar el salto al inicio para hacerlo de menor impacto.',
-      'Ideal para circuitos de cardio o finalizadores de sesiÃ³n.'
+      'Ideal para circuitos de cardio o finalizadores de sesión.'
     ]
   },
   'Caminadora': {
-    emoji: 'ðŸš¶',
+    emoji: '🚶',
     primary: ['Cardio', 'Piernas'],
     secondary: ['Core'],
     steps: [
       'Comienza a velocidad baja para calentar (3-4 km/h).',
-      'Aumenta gradualmente la velocidad segÃºn tu objetivo.',
-      'MantÃ©n una postura erguida, no te apoyes en los parachoques.',
-      'Para aumentar la intensidad, sube la inclinaciÃ³n.',
-      'EnfrÃ­a con 5 minutos a baja velocidad.'
+      'Aumenta gradualmente la velocidad según tu objetivo.',
+      'Mantén una postura erguida, no te apoyes en los parachoques.',
+      'Para aumentar la intensidad, sube la inclinación.',
+      'Enfría con 5 minutos a baja velocidad.'
     ],
     errors: [
-      'Agarrarse de las parandas â€” anula el gasto calÃ³rico.',
-      'Velocidad demasiado alta sin inclinaciÃ³n.',
+      'Agarrarse de las parandas — anula el gasto calórico.',
+      'Velocidad demasiado alta sin inclinación.',
       'Postura encorvada.'
     ],
     tips: [
-      'Caminar al 10-15% de inclinaciÃ³n (incline walking) es excelente para glÃºteos y cardio de baja intensidad.',
-      'Una sesiÃ³n de 30-40 min en zona 2 (puedes conversar) mejora la salud cardiovascular.'
+      'Caminar al 10-15% de inclinación (incline walking) es excelente para glúteos y cardio de baja intensidad.',
+      'Una sesión de 30-40 min en zona 2 (puedes conversar) mejora la salud cardiovascular.'
     ]
   },
-  'AbducciÃ³n de cadera': {
-    emoji: 'ðŸ‘',
-    primary: ['GlÃºteo medio y menor', 'Tensor de la fascia lata'],
-    secondary: ['GlÃºteo mayor'],
+  'Abducción de cadera': {
+    emoji: '🍑',
+    primary: ['Glúteo medio y menor', 'Tensor de la fascia lata'],
+    secondary: ['Glúteo mayor'],
     steps: [
-      'Usa la mÃ¡quina de abducciÃ³n o una banda resistencia.',
-      'SiÃ©ntate con los pads en la parte externa de las rodillas.',
-      'Abre las piernas contra la resistencia, apretando los glÃºteos.',
-      'MantÃ©n 1 segundo en la posiciÃ³n abierta.',
-      'Vuelve lentamente a la posiciÃ³n inicial.'
+      'Usa la máquina de abducción o una banda resistencia.',
+      'Siéntate con los pads en la parte externa de las rodillas.',
+      'Abre las piernas contra la resistencia, apretando los glúteos.',
+      'Mantén 1 segundo en la posición abierta.',
+      'Vuelve lentamente a la posición inicial.'
     ],
     errors: [
       'Usar demasiado peso y perder la forma.',
@@ -712,143 +712,143 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Inclinarse hacia los lados.'
     ],
     tips: [
-      'El glÃºteo medio es clave para la estabilidad de la rodilla y cadera.',
-      'TambiÃ©n puedes hacerlo de pie con una banda resistencia.'
+      'El glúteo medio es clave para la estabilidad de la rodilla y cadera.',
+      'También puedes hacerlo de pie con una banda resistencia.'
     ]
   },
-  'Patada de glÃºteo': {
-    emoji: 'ðŸ‘',
-    primary: ['GlÃºteo mayor'],
+  'Patada de glúteo': {
+    emoji: '🍑',
+    primary: ['Glúteo mayor'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'ColÃ³cate en cuadrupedia (manos y rodillas en el suelo).',
-      'MantÃ©n el core activo y la espalda neutra.',
-      'Extiende una pierna hacia atrÃ¡s y arriba, apretando el glÃºteo.',
+      'Colócate en cuadrupedia (manos y rodillas en el suelo).',
+      'Mantén el core activo y la espalda neutra.',
+      'Extiende una pierna hacia atrás y arriba, apretando el glúteo.',
       'No hipextender la columna al subir la pierna.',
       'Baja controladamente y repite.'
     ],
     errors: [
-      'Arquear la espalda baja para elevar la pierna mÃ¡s.',
-      'No contraer el glÃºteo en la posiciÃ³n extendida.',
+      'Arquear la espalda baja para elevar la pierna más.',
+      'No contraer el glúteo en la posición extendida.',
       'Rotar la cadera al elevar.'
     ],
     tips: [
-      'AÃ±ade una mancuerna detrÃ¡s de la rodilla o una band para mÃ¡s resistencia.',
-      'MantÃ©n la mirada hacia abajo para no tensionar el cuello.'
+      'Añade una mancuerna detrás de la rodilla o una band para más resistencia.',
+      'Mantén la mirada hacia abajo para no tensionar el cuello.'
     ]
   },
   'Apertura con mancuernas': {
-    emoji: 'ðŸ’ª',
+    emoji: '💪',
     primary: ['Pectoral mayor'],
-    secondary: ['Hombro anterior', 'BÃ­ceps'],
+    secondary: ['Hombro anterior', 'Bíceps'],
     steps: [
-      'AcuÃ©state en el banco con mancuernas sobre el pecho, palmas mirÃ¡ndose.',
+      'Acuéstate en el banco con mancuernas sobre el pecho, palmas mirándose.',
       'Abre los brazos hacia los lados con codos ligeramente flexionados.',
-      'Baja hasta sentir el estiramiento en el pecho (sin pasar la lÃ­nea del banco).',
-      'Vuelve al inicio como si abrazaras un Ã¡rbol.',
+      'Baja hasta sentir el estiramiento en el pecho (sin pasar la línea del banco).',
+      'Vuelve al inicio como si abrazaras un árbol.',
       'El movimiento es en los hombros, no en los codos.'
     ],
     errors: [
       'Doblar demasiado los codos (se convierte en press).',
-      'Bajar las mancuernas mÃ¡s allÃ¡ del plano del pecho.',
+      'Bajar las mancuernas más allá del plano del pecho.',
       'Usar demasiado peso y perder el estiramiento.'
     ],
     tips: [
-      'Las aperturas son ideales para el final de la sesiÃ³n de pecho con peso ligero y muchas reps.',
-      'En cable, la tensiÃ³n es constante durante todo el rango.'
+      'Las aperturas son ideales para el final de la sesión de pecho con peso ligero y muchas reps.',
+      'En cable, la tensión es constante durante todo el rango.'
     ]
   },
   'Press Arnold': {
-    emoji: 'ðŸ’«',
+    emoji: '💫',
     primary: ['Deltoides anterior y lateral'],
-    secondary: ['TrÃ­ceps', 'Trapecio'],
+    secondary: ['Tríceps', 'Trapecio'],
     steps: [
-      'SiÃ©ntate con mancuernas a la altura de los hombros, palmas mirando hacia ti.',
+      'Siéntate con mancuernas a la altura de los hombros, palmas mirando hacia ti.',
       'Al empujar hacia arriba, rota las palmas hasta que miren hacia afuera.',
       'Extiende completamente los brazos.',
       'Al bajar, rota de regreso hasta que las palmas te miren.',
-      'Es un movimiento fluido de rotaciÃ³n + press.'
+      'Es un movimiento fluido de rotación + press.'
     ],
     errors: [
-      'Hacer la rotaciÃ³n de forma abrupta.',
-      'No completar el rango de rotaciÃ³n.',
+      'Hacer la rotación de forma abrupta.',
+      'No completar el rango de rotación.',
       'Arquear la espalda.'
     ],
     tips: [
-      'Creado por Arnold Schwarzenegger para trabajar mÃ¡s Ã¡ngulos del deltoides.',
-      'El rango de movimiento mÃ¡s completo activa mejor el deltoides medial.'
+      'Creado por Arnold Schwarzenegger para trabajar más ángulos del deltoides.',
+      'El rango de movimiento más completo activa mejor el deltoides medial.'
     ]
   },
-  'Press francÃ©s': {
-    emoji: 'ðŸ’ª',
-    primary: ['TrÃ­ceps'],
+  'Press francés': {
+    emoji: '💪',
+    primary: ['Tríceps'],
     secondary: [],
     steps: [
-      'AcuÃ©state con la barra EZ o mancuerna sobre el pecho, brazos extendidos.',
-      'Baja la pesa hacia la frente o detrÃ¡s de la cabeza doblando solo los codos.',
+      'Acuéstate con la barra EZ o mancuerna sobre el pecho, brazos extendidos.',
+      'Baja la pesa hacia la frente o detrás de la cabeza doblando solo los codos.',
       'Los codos apuntan al techo durante todo el movimiento.',
-      'Extiende los brazos de regreso a la posiciÃ³n inicial.'
+      'Extiende los brazos de regreso a la posición inicial.'
     ],
     errors: [
       'Mover los hombros durante el movimiento.',
       'Codos que se abren hacia los lados.',
-      'Bajar demasiado rÃ¡pido.'
+      'Bajar demasiado rápido.'
     ],
     tips: [
-      'La variante con barra EZ es mÃ¡s cÃ³moda para las muÃ±ecas.',
-      'Combinado con press de pecho en superserie = excelente para trÃ­ceps.'
+      'La variante con barra EZ es más cómoda para las muñecas.',
+      'Combinado con press de pecho en superserie = excelente para tríceps.'
     ]
   },
-  'JalÃ³n de trÃ­ceps en polea': {
-    emoji: 'ðŸ’ª',
-    primary: ['TrÃ­ceps'],
+  'Jalón de tríceps en polea': {
+    emoji: '💪',
+    primary: ['Tríceps'],
     secondary: [],
     steps: [
-      'PÃ¡rate frente a la polea alta con la cuerda o barra.',
-      'Codos pegados al cuerpo, parte superior del brazo inmÃ³vil.',
+      'Párate frente a la polea alta con la cuerda o barra.',
+      'Codos pegados al cuerpo, parte superior del brazo inmóvil.',
       'Extiende los antebrazos hacia abajo hasta bloquear los codos.',
-      'Vuelve lentamente arriba hasta que los antebrazos estÃ©n paralelos al suelo.'
+      'Vuelve lentamente arriba hasta que los antebrazos estén paralelos al suelo.'
     ],
     errors: [
-      'Mover los codos hacia adelante y atrÃ¡s.',
-      'No llegar a la extensiÃ³n completa.',
+      'Mover los codos hacia adelante y atrás.',
+      'No llegar a la extensión completa.',
       'Inclinarse hacia adelante en exceso.'
     ],
     tips: [
-      'Al usar la cuerda, separa las manos al final para activar mÃ¡s la cabeza lateral.',
-      'MantÃ©n los codos fijos â€” si se mueven, el peso es demasiado.'
+      'Al usar la cuerda, separa las manos al final para activar más la cabeza lateral.',
+      'Mantén los codos fijos — si se mueven, el peso es demasiado.'
     ]
   },
   'Dead bug': {
-    emoji: 'ðŸ§±',
+    emoji: '🧱',
     primary: ['Core profundo', 'Transverso abdominal'],
     secondary: ['Psoas', 'Estabilizadores lumbares'],
     steps: [
-      'AcuÃ©state boca arriba con brazos extendidos hacia el techo y caderas y rodillas a 90Â°.',
-      'MantÃ©n la zona lumbar PEGADA al suelo â€” este es el punto clave.',
+      'Acuéstate boca arriba con brazos extendidos hacia el techo y caderas y rodillas a 90°.',
+      'Mantén la zona lumbar PEGADA al suelo — este es el punto clave.',
       'Baja lentamente el brazo derecho y la pierna izquierda hacia el suelo.',
       'Para cuando la zona lumbar empiece a despegarse.',
       'Regresa al inicio y repite del otro lado.'
     ],
     errors: [
       'Dejar que la zona lumbar se arquee al extender.',
-      'Ir demasiado rÃ¡pido.',
+      'Ir demasiado rápido.',
       'No coordinar brazo y pierna opuestos.'
     ],
     tips: [
-      'Este ejercicio es mÃ¡s difÃ­cil de lo que parece â€” empieza con rangos cortos.',
-      'Exhala al extender las extremidades para facilitar la estabilizaciÃ³n.',
+      'Este ejercicio es más difícil de lo que parece — empieza con rangos cortos.',
+      'Exhala al extender las extremidades para facilitar la estabilización.',
       'Es uno de los mejores ejercicios para el core profundo y la estabilidad lumbar.'
     ]
   },
   'Step up': {
-    emoji: 'ðŸ¦µ',
-    primary: ['CuÃ¡driceps', 'GlÃºteos'],
+    emoji: '🦵',
+    primary: ['Cuádriceps', 'Glúteos'],
     secondary: ['Isquiotibiales', 'Core'],
     steps: [
-      'PÃ¡rate frente a un banco o escalÃ³n a la altura de la rodilla.',
+      'Párate frente a un banco o escalón a la altura de la rodilla.',
       'Sube con una pierna, empujando completamente hasta extender la rodilla.',
-      'No empujes con la pierna del suelo â€” todo el trabajo es de la pierna elevada.',
+      'No empujes con la pierna del suelo — todo el trabajo es de la pierna elevada.',
       'Baja controladamente al inicio.'
     ],
     errors: [
@@ -857,20 +857,20 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Usar un banco demasiado bajo.'
     ],
     tips: [
-      'Cuanto mÃ¡s alto el escalÃ³n, mÃ¡s glÃºteo; mÃ¡s bajo, mÃ¡s cuÃ¡driceps.',
+      'Cuanto más alto el escalón, más glúteo; más bajo, más cuádriceps.',
       'Agrega mancuernas para aumentar la dificultad.'
     ]
   },
-  'Buenos dÃ­as': {
-    emoji: 'âš¡',
+  'Buenos días': {
+    emoji: '⚡',
     primary: ['Isquiotibiales', 'Espalda baja'],
-    secondary: ['GlÃºteos', 'Core'],
+    secondary: ['Glúteos', 'Core'],
     steps: [
-      'PÃ¡rate con la barra en los trapecios (igual que en sentadilla).',
+      'Párate con la barra en los trapecios (igual que en sentadilla).',
       'Rodillas ligeramente flexionadas, pies a la altura de los hombros.',
-      'Inclina el torso hacia adelante llevando las caderas hacia atrÃ¡s.',
-      'Baja hasta que el torso quede casi paralelo al suelo o donde sientas el lÃ­mite.',
-      'Vuelve al inicio contrayendo glÃºteos e isquiotibiales.'
+      'Inclina el torso hacia adelante llevando las caderas hacia atrás.',
+      'Baja hasta que el torso quede casi paralelo al suelo o donde sientas el límite.',
+      'Vuelve al inicio contrayendo glúteos e isquiotibiales.'
     ],
     errors: [
       'Redondear la espalda.',
@@ -878,20 +878,20 @@ const GUIDES: Record<string, ExerciseGuide> = {
       'Usar peso excesivo al inicio.'
     ],
     tips: [
-      'Empieza con peso muy ligero para aprender la mecÃ¡nica.',
+      'Empieza con peso muy ligero para aprender la mecánica.',
       'El movimiento es similar al peso muerto rumano pero con barra en la espalda.'
     ]
   }
 };
 
-// â”€â”€ STATE â”€â”€
+// ── STATE ──
 
 /**
  * Currently selected exercise name for guide display
  */
 let guideExName: string = '';
 
-// â”€â”€ FUNCTIONS â”€â”€
+// ── FUNCTIONS ──
 
 /**
  * Renders the guide content for a specific exercise
@@ -914,7 +914,7 @@ function renderGuideContent(name: string, guide: ExerciseGuide | null): void {
   // Update add button text
   const addTextElement = document.getElementById(GUIDE_DOM_IDS.ADD_TXT);
   if (addTextElement) {
-    addTextElement.textContent = `Agregar "${name}" al dÃ­a de hoy`;
+    addTextElement.textContent = `Agregar "${name}" al día de hoy`;
   }
 }
 
@@ -924,17 +924,17 @@ function renderGuideContent(name: string, guide: ExerciseGuide | null): void {
 function renderNoGuideAvailable(): void {
   const emojiElement = document.getElementById(GUIDE_DOM_IDS.EMOJI);
   if (emojiElement) {
-    emojiElement.textContent = 'ðŸ“–';
+    emojiElement.textContent = '📖';
   }
 
   const musclesElement = document.getElementById(GUIDE_DOM_IDS.MUSCLES);
   if (musclesElement) {
-    musclesElement.innerHTML = '<span class="muscle-tag secondary">Sin guÃ­a disponible aÃºn</span>';
+    musclesElement.innerHTML = '<span class="muscle-tag secondary">Sin guía disponible aún</span>';
   }
 
   const stepsElement = document.getElementById(GUIDE_DOM_IDS.STEPS);
   if (stepsElement) {
-    stepsElement.innerHTML = '<div class="guide-tip ok"><span class="tip-icon">ðŸ’¡</span><span>No tenemos una guÃ­a especÃ­fica para este ejercicio todavÃ­a. Â¡Consulta con tu entrenador o busca en YouTube para ver la tÃ©cnica correcta!</span></div>';
+    stepsElement.innerHTML = '<div class="guide-tip ok"><span class="tip-icon">💡</span><span>No tenemos una guía específica para este ejercicio todavía. ¡Consulta con tu entrenador o busca en YouTube para ver la técnica correcta!</span></div>';
   }
 
   // Hide error and tip sections
@@ -984,7 +984,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const errorsElement = document.getElementById(GUIDE_DOM_IDS.ERRORS);
   if (errorsElement) {
     errorsElement.innerHTML = (guide.errors || []).map((error: string) =>
-      `<div class="guide-tip err"><span class="tip-icon">âŒ</span><span>${error}</span></div>`
+      `<div class="guide-tip err"><span class="tip-icon">❌</span><span>${error}</span></div>`
     ).join('');
   }
 
@@ -992,7 +992,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const tipsElement = document.getElementById(GUIDE_DOM_IDS.TIPS);
   if (tipsElement) {
     tipsElement.innerHTML = (guide.tips || []).map((tip: string) =>
-      `<div class="guide-tip ok"><span class="tip-icon">âœ…</span><span>${tip}</span></div>`
+      `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${tip}</span></div>`
     ).join('');
   }
 
@@ -1015,7 +1015,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
 function openGuide(name: string): void {
   if (!name || typeof name !== 'string' || name.trim() === '') {
     console.warn('Invalid exercise name provided to openGuide');
-    toast('Nombre de ejercicio invÃ¡lido');
+    toast('Nombre de ejercicio inválido');
     return;
   }
 
@@ -1076,7 +1076,7 @@ function addFromGuide(): void {
   }, 100);
 }
 
-// â”€â”€ EXPORTS â”€â”€
+// ── EXPORTS ──
 
 export {
   GUIDES,

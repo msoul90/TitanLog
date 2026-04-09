@@ -1,5 +1,5 @@
-﻿// ============================================================
-// gym.ts â€” Pantalla de Gym: ejercicios, composiciÃ³n, timer
+// ============================================================
+// gym.ts — Pantalla de Gym: ejercicios, composición, timer
 // ============================================================
 
 import { BodyWeightEntry } from './types.js';
@@ -11,22 +11,22 @@ const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
 const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 const renderToday = (): void => (globalThis as any).renderToday?.();
 
-// â”€â”€ CONSTANTS â”€â”€
+// ── CONSTANTS ──
 
 // Body composition categories and ranges
 const BODY_COMPOSITION_RANGES = {
   FAT: {
-    VERY_LOW: { max: 10, label: 'Muy bajo â€” revisa con un profesional', class: 'high' },
-    ATHLETIC: { max: 18, label: 'AtlÃ©tico / muy bajo', class: 'ok' },
-    FITNESS: { max: 25, label: 'Fitness â€” rango saludable', class: 'ok' },
+    VERY_LOW: { max: 10, label: 'Muy bajo — revisa con un profesional', class: 'high' },
+    ATHLETIC: { max: 18, label: 'Atlético / muy bajo', class: 'ok' },
+    FITNESS: { max: 25, label: 'Fitness — rango saludable', class: 'ok' },
     AVERAGE: { max: 32, label: 'Promedio', class: 'warn' },
-    HIGH: { max: Infinity, label: 'Alto â€” considera ajustar tu dieta', class: 'high' }
+    HIGH: { max: Infinity, label: 'Alto — considera ajustar tu dieta', class: 'high' }
   },
   MMC: {
-    LOW: { max: 30, label: 'Bajo â€” enfÃ³cate en la proteÃ­na', class: 'high' },
+    LOW: { max: 30, label: 'Bajo — enfócate en la proteína', class: 'high' },
     AVERAGE: { max: 40, label: 'Promedio', class: 'warn' },
-    GOOD: { max: 50, label: 'Bueno â€” Â¡sigue asÃ­!', class: 'ok' },
-    EXCELLENT: { max: Infinity, label: 'Excelente â€” masa muscular alta', class: 'ok' }
+    GOOD: { max: 50, label: 'Bueno — ¡sigue así!', class: 'ok' },
+    EXCELLENT: { max: Infinity, label: 'Excelente — masa muscular alta', class: 'ok' }
   }
 } as const;
 
@@ -57,10 +57,10 @@ const DOM_IDS = {
 } as const;
 
 // Date constants
-const DAYS_OF_WEEK: readonly string[] = ['domingo', 'lunes', 'martes', 'miÃ©rcoles', 'jueves', 'viernes', 'sÃ¡bado'];
+const DAYS_OF_WEEK: readonly string[] = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
 const MONTHS: readonly string[] = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-// â”€â”€ BODY COMPOSITION â”€â”€
+// ── BODY COMPOSITION ──
 
 /**
  * Categorizes body fat percentage and returns label and CSS class
@@ -265,7 +265,7 @@ function formatDateForModal(date: Date): string {
   const dayName = DAYS_OF_WEEK[date.getDay()];
   const day = date.getDate();
   const monthName = MONTHS[date.getMonth()];
-  return `ðŸ“… ${dayName} ${day} de ${monthName}`;
+  return `📅 ${dayName} ${day} de ${monthName}`;
 }
 
 /**
@@ -322,7 +322,7 @@ async function saveBW(): Promise<void> {
     await saveBWDay(dk(appState.viewDate), weightData);
     closeM('bwMod');
     renderToday();
-    toast('Medidas guardadas âœ“');
+    toast('Medidas guardadas ✓');
   } catch (err) {
     console.error('Error saving body weight:', err);
     toast('Error guardando medidas. Intenta de nuevo.');
@@ -340,13 +340,13 @@ function validateAndParseBodyWeightData(): BodyWeightEntry | null {
 
   if (!bwInput || !fatInput || !mmcInput) {
     console.error('Required body weight form elements not found');
-    toast('Error en la interfaz. Recarga la pÃ¡gina.');
+    toast('Error en la interfaz. Recarga la página.');
     return null;
   }
 
   const v = Number.parseFloat(bwInput.value);
   if (!v || v < VALIDATION_RANGES.WEIGHT.min) {
-    toast('Ingresa un peso vÃ¡lido');
+    toast('Ingresa un peso válido');
     return null;
   }
 
@@ -354,19 +354,19 @@ function validateAndParseBodyWeightData(): BodyWeightEntry | null {
   const mmc = mmcInput.value === '' ? undefined : Number.parseFloat(mmcInput.value);
 
   if (fat != null && (fat < VALIDATION_RANGES.FAT_PERCENTAGE.min || fat > VALIDATION_RANGES.FAT_PERCENTAGE.max)) {
-    toast(`% de grasa no vÃ¡lido (${VALIDATION_RANGES.FAT_PERCENTAGE.min}-${VALIDATION_RANGES.FAT_PERCENTAGE.max})`);
+    toast(`% de grasa no válido (${VALIDATION_RANGES.FAT_PERCENTAGE.min}-${VALIDATION_RANGES.FAT_PERCENTAGE.max})`);
     return null;
   }
 
   if (mmc != null && (mmc < VALIDATION_RANGES.MMC_PERCENTAGE.min || mmc > VALIDATION_RANGES.MMC_PERCENTAGE.max)) {
-    toast(`% MMC no vÃ¡lido (${VALIDATION_RANGES.MMC_PERCENTAGE.min}-${VALIDATION_RANGES.MMC_PERCENTAGE.max})`);
+    toast(`% MMC no válido (${VALIDATION_RANGES.MMC_PERCENTAGE.min}-${VALIDATION_RANGES.MMC_PERCENTAGE.max})`);
     return null;
   }
 
   return { v, u: appState.bodyWeightUnit, fat, mmc };
 }
 
-// â”€â”€ TIMER â”€â”€
+// ── TIMER ──
 
 /**
  * Starts the timer with specified duration
@@ -394,7 +394,7 @@ function startT(secs: number, btn: HTMLElement): void {
 
       const timerNumElement = document.getElementById(DOM_IDS.TIMER_NUM);
       if (timerNumElement) {
-        timerNumElement.textContent = 'Â¡Listo!';
+        timerNumElement.textContent = '¡Listo!';
         timerNumElement.classList.add('warn');
       }
 
@@ -446,7 +446,7 @@ function updT(): void {
   }
 }
 
-// â”€â”€ EXPORTS â”€â”€
+// ── EXPORTS ──
 
 export {
   // Constants

@@ -1,4 +1,4 @@
-﻿import { Exercise, BodyWeightEntry } from './types.js';
+import { Exercise, BodyWeightEntry } from './types.js';
 import { dk, getCurrentProfile } from './db.js';
 import { escHtml, gD, sD, gBW, sBW, renderToday, isPR } from './app.js';
 
@@ -28,16 +28,16 @@ const PROGRESS_CONSTANTS = {
 
 // Body composition metrics
 const BC_METRICS = {
-  WEIGHT: { emoji: 'âš–ï¸', label: 'Peso', invertDelta: false },
-  FAT_PERCENT: { emoji: 'ðŸ”¥', label: '% Grasa', invertDelta: true },
-  MMC_PERCENT: { emoji: 'ðŸ’ª', label: '% MMC', invertDelta: false }
+  WEIGHT: { emoji: '⚖️', label: 'Peso', invertDelta: false },
+  FAT_PERCENT: { emoji: '🔥', label: '% Grasa', invertDelta: true },
+  MMC_PERCENT: { emoji: '💪', label: '% MMC', invertDelta: false }
 } as const;
 
 // History chart titles
 const HISTORY_TITLES = {
-  WEIGHT: 'ðŸ“ˆ Historial de peso',
-  FAT: 'ðŸ”¥ Historial % grasa',
-  MMC: 'ðŸ’ª Historial % masa muscular'
+  WEIGHT: '📈 Historial de peso',
+  FAT: '🔥 Historial % grasa',
+  MMC: '💪 Historial % masa muscular'
 } as const;
 
 // Export/import constants
@@ -65,7 +65,7 @@ interface ExerciseProgressMap {
   [exerciseName: string]: ExerciseProgressEntry[];
 }
 
-// â”€â”€ UTILITY FUNCTIONS â”€â”€
+// ── UTILITY FUNCTIONS ──
 
 /**
  * Calculates delta HTML for body composition cards
@@ -87,7 +87,7 @@ function deltaHtml(current: number | null, previous: number | null, unit: string
     cssClass = isIncrease === isGoodChange ? 'up' : 'dn';
   }
 
-  return `<div class="bc-lc-delta ${cssClass}">${isIncrease ? '▲' : '▼'} ${Math.abs(Number.parseFloat(diff))} ${unit}</div>`;
+  return `<div class="bc-lc-delta ${cssClass}">${isIncrease ? '?' : '?'} ${Math.abs(Number.parseFloat(diff))} ${unit}</div>`;
 }
 
 /**
@@ -108,7 +108,7 @@ function getMonWeek(date: Date): string {
   return `${workingDate.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
 }
 
-// â”€â”€ PROGRESS RENDERING â”€â”€
+// ── PROGRESS RENDERING ──
 
 /**
  * Main function to render the progress section
@@ -287,7 +287,7 @@ function renderWeeklyDots(exerciseData: Record<string, Exercise[]>, today: Date)
     else if (hasTraining && isCurrentWeek) cssClass += ' done';
     else if (isCurrentWeek) cssClass += ' current';
 
-    const displayText = hasTraining ? 'âœ“' : `S${weekNumber}`;
+    const displayText = hasTraining ? '✓' : `S${weekNumber}`;
     dots.push(`<div class="${cssClass}" title="Semana ${weekNumber}">${displayText}</div>`);
 
     dotDate.setDate(dotDate.getDate() + PROGRESS_CONSTANTS.WEEK_DAYS);
@@ -307,7 +307,7 @@ function renderBodyCompositionSection(): void {
   if (!bcElement) return;
 
   if (!bodyCompositionEntries.length) {
-    bcElement.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;padding:4px 2px">Registra tu composiciÃ³n corporal para ver el historial.</div>';
+    bcElement.innerHTML = '<div style="color:var(--text3);font-size:0.8rem;padding:4px 2px">Registra tu composición corporal para ver el historial.</div>';
     return;
   }
 
@@ -332,8 +332,8 @@ function renderBodyCompositionSection(): void {
  * @returns HTML for metric cards
  */
 function generateBodyCompositionCards(latest: BodyWeightEntry, previous: BodyWeightEntry | null, unit: string): string {
-  const fatText = latest.fat == null ? 'â€”' : `${latest.fat}%`;
-  const mmcText = latest.mmc == null ? 'â€”' : `${latest.mmc}%`;
+  const fatText = latest.fat == null ? '—' : `${latest.fat}%`;
+  const mmcText = latest.mmc == null ? '—' : `${latest.mmc}%`;
 
   return `
     <div class="bc-latest-cards">
@@ -431,7 +431,7 @@ function renderExerciseProgress(exerciseData: Record<string, Exercise[]>): void 
   const entries = Object.entries(exerciseMap).filter(([, progressData]) => progressData.length > 0);
 
   if (!entries.length) {
-    progressListElement.innerHTML = '<div class="empty"><div class="empty-ic">ðŸ“Š</div><div class="empty-tx">Registra ejercicios con peso<br>para ver el progreso aquÃ­.</div></div>';
+    progressListElement.innerHTML = '<div class="empty"><div class="empty-ic">📊</div><div class="empty-tx">Registra ejercicios con peso<br>para ver el progreso aquí.</div></div>';
     return;
   }
 
@@ -500,13 +500,13 @@ function generateExerciseProgressCard(exerciseName: string, progressData: Exerci
   return `<div class="prog-card">
     <div class="pc-top">
       <div class="pc-name">${escHtml(exerciseName)}</div>
-      <div class="pc-best">ðŸ† MÃ¡x: ${maxWeight} ${escHtml(latestUnit)}</div>
+      <div class="pc-best">🏆 Máx: ${maxWeight} ${escHtml(latestUnit)}</div>
     </div>
     <div class="pc-dots">${progressDots}</div>
   </div>`;
 }
 
-// â”€â”€ EXPORT / IMPORT â”€â”€
+// ── EXPORT / IMPORT ──
 
 /**
  * Exports user data as JSON file
@@ -527,7 +527,7 @@ export function expJSON(): void {
     downloadLink.download = `ironlog_${userName}_${dk(new Date())}.json`;
     downloadLink.click();
 
-    showToast('JSON exportado âœ“', 'success');
+    showToast('JSON exportado ✓', 'success');
   } catch (error) {
     console.error('Error exporting JSON:', error);
     showToast('Error al exportar JSON', 'error');
@@ -569,7 +569,7 @@ export function expCSV(): void {
     downloadLink.download = `ironlog_${userName}_${dk(new Date())}.csv`;
     downloadLink.click();
 
-    showToast('CSV exportado âœ“', 'success');
+    showToast('CSV exportado ✓', 'success');
   } catch (error) {
     console.error('Error exporting CSV:', error);
     showToast('Error al exportar CSV', 'error');
@@ -626,10 +626,10 @@ export function handleImp(event: Event): void {
 
       // Refresh UI
       renderToday();
-      showToast('Datos importados âœ“', 'success');
+      showToast('Datos importados ✓', 'success');
     } catch (error) {
       console.error('Error importing data:', error);
-      showToast('Error: archivo invÃ¡lido', 'error');
+      showToast('Error: archivo inválido', 'error');
     }
   }).catch((error) => {
     console.error('Error reading file:', error);
@@ -639,14 +639,14 @@ export function handleImp(event: Event): void {
   target.value = ''; // Reset file input
 }
 
-// â”€â”€ DEMO DATA â”€â”€
+// ── DEMO DATA ──
 
 /**
  * Loads demo workout data for user demonstration
  * Creates sample workouts for Monday and Tuesday
  */
 export function loadDemo(): void {
-  if (!confirm('Â¿Cargar la rutina de ejemplo?')) return;
+  if (!confirm('¿Cargar la rutina de ejemplo?')) return;
 
   const exerciseData = gD();
   const today = new Date();
@@ -673,7 +673,7 @@ export function loadDemo(): void {
   // Note: viewDate assignment removed as it's not defined in this module
   renderToday();
 
-  showToast('Â¡Rutina cargada! ðŸš€', 'success');
+  showToast('¡Rutina cargada! 🚀', 'success');
 
   // Navigate to today view
   const todayNavButton = document.querySelectorAll('.nav-btn')[0] as HTMLElement;
@@ -701,7 +701,7 @@ function createMondayDemoWorkout(): Exercise[] {
       ts: baseTimestamp
     },
     {
-      name: 'Desplantes hacia atrÃ¡s',
+      name: 'Desplantes hacia atrás',
       weight: '20',
       unit: 'lb',
       sets: '3',
@@ -813,7 +813,7 @@ function createTuesdayDemoWorkout(): Exercise[] {
   ];
 }
 
-// â”€â”€ TOAST NOTIFICATIONS â”€â”€
+// ── TOAST NOTIFICATIONS ──
 
 /**
  * Shows a toast notification to the user

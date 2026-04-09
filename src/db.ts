@@ -1,5 +1,5 @@
-﻿// ============================================================
-// db.ts â€” Supabase config, base de datos y autenticaciÃ³n
+// ============================================================
+// db.ts — Supabase config, base de datos y autenticación
 // ============================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -15,10 +15,10 @@ import {
   AuthMode
 } from './types.js';
 
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-// SUPABASE CONFIG â€” reemplaza con tus propios valores
-// Los encuentras en: supabase.com â†’ tu proyecto â†’ Settings â†’ API
-// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// ══════════════════════════════════════════════════════
+// SUPABASE CONFIG — reemplaza con tus propios valores
+// Los encuentras en: supabase.com → tu proyecto → Settings → API
+// ══════════════════════════════════════════════════════
 const SUPABASE_URL: string = 'https://TU_PROJECT_ID.supabase.co';
 const SUPABASE_ANON: string = 'TU_ANON_PUBLIC_KEY';
 const PROFILE_COLORS: readonly string[] = ['#aaff45','#ff9f43','#45c8ff','#ff6bbd','#a78bfa','#fb923c','#34d399','#f472b6'];
@@ -34,7 +34,7 @@ const renderToday = (): void => (globalThis as any).renderToday?.();
 const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
 
 
-// â”€â”€ ESTADO GLOBAL â”€â”€
+// ── ESTADO GLOBAL ──
 interface DBState {
   currentUser: User | null;
   currentProfile: UserProfile | null;
@@ -48,13 +48,13 @@ const dbState: DBState = {
   currentProfile: null,   // fila de la tabla profiles
   gymCache: {},     // cache local de sesiones gym { 'YYYY-MM-DD': [...] }
   hiitCache: {},     // cache local de sesiones HIIT { 'YYYY-MM-DD': [...] }
-  bwCache: {}     // cache local de mÃ©tricas { 'YYYY-MM-DD': {...} }
+  bwCache: {}     // cache local de métricas { 'YYYY-MM-DD': {...} }
 };
 
 // For backward compatibility
 let { currentUser, currentProfile, gymCache, hiitCache, bwCache } = dbState;
 
-// â”€â”€ HELPERS DE FECHA â”€â”€
+// ── HELPERS DE FECHA ──
 
 /**
  * Creates a date key in YYYY-MM-DD format
@@ -69,7 +69,7 @@ export function getCurrentProfile(): UserProfile | null {
   return currentProfile;
 }
 
-// â”€â”€ SUPABASE: GYM SESSIONS â”€â”€
+// ── SUPABASE: GYM SESSIONS ──
 
 /**
  * Loads gym sessions for a specific month
@@ -146,7 +146,7 @@ async function deleteGymDay(dateStr: string): Promise<void> {
  * @returns Object with date keys and exercise arrays
  */
 function gD(): Record<string, Exercise[]> {
-  // Devuelve objeto compatible con el cÃ³digo existente { 'YYYY-MM-DD': [exercises] }
+  // Devuelve objeto compatible con el código existente { 'YYYY-MM-DD': [exercises] }
   const result: Record<string, Exercise[]> = {};
   for (const [date, val] of Object.entries(gymCache)) {
     result[date] = val.exercises || [];
@@ -154,7 +154,7 @@ function gD(): Record<string, Exercise[]> {
   return result;
 }
 
-// â”€â”€ SUPABASE: BODY METRICS â”€â”€
+// ── SUPABASE: BODY METRICS ──
 
 /**
  * Loads all body weight metrics for the current user
@@ -234,7 +234,7 @@ function gBW(): BodyWeightData {
   return bwCache;
 }
 
-// â”€â”€ SUPABASE: HIIT SESSIONS â”€â”€
+// ── SUPABASE: HIIT SESSIONS ──
 
 /**
  * Loads HIIT sessions for a specific month
@@ -328,7 +328,7 @@ function gHiit(): Record<string, HIITSession[]> {
   return result;
 }
 
-// â”€â”€ PERFIL DE USUARIO â”€â”€
+// ── PERFIL DE USUARIO ──
 
 /**
  * Loads user profile from database
@@ -478,14 +478,14 @@ async function saveProfile(): Promise<void> {
     currentProfile = { ...(currentProfile as UserProfile), name, color: selectedColor };
     closeM('editProfMod');
     applyUser();
-    toast('Perfil actualizado âœ“');
+    toast('Perfil actualizado ✓');
   } catch (err) {
     console.error('Exception in saveProfile:', err);
     toast('Error guardando perfil. Intenta de nuevo.');
   }
 }
 
-// â”€â”€ AUTH SYSTEM â”€â”€
+// ── AUTH SYSTEM ──
 let authMode: AuthMode = 'signin'; // 'signin' | 'signup'
 
 /**
@@ -496,19 +496,19 @@ function toggleAuthMode(): void { // NOSONAR
   const isSignup = authMode === 'signup';
 
   const authTitle = document.getElementById('authTitle');
-  if (authTitle) authTitle.textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesiÃ³n';
+  if (authTitle) authTitle.textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
 
   const authSub = document.getElementById('authSub');
-  if (authSub) authSub.textContent = isSignup ? 'RegÃ­strate para acceder a IronLog.' : 'Accede con tu cuenta de IronLog.';
+  if (authSub) authSub.textContent = isSignup ? 'Regístrate para acceder a IronLog.' : 'Accede con tu cuenta de IronLog.';
 
   const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
   if (authBtn) authBtn.textContent = isSignup ? 'Crear cuenta' : 'Entrar';
 
   const authToggleText = document.getElementById('authToggleText');
-  if (authToggleText) authToggleText.textContent = isSignup ? 'Â¿Ya tienes cuenta?' : 'Â¿Primera vez?';
+  if (authToggleText) authToggleText.textContent = isSignup ? '¿Ya tienes cuenta?' : '¿Primera vez?';
 
   const authToggleLink = document.getElementById('authToggleLink');
-  if (authToggleLink) authToggleLink.textContent = isSignup ? 'Iniciar sesiÃ³n' : 'Crear cuenta';
+  if (authToggleLink) authToggleLink.textContent = isSignup ? 'Iniciar sesión' : 'Crear cuenta';
 
   const authNameGroup = document.getElementById('authNameGroup');
   if (authNameGroup) authNameGroup.style.display = isSignup ? 'block' : 'none';
@@ -540,13 +540,13 @@ async function doAuthAction(): Promise<void> { // NOSONAR
     if (authErr) authErr.textContent = '';
 
     if (!email || !pw) {
-      if (authErr) authErr.textContent = 'Completa email y contraseÃ±a';
+      if (authErr) authErr.textContent = 'Completa email y contraseña';
       return;
     }
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
-      authBtn.textContent = 'â€¦';
+      authBtn.textContent = '…';
       authBtn.disabled = true;
     }
 
@@ -560,18 +560,18 @@ async function doAuthAction(): Promise<void> { // NOSONAR
       if (error) {
         if (authErr) {
           authErr.textContent = error.message.includes('already')
-            ? 'Este email ya tiene cuenta. Inicia sesiÃ³n.'
+            ? 'Este email ya tiene cuenta. Inicia sesión.'
             : error.message;
         }
       } else if (authErr) {
         authErr.style.color = 'var(--accent)';
-        authErr.textContent = 'Â¡Cuenta creada! Revisa tu email para confirmar.';
+        authErr.textContent = '¡Cuenta creada! Revisa tu email para confirmar.';
       }
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
 
       if (error) {
-        if (authErr) authErr.textContent = 'Email o contraseÃ±a incorrectos';
+        if (authErr) authErr.textContent = 'Email o contraseña incorrectos';
       } else {
         await enterApp(data.user);
       }
@@ -585,7 +585,7 @@ async function doAuthAction(): Promise<void> { // NOSONAR
     console.error('Error in authentication:', err);
 
     const authErr = document.getElementById('authErr');
-    if (authErr) authErr.textContent = 'Error de conexiÃ³n. Intenta de nuevo.';
+    if (authErr) authErr.textContent = 'Error de conexión. Intenta de nuevo.';
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
@@ -617,7 +617,7 @@ async function sendResetEmail(): Promise<void> {
       if (authErr) authErr.textContent = error.message;
     } else if (authErr) {
       authErr.style.color = 'var(--accent)';
-      authErr.textContent = 'Email de recuperaciÃ³n enviado âœ“';
+      authErr.textContent = 'Email de recuperación enviado ✓';
     }
   } catch (err) {
     console.error('Exception sending reset email:', err);
@@ -678,7 +678,7 @@ function showLoading(show: boolean): void {
   if (loginStep1) loginStep1.style.display = show ? 'none' : 'block';
 }
 
-// â”€â”€ CACHE CLEANUP â”€â”€
+// ── CACHE CLEANUP ──
 
 /**
  * Clears all cached data
@@ -695,7 +695,7 @@ function clearCache(): void {
  * Logs out the current user
  */
 async function doLogout(): Promise<void> {
-  if (!confirm('Â¿Cerrar sesiÃ³n?')) return;
+  if (!confirm('¿Cerrar sesión?')) return;
   clearCache();
   await sb.auth.signOut();
   location.reload();
@@ -728,7 +728,7 @@ async function initLogin(): Promise<void> {
   }
 }
 
-// â”€â”€ EXPORTS â”€â”€
+// ── EXPORTS ──
 
 export {
   // Constants

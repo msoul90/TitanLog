@@ -1,8 +1,8 @@
-﻿// ============================================================
-// types.ts â€” Definiciones de tipos TypeScript para IronLog
+// ============================================================
+// types.ts — Definiciones de tipos TypeScript para IronLog
 // ============================================================
 
-// â”€â”€ CORE DATA TYPES â”€â”€
+// ── CORE DATA TYPES ──
 
 // Exercise entry structure
 export interface Exercise {
@@ -46,7 +46,7 @@ export interface HIITExercise {
   rounds?: number;
 }
 
-// â”€â”€ ENUMS & UNION TYPES â”€â”€
+// ── ENUMS & UNION TYPES ──
 
 // RPE (Rate of Perceived Exertion) values
 export type RPEValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -60,23 +60,23 @@ export type ExerciseCategory =
   | 'Espalda'
   | 'Pecho'
   | 'Hombros'
-  | 'BÃ­ceps'
-  | 'TrÃ­ceps'
+  | 'Bíceps'
+  | 'Tríceps'
   | 'Abdomen'
   | 'Core'
   | 'Cardio'
   | 'Funcional'
   | 'Piernas / Espalda'
   | 'Isquiotibiales'
-  | 'CuÃ¡driceps'
-  | 'GlÃºteos'
+  | 'Cuádriceps'
+  | 'Glúteos'
   | 'Pantorrillas'
-  | 'Pecho / TrÃ­ceps'
-  | 'Espalda / BÃ­ceps'
+  | 'Pecho / Tríceps'
+  | 'Espalda / Bíceps'
   | 'Espalda / Hombros'
   | 'Espalda baja';
 
-// â”€â”€ APPLICATION STATE TYPES â”€â”€
+// ── APPLICATION STATE TYPES ──
 
 // Global application state
 export interface AppState {
@@ -101,7 +101,7 @@ export interface UserProfile {
   created_at?: string;
 }
 
-// â”€â”€ UI & DOM TYPES â”€â”€
+// ── UI & DOM TYPES ──
 
 // Toast notification types
 export type ToastType = 'success' | 'error' | 'info';
@@ -119,7 +119,7 @@ export interface ExerciseGuide {
   tips?: string[];
 }
 
-// â”€â”€ DATABASE & STORAGE TYPES â”€â”€
+// ── DATABASE & STORAGE TYPES ──
 
 // Supabase response types
 export interface SupabaseResponse<T> {
@@ -155,14 +155,14 @@ export interface BodyWeightData {
   [dateKey: string]: BodyWeightEntry & { id?: string };
 }
 
-// â”€â”€ AUTHENTICATION TYPES â”€â”€
+// ── AUTHENTICATION TYPES ──
 
 // Authentication mode
 export type AuthMode = 'signin' | 'signup' | 'reset';
 
-// â”€â”€ UTILITY TYPES â”€â”€
+// ── UTILITY TYPES ──
 
-// â”€â”€ FUNCTION SIGNATURES â”€â”€
+// ── FUNCTION SIGNATURES ──
 
 // Validation function type
 export type ValidationFunction = (
@@ -178,7 +178,7 @@ export interface ExerciseDatabaseEntry {
   m: string; // muscle group
 }
 
-// â”€â”€ CONFIGURATION TYPES â”€â”€
+// ── CONFIGURATION TYPES ──
 
 // Validation limits
 export interface ValidationLimits {
@@ -200,7 +200,7 @@ export interface StorageKeys {
   HIIT_DATA_PREFIX: string;
 }
 
-// â”€â”€ EVENT HANDLER TYPES â”€â”€
+// ── EVENT HANDLER TYPES ──
 
 // DOM event handlers
 export type EventHandler<T extends Event = Event> = (event: T) => void;
@@ -209,7 +209,7 @@ export type MouseEventHandler = EventHandler<MouseEvent>;
 export type InputEventHandler = EventHandler<InputEvent>;
 export type ChangeEventHandler = EventHandler<Event>;
 
-// â”€â”€ API RESPONSE TYPES â”€â”€
+// ── API RESPONSE TYPES ──
 
 // Generic API response
 export interface ApiResponse<T = any> {

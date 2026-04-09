@@ -1,5 +1,5 @@
-﻿// ============================================================
-// calendar.ts â€” Pantalla de Calendario
+// ============================================================
+// calendar.ts — Pantalla de Calendario
 // ============================================================
 
 import { Exercise } from './types.js';
@@ -9,7 +9,7 @@ import { dk, loadGymMonth } from './db.js';
 // Alias for backward compatibility
 const MOS = MONTHS;
 
-// â”€â”€ CALENDAR FUNCTIONS â”€â”€
+// ── CALENDAR FUNCTIONS ──
 
 /**
  * Changes the calendar month and reloads data
@@ -147,16 +147,16 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
         ex.weight ? `${escHtml(String(ex.weight))} ${escHtml(ex.unit || 'lb')}` : null,
         ex.reps ? `${escHtml(ex.reps)} reps` : null,
         ex.sets ? `${escHtml(ex.sets.toString())} series` : null
-      ].filter(Boolean).join(' Â· ');
+      ].filter(Boolean).join(' · ');
 
-      return `<div class="cal-row"><div class="cr-name">${escHtml(ex.name)}${pr ? '<span class="cr-pr">ðŸ† PR</span>' : ''}</div><div class="cr-stats">${stats}</div></div>`;
+      return `<div class="cal-row"><div class="cr-name">${escHtml(ex.name)}${pr ? '<span class="cr-pr">🏆 PR</span>' : ''}</div><div class="cr-stats">${stats}</div></div>`;
     }).join('');
 
   det.innerHTML = content;
   det.style.display = 'block';
 }
 
-// â”€â”€ EXPORTS â”€â”€
+// ── EXPORTS ──
 
 export {
   changeMonth,

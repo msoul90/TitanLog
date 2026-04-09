@@ -1,10 +1,10 @@
-﻿// ============================================================
-// main.ts â€” Entry point de la aplicaciÃ³n
-// Importa todos los mÃ³dulos para que registren sus funciones
+// ============================================================
+// main.ts — Entry point de la aplicación
+// Importa todos los módulos para que registren sus funciones
 // en window, luego inicializa la app.
 // ============================================================
 
-// toast â€” notificaciÃ³n temporal en pantalla
+// toast — notificación temporal en pantalla
 function toast(msg: string): void {
   const el = document.getElementById('toast');
   if (!el) return;
@@ -22,7 +22,7 @@ import './progress.js'
 import './guides.js'
 import './hiit.js'
 
-// openAdd â€” abre el modal de ejercicio en modo "agregar"
+// openAdd — abre el modal de ejercicio en modo "agregar"
 function openAdd(): void {
   const exModTtl = document.getElementById('exModTtl');
   if (exModTtl) exModTtl.textContent = 'Agregar ejercicio';
@@ -87,7 +87,7 @@ async function saveEx(): Promise<void> {
 
   (globalThis as any).closeM?.('exMod');
   (globalThis as any).renderToday?.();
-  toast('Ejercicio guardado âœ“');
+  toast('Ejercicio guardado ✓');
 }
 (globalThis as any).saveEx = saveEx;
 
