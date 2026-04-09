@@ -472,10 +472,27 @@ body {
   width:36px; height:36px; border-radius:10px;
   display:flex; align-items:center; justify-content:center; font-size:1rem; flex-shrink:0;
 }
-.cfg-info { flex:1; }
-.cfg-ttl { font-weight:700; font-size:0.86rem; }
-.cfg-sub { font-size:0.72rem; color:var(--text2); margin-top:2px; }
+.cfg-info { flex:1; min-width:0; display:flex; flex-direction:column; gap:2px; }
+.cfg-ttl { font-weight:700; font-size:0.86rem; display:block; line-height:1.2; }
+.cfg-sub { font-size:0.72rem; color:var(--text2); margin-top:2px; display:block; line-height:1.35; }
 .cfg-arr { color:var(--text3); }
+
+.cfg-guides-tools { margin: 0 0 8px; }
+.cfg-guide-search {
+  background: var(--surface);
+  border-color: var(--border);
+  border-radius: 12px;
+}
+.cfg-guide-row { align-items: flex-start; }
+.cfg-guide-sub {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.cfg-guide-empty {
+  padding: 14px 15px;
+  color: var(--text2);
+  font-size: 0.8rem;
+}
 
 /* AUTOCOMPLETE */
 .ac-wrap { position:relative; }

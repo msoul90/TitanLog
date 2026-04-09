@@ -312,6 +312,15 @@
 <input type="file" id="impFile" accept=".json" class="input-hidden" onchange="handleImp(event)">
 
   <div class="sec-label">Guías de ejercicios</div>
+  <div class="cfg-guides-tools">
+    <input
+      class="fi cfg-guide-search"
+      id="cfgGuideSearch"
+      type="search"
+      placeholder="Buscar guía por ejercicio o músculo..."
+      autocomplete="off"
+      oninput="filterGuidesCatalog(this.value)">
+  </div>
   <div class="cfg-card" id="cfgGuideList"></div>
 
   <div class="sec-label">Perfil y apariencia</div>

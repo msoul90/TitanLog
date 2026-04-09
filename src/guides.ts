@@ -39,7 +39,8 @@ const EXERCISE_FORM_IDS = {
 } as const;
 
 const CONFIG_GUIDE_IDS = {
-  LIST: 'cfgGuideList'
+  LIST: 'cfgGuideList',
+  SEARCH: 'cfgGuideSearch'
 } as const;
 
 // ── GUIDE DATA ──
@@ -909,25 +910,47 @@ function findGuideKey(name: string): string | null {
   return match || null;
 }
 
-function renderGuidesCatalog(): void {
+function renderGuidesCatalog(filter: string = ''): void {
   const listElement = document.getElementById(CONFIG_GUIDE_IDS.LIST);
   if (!listElement) return;
+
+  const normalizedFilter = normalizeExerciseName(filter);
 
   const guideEntries = Object.entries(GUIDES).sort(([nameA], [nameB]) =>
     nameA.localeCompare(nameB, 'es', { sensitivity: 'base' })
   );
 
-  listElement.innerHTML = guideEntries.map(([name, guide]) => {
+  const filteredEntries = normalizedFilter
+    ? guideEntries.filter(([name, guide]) => {
+        const haystack = [
+          name,
+          ...(guide.primary || []),
+          ...(guide.secondary || [])
+        ].join(' ');
+        return normalizeExerciseName(haystack).includes(normalizedFilter);
+      })
+    : guideEntries;
+
+  if (filteredEntries.length === 0) {
+    listElement.innerHTML = '<div class="cfg-guide-empty">No se encontraron guías para tu búsqueda.</div>';
+    return;
+  }
+
+  listElement.innerHTML = filteredEntries.map(([name, guide]) => {
     const subtitle = [...(guide.primary || []).slice(0, 2), ...(guide.secondary || []).slice(0, 1)]
       .filter(Boolean)
       .join(' · ');
 
-    return `<button type="button" class="cfg-row" onclick='openGuide(${JSON.stringify(name)})'>
+    return `<button type="button" class="cfg-row cfg-guide-row" onclick='openGuide(${JSON.stringify(name)})'>
       <span class="cfg-ic" style="background:var(--accent-dim)">${guide.emoji || '📖'}</span>
-      <span class="cfg-info"><span class="cfg-ttl">${name}</span><span class="cfg-sub">${subtitle || 'Ver técnica y consejos'}</span></span>
+      <span class="cfg-info"><span class="cfg-ttl">${name}</span><span class="cfg-sub cfg-guide-sub">${subtitle || 'Ver técnica y consejos'}</span></span>
       <span class="cfg-arr">›</span>
     </button>`;
   }).join('');
+}
+
+function filterGuidesCatalog(value: string): void {
+  renderGuidesCatalog(value);
 }
 
 // ── FUNCTIONS ──
@@ -1121,6 +1144,7 @@ export {
   GUIDES,
   openGuide,
   addFromGuide,
+  filterGuidesCatalog,
   renderGuidesCatalog,
   renderGuideContent,
   renderNoGuideAvailable,
@@ -1130,4 +1154,5 @@ export {
 // Make functions globally available for backward compatibility
 (globalThis as any).openGuide = openGuide;
 (globalThis as any).addFromGuide = addFromGuide;
+(globalThis as any).filterGuidesCatalog = filterGuidesCatalog;
 (globalThis as any).renderGuidesCatalog = renderGuidesCatalog;
