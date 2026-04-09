@@ -309,12 +309,31 @@ async function saveHiitSession(
     const { error } = await sb.from('hiit_sessions')
       .update({ ...payload, updated_at: new Date().toISOString() })
       .eq('id', existingId);
-    return error ? false : existingId;
+
+    if (error) return false;
+
+    hiitCache[dateStr] ??= [];
+    const index = hiitCache[dateStr].findIndex(item => item.id === existingId);
+    const updatedSession: HIITSession = { ...session, id: existingId, date: dateStr };
+
+    if (index >= 0) {
+      hiitCache[dateStr][index] = updatedSession;
+    } else {
+      hiitCache[dateStr].push(updatedSession);
+    }
+
+    return existingId;
   } else {
     const { data, error } = await sb.from('hiit_sessions')
       .insert(payload)
       .select('id').single();
-    return (!error && data) ? data.id : false;
+
+    if (error || !data) return false;
+
+    hiitCache[dateStr] ??= [];
+    hiitCache[dateStr].push({ ...session, id: data.id, date: dateStr });
+
+    return data.id;
   }
 }
 
@@ -324,6 +343,13 @@ async function saveHiitSession(
  */
 async function deleteHiitSession(id: string): Promise<void> {
   await sb.from('hiit_sessions').delete().eq('id', id);
+
+  Object.keys(hiitCache).forEach(dateKey => {
+    hiitCache[dateKey] = (hiitCache[dateKey] || []).filter(session => session.id !== id);
+    if (hiitCache[dateKey].length === 0) {
+      delete hiitCache[dateKey];
+    }
+  });
 }
 
 /**
