@@ -5,7 +5,27 @@ vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({})),
 }));
 
-import { validateExerciseInput, escHtml, isPR, clearPerformanceCache } from '../app.js';
+import {
+  validateExerciseInput,
+  escHtml,
+  isPR,
+  clearPerformanceCache,
+  toggleTheme,
+  initTheme,
+  openM,
+  closeM,
+  showS,
+  acIn,
+  acKey,
+  changeDay,
+  appState,
+  toggleVis,
+  sD,
+  gD,
+  sBW,
+  gBW,
+  renderToday,
+} from '../app.js';
 
 // -----------------------------------------
 // escHtml
@@ -165,5 +185,153 @@ describe('isPR', () => {
       '2024-01-05': [{ name: 'SENTADILLA', weight: 80, reps: '10', ts: 0 }],
     }));
     expect(isPR('sentadilla', '2024-01-10', 100)).toBe(true);
+  });
+});
+
+describe('app UI helpers', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    document.body.innerHTML = `
+      <input id="pw" type="password" />
+      <dialog id="m1"></dialog>
+      <div id="m2" style="display:none"></div>
+      <div id="acDrop" style="display:none"></div>
+      <input id="fName" value="" />
+      <button id="fabBtn" style="display:none"></button>
+      <button id="todayBtn" class="nav-btn"></button>
+      <button id="calBtn" class="nav-btn"></button>
+      <section id="screen-today" class="screen"></section>
+      <section id="screen-calendar" class="screen"></section>
+    `;
+
+    (globalThis as any).requestAnimationFrame = (cb: FrameRequestCallback) => {
+      cb(0);
+      return 1;
+    };
+    (globalThis as any).renderCal = vi.fn();
+  });
+
+  it('toggleVis alterna tipo password/text', () => {
+    toggleVis('pw');
+    expect((document.getElementById('pw') as HTMLInputElement).type).toBe('text');
+    toggleVis('pw');
+    expect((document.getElementById('pw') as HTMLInputElement).type).toBe('password');
+  });
+
+  it('toggleTheme e initTheme gestionan tema en localStorage', () => {
+    document.documentElement.dataset.theme = 'dark';
+    toggleTheme();
+    expect(document.documentElement.dataset.theme).toBe('light');
+
+    localStorage.setItem('ironlog_theme', 'dark');
+    initTheme();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('openM y closeM funcionan con dialog y div', () => {
+    vi.useFakeTimers();
+
+    openM('m1');
+    expect((document.getElementById('m1') as HTMLDialogElement).open).toBe(true);
+
+    openM('m2');
+    expect((document.getElementById('m2') as HTMLElement).style.display).toBe('block');
+
+    closeM('m1');
+    vi.advanceTimersByTime(220);
+    expect((document.getElementById('m1') as HTMLDialogElement).open).toBe(false);
+
+    closeM('m2');
+    vi.advanceTimersByTime(220);
+    expect((document.getElementById('m2') as HTMLElement).style.display).toBe('none');
+
+    vi.useRealTimers();
+  });
+
+  it('showS activa pantalla y llama render de calendar', () => {
+    showS('calendar', document.getElementById('calBtn') as HTMLElement);
+
+    expect(document.getElementById('screen-calendar')?.classList.contains('active')).toBe(true);
+    expect(document.getElementById('calBtn')?.classList.contains('active')).toBe(true);
+    expect((globalThis as any).renderCal).toHaveBeenCalled();
+    expect(globalThis.location.hash).toBe('#calendar');
+  });
+
+  it('acIn muestra sugerencias y acKey selecciona con Enter', () => {
+    acIn('sen');
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    expect(drop.style.display).toBe('block');
+    expect(drop.querySelectorAll('.ac-it').length).toBeGreaterThan(0);
+
+    acKey(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    acKey(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect((document.getElementById('fName') as HTMLInputElement).value.length).toBeGreaterThan(0);
+    expect(drop.style.display).toBe('none');
+  });
+
+  it('changeDay mueve fecha del estado', () => {
+    const base = new Date(2026, 3, 9);
+    appState.viewDate = new Date(base);
+
+    changeDay(1);
+
+    expect(appState.viewDate.getDate()).toBe(10);
+  });
+
+  it('sD/gD y sBW/gBW persisten en localStorage', () => {
+    sD({ '2026-04-09': [{ name: 'Press', reps: '8', ts: 1 }] as any });
+    const data = gD();
+    expect(data['2026-04-09']?.length).toBe(1);
+
+    sBW({ '2026-04-09': { v: 80, u: 'kg' } as any });
+    const bw = gBW();
+    expect(bw['2026-04-09']?.v).toBe(80);
+  });
+
+  it('gD y gBW devuelven {} si JSON está corrupto', () => {
+    localStorage.setItem('ironlog_gym_', '{');
+    localStorage.setItem('ironlog_bw_', '{');
+
+    expect(gD()).toEqual({});
+    expect(gBW()).toEqual({});
+  });
+
+  it('renderToday muestra estado vacío y lista con ejercicios', () => {
+    document.body.innerHTML += '<div id="dLabel"></div><div id="dSub"></div><div id="exList"></div>';
+    appState.viewDate = new Date(2026, 3, 9);
+
+    renderToday();
+    expect(document.getElementById('exList')?.innerHTML).toContain('Sin ejercicios');
+
+    sD({ '2026-04-09': [{ name: 'Sentadilla', reps: '10', ts: 1, weight: '80', unit: 'kg', sets: '3' }] as any });
+    renderToday();
+    expect(document.getElementById('exList')?.innerHTML).toContain('Sentadilla');
+  });
+
+  it('showS cubre ramas hiit/progress/export/today', () => {
+    document.body.innerHTML += `
+      <button id="n1" class="nav-btn"></button>
+      <button id="n2" class="nav-btn"></button>
+      <section id="screen-hiit" class="screen"></section>
+      <section id="screen-progress" class="screen"></section>
+      <section id="screen-export" class="screen"></section>
+      <section id="screen-today" class="screen"></section>
+      <button id="fabBtn"></button>
+    `;
+    (globalThis as any).renderHiit = vi.fn();
+    (globalThis as any).renderHiitProgress = vi.fn();
+    (globalThis as any).renderProg = vi.fn();
+    (globalThis as any).renderGuidesCatalog = vi.fn();
+    (globalThis as any).renderStretchCatalog = vi.fn();
+
+    showS('hiit', document.getElementById('n1') as HTMLElement);
+    showS('progress', document.getElementById('n1') as HTMLElement);
+    showS('export', document.getElementById('n1') as HTMLElement);
+    showS('today', document.getElementById('n2') as HTMLElement);
+
+    expect((globalThis as any).renderHiit).toHaveBeenCalled();
+    expect((globalThis as any).renderProg).toHaveBeenCalled();
+    expect((globalThis as any).renderGuidesCatalog).toHaveBeenCalled();
+    expect((document.getElementById('fabBtn') as HTMLElement).style.display).toBe('flex');
   });
 });
