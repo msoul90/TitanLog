@@ -15,7 +15,7 @@ function toast(msg: string): void {
 (globalThis as any).toast = toast;
 
 import './db.js'
-import './app.js'
+import { appState } from './app.js'
 import './gym.js'
 import './calendar.js'
 import './progress.js'
@@ -63,7 +63,7 @@ async function saveEx(): Promise<void> {
   const noteValue = (document.getElementById('fN') as HTMLInputElement | null)?.value.trim() || '';
   const unitValue = (document.getElementById('fU') as HTMLSelectElement | null)?.value || 'lb';
 
-  const currentViewDate = ((globalThis as any).viewDate as Date | undefined) ?? new Date();
+  const currentViewDate = appState.viewDate ?? new Date();
   const key = dateKey(currentViewDate);
   const data = ((globalThis as any).gD?.() as Record<string, any[]> | undefined) ?? {};
   const daily = Array.isArray(data[key]) ? data[key] : [];

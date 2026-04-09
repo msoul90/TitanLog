@@ -201,19 +201,61 @@ function isPR(name: string, curKey: string, weight: string | number | null | und
  * Main function to render the today view
  */
 function renderToday(): void {
-  // Update header with current date and profile info
-  const headerElement = document.getElementById('dSub');
-  if (headerElement && appState.viewDate) {
-    headerElement.textContent = `${appState.viewDate.getDate()} de ${MONTHS[appState.viewDate.getMonth()]} ${appState.viewDate.getFullYear()} · ${(currentProfile?.name || '')}`;
+  // Keep legacy global date in sync for modules/handlers that still read it.
+  (globalThis as any).viewDate = new Date(appState.viewDate);
+
+  const today = new Date();
+  const isToday = dateKey(appState.viewDate) === dateKey(today);
+  const dayName = DAYS_OF_WEEK[appState.viewDate.getDay()] || '';
+  const dayNameCapitalized = dayName.charAt(0).toUpperCase() + dayName.slice(1);
+
+  const dateMainElement = document.getElementById('dLabel');
+  if (dateMainElement) {
+    dateMainElement.textContent = isToday ? `Hoy - ${dayNameCapitalized}` : dayNameCapitalized;
   }
 
-  // Render exercises for current date
-  const exerciseList = document.getElementById('exList');
-  if (exerciseList) {
-    // This would need the full exercise rendering logic
-    // For now, just clear it
-    exerciseList.innerHTML = '';
+  const dateSubElement = document.getElementById('dSub');
+  if (dateSubElement) {
+    dateSubElement.textContent = `${appState.viewDate.getDate()} de ${MONTHS[appState.viewDate.getMonth()]} ${appState.viewDate.getFullYear()} · ${(currentProfile?.name || '')}`;
   }
+
+  const key = dateKey(appState.viewDate);
+  const exercises = gD()[key] || [];
+  const exerciseListElement = document.getElementById('exList');
+  if (!exerciseListElement) return;
+
+  if (exercises.length === 0) {
+    exerciseListElement.innerHTML = '<div class="empty"><div class="empty-ic">🏋️</div><div class="empty-tx">Sin ejercicios este día.<br>Toca <strong>＋</strong> para agregar uno.</div></div>';
+    return;
+  }
+
+  exerciseListElement.innerHTML = exercises
+    .map(exercise => renderTodayExerciseCard(exercise, key))
+    .join('');
+}
+
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+function renderTodayExerciseCard(exercise: Exercise, key: string): string {
+  const hasWeight = exercise.weight !== null && exercise.weight !== undefined && exercise.weight !== '';
+  const hasSets = exercise.sets !== null && exercise.sets !== undefined && exercise.sets !== '';
+  const hasReps = exercise.reps !== null && exercise.reps !== undefined && exercise.reps !== '';
+  const isPersonalRecord = hasWeight ? isPR(exercise.name, key, exercise.weight) : false;
+
+  return `<div class="ex-card ${hasWeight ? 'has-w' : ''} ${isPersonalRecord ? 'is-pr' : ''}">
+    <div class="ex-top">
+      <div class="ex-nm">${escHtml(exercise.name)}</div>
+      ${isPersonalRecord ? '<div class="pr-tag">🏆 Nuevo máximo</div>' : ''}
+    </div>
+    <div class="ex-chips">
+      ${hasWeight ? `<div class="chip"><span class="chip-v">${escHtml(String(exercise.weight))} ${escHtml(exercise.unit || 'lb')}</span><span class="chip-l">Peso</span></div>` : ''}
+      ${hasSets ? `<div class="chip"><span class="chip-v">${escHtml(String(exercise.sets))}</span><span class="chip-l">Series</span></div>` : ''}
+      ${hasReps ? `<div class="chip"><span class="chip-v">${escHtml(String(exercise.reps))}</span><span class="chip-l">Reps</span></div>` : ''}
+    </div>
+    ${exercise.notes ? `<div class="ex-note">📝 ${escHtml(exercise.notes)}</div>` : ''}
+  </div>`;
 }
 
 function hideAutocomplete(): void {
@@ -446,6 +488,7 @@ function showS(name: string, btn: HTMLElement): void {
 function changeDay(days: number): void {
   appState.viewDate = new Date(appState.viewDate);
   appState.viewDate.setDate(appState.viewDate.getDate() + days);
+  (globalThis as any).viewDate = new Date(appState.viewDate);
   renderToday();
 }
 
