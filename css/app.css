@@ -483,6 +483,37 @@ body {
   border-color: var(--border);
   border-radius: 12px;
 }
+.cfg-guides-accordion {
+  margin-bottom: 8px;
+}
+.cfg-guides-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  user-select: none;
+}
+.cfg-guides-summary::-webkit-details-marker {
+  display: none;
+}
+.cfg-guides-summary::after {
+  content: '▾';
+  color: var(--text3);
+  font-size: 0.85rem;
+  transition: transform 0.16s ease;
+}
+.cfg-guides-accordion[open] .cfg-guides-summary::after {
+  transform: rotate(180deg);
+}
+.cfg-guides-panel {
+  animation: cfgGuidesFade 0.16s ease;
+}
+@keyframes cfgGuidesFade {
+  from { opacity: 0; transform: translateY(-2px); }
+  to { opacity: 1; transform: translateY(0); }
+}
 .cfg-guide-row { align-items: flex-start; }
 .cfg-guide-sub {
   white-space: normal;
