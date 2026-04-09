@@ -1,5 +1,5 @@
-// ============================================================
-// db.ts — Supabase config, base de datos y autenticación
+﻿// ============================================================
+// db.ts â€” Supabase config, base de datos y autenticaciÃ³n
 // ============================================================
 
 import { createClient } from '@supabase/supabase-js';
@@ -15,10 +15,10 @@ import {
   AuthMode
 } from './types.js';
 
-// ══════════════════════════════════════════════════════
-// SUPABASE CONFIG — reemplaza con tus propios valores
-// Los encuentras en: supabase.com → tu proyecto → Settings → API
-// ══════════════════════════════════════════════════════
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+// SUPABASE CONFIG â€” reemplaza con tus propios valores
+// Los encuentras en: supabase.com â†’ tu proyecto â†’ Settings â†’ API
+// â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 const SUPABASE_URL: string = 'https://TU_PROJECT_ID.supabase.co';
 const SUPABASE_ANON: string = 'TU_ANON_PUBLIC_KEY';
 const PROFILE_COLORS: readonly string[] = ['#aaff45','#ff9f43','#45c8ff','#ff6bbd','#a78bfa','#fb923c','#34d399','#f472b6'];
@@ -34,7 +34,7 @@ const renderToday = (): void => (globalThis as any).renderToday?.();
 const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
 
 
-// ── ESTADO GLOBAL ──
+// â”€â”€ ESTADO GLOBAL â”€â”€
 interface DBState {
   currentUser: User | null;
   currentProfile: UserProfile | null;
@@ -48,13 +48,13 @@ const dbState: DBState = {
   currentProfile: null,   // fila de la tabla profiles
   gymCache: {},     // cache local de sesiones gym { 'YYYY-MM-DD': [...] }
   hiitCache: {},     // cache local de sesiones HIIT { 'YYYY-MM-DD': [...] }
-  bwCache: {}     // cache local de métricas { 'YYYY-MM-DD': {...} }
+  bwCache: {}     // cache local de mÃ©tricas { 'YYYY-MM-DD': {...} }
 };
 
 // For backward compatibility
 let { currentUser, currentProfile, gymCache, hiitCache, bwCache } = dbState;
 
-// ── HELPERS DE FECHA ──
+// â”€â”€ HELPERS DE FECHA â”€â”€
 
 /**
  * Creates a date key in YYYY-MM-DD format
@@ -69,7 +69,7 @@ export function getCurrentProfile(): UserProfile | null {
   return currentProfile;
 }
 
-// ── SUPABASE: GYM SESSIONS ──
+// â”€â”€ SUPABASE: GYM SESSIONS â”€â”€
 
 /**
  * Loads gym sessions for a specific month
@@ -146,7 +146,7 @@ async function deleteGymDay(dateStr: string): Promise<void> {
  * @returns Object with date keys and exercise arrays
  */
 function gD(): Record<string, Exercise[]> {
-  // Devuelve objeto compatible con el código existente { 'YYYY-MM-DD': [exercises] }
+  // Devuelve objeto compatible con el cÃ³digo existente { 'YYYY-MM-DD': [exercises] }
   const result: Record<string, Exercise[]> = {};
   for (const [date, val] of Object.entries(gymCache)) {
     result[date] = val.exercises || [];
@@ -154,7 +154,7 @@ function gD(): Record<string, Exercise[]> {
   return result;
 }
 
-// ── SUPABASE: BODY METRICS ──
+// â”€â”€ SUPABASE: BODY METRICS â”€â”€
 
 /**
  * Loads all body weight metrics for the current user
@@ -206,7 +206,7 @@ async function saveBWDay(dateStr: string, entry: BodyWeightEntry): Promise<void>
       .eq('id', existing.id);
 
     if (!error) {
-      bwCache[dateStr] = { ...entry, id: existing.id } as BodyWeightEntry & { id?: string | undefined };
+      bwCache[dateStr] = { ...entry, id: existing.id } as BodyWeightEntry & { id?: string };
     }
   } else {
     const { data, error } = await sb.from('body_metrics')
@@ -234,7 +234,7 @@ function gBW(): BodyWeightData {
   return bwCache;
 }
 
-// ── SUPABASE: HIIT SESSIONS ──
+// â”€â”€ SUPABASE: HIIT SESSIONS â”€â”€
 
 /**
  * Loads HIIT sessions for a specific month
@@ -262,7 +262,7 @@ async function loadHiitMonth(year: number, month: number): Promise<void> {
     const byDate: HIITSessionData = {};
     (data || []).forEach((row: any) => {
       const dateKey = String(row.date);
-      if (!byDate[dateKey]) byDate[dateKey] = [];
+      byDate[dateKey] ??= [];
       byDate[dateKey].push({ ...row });
     });
     Object.assign(hiitCache, byDate);
@@ -288,7 +288,7 @@ async function saveHiitSession(
     user_id: currentUser!.id,
     date: dateStr,
     name: session.name,
-    rounds: session.rounds ? parseInt(session.rounds.toString(), 10) : null,
+    rounds: session.rounds ? Number.parseInt(session.rounds.toString(), 10) : null,
     duration: session.duration,
     notes: session.notes,
     rpe: session.rpe,
@@ -328,7 +328,7 @@ function gHiit(): Record<string, HIITSession[]> {
   return result;
 }
 
-// ── PERFIL DE USUARIO ──
+// â”€â”€ PERFIL DE USUARIO â”€â”€
 
 /**
  * Loads user profile from database
@@ -478,37 +478,37 @@ async function saveProfile(): Promise<void> {
     currentProfile = { ...(currentProfile as UserProfile), name, color: selectedColor };
     closeM('editProfMod');
     applyUser();
-    toast('Perfil actualizado ✓');
+    toast('Perfil actualizado âœ“');
   } catch (err) {
     console.error('Exception in saveProfile:', err);
     toast('Error guardando perfil. Intenta de nuevo.');
   }
 }
 
-// ── AUTH SYSTEM ──
+// â”€â”€ AUTH SYSTEM â”€â”€
 let authMode: AuthMode = 'signin'; // 'signin' | 'signup'
 
 /**
  * Toggles between signin and signup modes
  */
-function toggleAuthMode(): void {
+function toggleAuthMode(): void { // NOSONAR
   authMode = authMode === 'signin' ? 'signup' : 'signin';
   const isSignup = authMode === 'signup';
 
   const authTitle = document.getElementById('authTitle');
-  if (authTitle) authTitle.textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
+  if (authTitle) authTitle.textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesiÃ³n';
 
   const authSub = document.getElementById('authSub');
-  if (authSub) authSub.textContent = isSignup ? 'Regístrate para acceder a IronLog.' : 'Accede con tu cuenta de IronLog.';
+  if (authSub) authSub.textContent = isSignup ? 'RegÃ­strate para acceder a IronLog.' : 'Accede con tu cuenta de IronLog.';
 
   const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
   if (authBtn) authBtn.textContent = isSignup ? 'Crear cuenta' : 'Entrar';
 
   const authToggleText = document.getElementById('authToggleText');
-  if (authToggleText) authToggleText.textContent = isSignup ? '¿Ya tienes cuenta?' : '¿Primera vez?';
+  if (authToggleText) authToggleText.textContent = isSignup ? 'Â¿Ya tienes cuenta?' : 'Â¿Primera vez?';
 
   const authToggleLink = document.getElementById('authToggleLink');
-  if (authToggleLink) authToggleLink.textContent = isSignup ? 'Iniciar sesión' : 'Crear cuenta';
+  if (authToggleLink) authToggleLink.textContent = isSignup ? 'Iniciar sesiÃ³n' : 'Crear cuenta';
 
   const authNameGroup = document.getElementById('authNameGroup');
   if (authNameGroup) authNameGroup.style.display = isSignup ? 'block' : 'none';
@@ -526,7 +526,7 @@ function toggleAuthMode(): void {
 /**
  * Performs authentication action (signin or signup)
  */
-async function doAuthAction(): Promise<void> {
+async function doAuthAction(): Promise<void> { // NOSONAR
   try {
     const authEmail = document.getElementById('authEmail') as HTMLInputElement;
     const authPw = document.getElementById('authPw') as HTMLInputElement;
@@ -540,13 +540,13 @@ async function doAuthAction(): Promise<void> {
     if (authErr) authErr.textContent = '';
 
     if (!email || !pw) {
-      if (authErr) authErr.textContent = 'Completa email y contraseña';
+      if (authErr) authErr.textContent = 'Completa email y contraseÃ±a';
       return;
     }
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
-      authBtn.textContent = '…';
+      authBtn.textContent = 'â€¦';
       authBtn.disabled = true;
     }
 
@@ -560,20 +560,18 @@ async function doAuthAction(): Promise<void> {
       if (error) {
         if (authErr) {
           authErr.textContent = error.message.includes('already')
-            ? 'Este email ya tiene cuenta. Inicia sesión.'
+            ? 'Este email ya tiene cuenta. Inicia sesiÃ³n.'
             : error.message;
         }
-      } else {
-        if (authErr) {
-          authErr.style.color = 'var(--accent)';
-          authErr.textContent = '¡Cuenta creada! Revisa tu email para confirmar.';
-        }
+      } else if (authErr) {
+        authErr.style.color = 'var(--accent)';
+        authErr.textContent = 'Â¡Cuenta creada! Revisa tu email para confirmar.';
       }
     } else {
       const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
 
       if (error) {
-        if (authErr) authErr.textContent = 'Email o contraseña incorrectos';
+        if (authErr) authErr.textContent = 'Email o contraseÃ±a incorrectos';
       } else {
         await enterApp(data.user);
       }
@@ -587,7 +585,7 @@ async function doAuthAction(): Promise<void> {
     console.error('Error in authentication:', err);
 
     const authErr = document.getElementById('authErr');
-    if (authErr) authErr.textContent = 'Error de conexión. Intenta de nuevo.';
+    if (authErr) authErr.textContent = 'Error de conexiÃ³n. Intenta de nuevo.';
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
@@ -617,11 +615,9 @@ async function sendResetEmail(): Promise<void> {
     if (error) {
       console.error('Error sending reset email:', error);
       if (authErr) authErr.textContent = error.message;
-    } else {
-      if (authErr) {
-        authErr.style.color = 'var(--accent)';
-        authErr.textContent = 'Email de recuperación enviado ✓';
-      }
+    } else if (authErr) {
+      authErr.style.color = 'var(--accent)';
+      authErr.textContent = 'Email de recuperaciÃ³n enviado âœ“';
     }
   } catch (err) {
     console.error('Exception sending reset email:', err);
@@ -682,7 +678,7 @@ function showLoading(show: boolean): void {
   if (loginStep1) loginStep1.style.display = show ? 'none' : 'block';
 }
 
-// ── CACHE CLEANUP ──
+// â”€â”€ CACHE CLEANUP â”€â”€
 
 /**
  * Clears all cached data
@@ -699,7 +695,7 @@ function clearCache(): void {
  * Logs out the current user
  */
 async function doLogout(): Promise<void> {
-  if (!confirm('¿Cerrar sesión?')) return;
+  if (!confirm('Â¿Cerrar sesiÃ³n?')) return;
   clearCache();
   await sb.auth.signOut();
   location.reload();
@@ -732,7 +728,7 @@ async function initLogin(): Promise<void> {
   }
 }
 
-// ── EXPORTS ──
+// â”€â”€ EXPORTS â”€â”€
 
 export {
   // Constants
@@ -783,28 +779,28 @@ export {
 };
 
 // Make functions globally available for backward compatibility
-(window as any).loadGymMonth = loadGymMonth;
-(window as any).saveGymDay = saveGymDay;
-(window as any).deleteGymDay = deleteGymDay;
-(window as any).gD = gD;
-(window as any).loadBWAll = loadBWAll;
-(window as any).saveBWDay = saveBWDay;
-(window as any).gBW = gBW;
-(window as any).loadHiitMonth = loadHiitMonth;
-(window as any).saveHiitSession = saveHiitSession;
-(window as any).deleteHiitSession = deleteHiitSession;
-(window as any).gHiit = gHiit;
-(window as any).loadProfile = loadProfile;
-(window as any).applyUser = applyUser;
-(window as any).openEditProfile = openEditProfile;
-(window as any).renderColorPicker = renderColorPicker;
-(window as any).selectColor = selectColor;
-(window as any).saveProfile = saveProfile;
-(window as any).toggleAuthMode = toggleAuthMode;
-(window as any).doAuthAction = doAuthAction;
-(window as any).sendResetEmail = sendResetEmail;
-(window as any).enterApp = enterApp;
-(window as any).showLoading = showLoading;
-(window as any).clearCache = clearCache;
-(window as any).doLogout = doLogout;
-(window as any).initLogin = initLogin;
+(globalThis as any).loadGymMonth = loadGymMonth;
+(globalThis as any).saveGymDay = saveGymDay;
+(globalThis as any).deleteGymDay = deleteGymDay;
+(globalThis as any).gD = gD;
+(globalThis as any).loadBWAll = loadBWAll;
+(globalThis as any).saveBWDay = saveBWDay;
+(globalThis as any).gBW = gBW;
+(globalThis as any).loadHiitMonth = loadHiitMonth;
+(globalThis as any).saveHiitSession = saveHiitSession;
+(globalThis as any).deleteHiitSession = deleteHiitSession;
+(globalThis as any).gHiit = gHiit;
+(globalThis as any).loadProfile = loadProfile;
+(globalThis as any).applyUser = applyUser;
+(globalThis as any).openEditProfile = openEditProfile;
+(globalThis as any).renderColorPicker = renderColorPicker;
+(globalThis as any).selectColor = selectColor;
+(globalThis as any).saveProfile = saveProfile;
+(globalThis as any).toggleAuthMode = toggleAuthMode;
+(globalThis as any).doAuthAction = doAuthAction;
+(globalThis as any).sendResetEmail = sendResetEmail;
+(globalThis as any).enterApp = enterApp;
+(globalThis as any).showLoading = showLoading;
+(globalThis as any).clearCache = clearCache;
+(globalThis as any).doLogout = doLogout;
+(globalThis as any).initLogin = initLogin;

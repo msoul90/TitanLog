@@ -1,4 +1,4 @@
-import { HIITSession, HIITExercise } from './types.js';
+﻿import { HIITSession, HIITExercise } from './types.js';
 import { dk, saveHiitSession } from './db.js';
 
 const escHtml = (value: string): string => (globalThis as any).escHtml?.(value) ?? value;
@@ -43,7 +43,7 @@ export function renderHiitProgress(): void {
   const sessions = hiitCache[currentDate] || [];
 
   if (sessions.length === 0) {
-    hiitList.innerHTML = '<div class="empty-hiit">No hay sesiones HIIT registradas para hoy.<br>¡Empieza tu primer entrenamiento!</div>';
+    hiitList.innerHTML = '<div class="empty-hiit">No hay sesiones HIIT registradas para hoy.<br>Â¡Empieza tu primer entrenamiento!</div>';
     return;
   }
 
@@ -67,7 +67,7 @@ export function renderHiit(date?: string): void {
   hiitContainer.innerHTML = `
     <div class="hiit-header">
       <h3>HIIT Sessions</h3>
-      <button class="btn-primary" onclick="openHiitModal()">+ Nueva Sesión</button>
+      <button class="btn-primary" onclick="openHiitModal()">+ Nueva SesiÃ³n</button>
     </div>
     <div class="hiit-sessions">
       ${sessions.length ? sessions.map(session => renderHiitSession(session)).join('') : '<p class="no-data">No HIIT sessions for this date</p>'}
@@ -94,8 +94,8 @@ function renderHiitSession(session: HIITSession): string {
       <div class="hiit-session-header">
         <h4>${escHtml(session.name)}</h4>
         <div class="hiit-session-actions">
-          <button onclick="editHiitSession('${session.id}')" class="btn-edit">✏️</button>
-          <button onclick="deleteHiitSession('${session.id}')" class="btn-delete">🗑️</button>
+          <button onclick="editHiitSession('${session.id}')" class="btn-edit">âœï¸</button>
+          <button onclick="deleteHiitSession('${session.id}')" class="btn-delete">ðŸ—‘ï¸</button>
         </div>
       </div>
       ${session.rounds ? `<div class="hiit-rounds">Rounds: ${session.rounds}</div>` : ''}
@@ -117,7 +117,7 @@ export function openHiitModal(): void {
   selectedRPE = null;
   hiitExCount = 0;
 
-  document.getElementById(DOM_IDS.HIIT_MOD_TTL)!.textContent = 'Nueva sesión HIIT';
+  document.getElementById(DOM_IDS.HIIT_MOD_TTL)!.textContent = 'Nueva sesiÃ³n HIIT';
   populateHiitModalFields({ exercises: [] });
   renderRPE();
   openM(DOM_IDS.HIIT_MOD);
@@ -135,7 +135,7 @@ export function editHiitSession(sessionId: string): void {
   hiitEditId = { id: sessionId };
   selectedRPE = session.rpe || null;
 
-  document.getElementById(DOM_IDS.HIIT_MOD_TTL)!.textContent = 'Editar sesión HIIT';
+  document.getElementById(DOM_IDS.HIIT_MOD_TTL)!.textContent = 'Editar sesiÃ³n HIIT';
   populateHiitModalFields(session);
   renderRPE();
   openM(DOM_IDS.HIIT_MOD);
@@ -177,7 +177,7 @@ function addHiitEx(data: Partial<HIITExercise> = {}): void {
     <input class="fi" placeholder="Ejercicio (ej: Burpees)" value="${escHtml(data.name || '')}" id="hex-name-${id}" autocomplete="off">
     <input class="fi" placeholder="Seg" type="number" min="1" value="${escHtml(data.duration?.toString() || '')}" id="hex-dur-${id}" style="width:56px">
     <input class="fi" placeholder="Reps" value="${escHtml(String(data.reps || ''))}" id="hex-reps-${id}" style="width:60px">
-    <button type="button" class="hiit-ex-del" onclick="document.getElementById('hiit-ex-${id}').remove()">✕</button>`;
+    <button type="button" class="hiit-ex-del" onclick="document.getElementById('hiit-ex-${id}').remove()">âœ•</button>`;
   document.getElementById(DOM_IDS.HIIT_EX_LIST)!.appendChild(row);
 }
 
@@ -215,16 +215,16 @@ export async function saveHiitSessionModal(): Promise<void> {
 
     const result = await saveHiitSession(key, sessionData, existingId);
   if (!result) {
-    showToast('Error guardando sesión HIIT. Intenta de nuevo.', 'error');
+    showToast('Error guardando sesiÃ³n HIIT. Intenta de nuevo.', 'error');
     return;
   }
 
     closeM(DOM_IDS.HIIT_MOD);
     renderHiit();
-    showToast(hiitEditId ? 'Sesión actualizada ✓' : 'Sesión HIIT guardada ⚡', 'success');
+    showToast(hiitEditId ? 'SesiÃ³n actualizada âœ“' : 'SesiÃ³n HIIT guardada âš¡', 'success');
   } catch (error) {
     console.error('Error saving HIIT session:', error);
-    showToast('Error guardando sesión HIIT. Intenta de nuevo.', 'error');
+    showToast('Error guardando sesiÃ³n HIIT. Intenta de nuevo.', 'error');
   }
 }
 
@@ -236,7 +236,7 @@ function collectHiitSessionData(): Omit<HIITSession, 'id' | 'date'> | null {
   const nameElement = document.getElementById(DOM_IDS.H_NAME) as HTMLInputElement;
   const name = nameElement.value.trim();
   if (!name) {
-    showToast('Escribe el nombre de la sesión');
+    showToast('Escribe el nombre de la sesiÃ³n');
     return null;
   }
 
@@ -252,10 +252,10 @@ function collectHiitSessionData(): Omit<HIITSession, 'id' | 'date'> | null {
 
   return {
     name,
-    rounds: roundsElement.value ? parseInt(roundsElement.value, 10) : undefined,
+    rounds: roundsElement.value ? Number.parseInt(roundsElement.value, 10) : undefined,
     duration: durationElement.value.trim() || undefined,
     notes: notesElement.value.trim() || undefined,
-    rpe: selectedRPE != null ? selectedRPE as import('./types.js').RPEValue : undefined,
+    rpe: selectedRPE == null ? undefined : selectedRPE as import('./types.js').RPEValue,
     exercises
   };
 }
@@ -277,7 +277,7 @@ function collectHiitExercises(): HIITExercise[] {
 
     exercises.push({
       name: exerciseName,
-      duration: durElement?.value ? parseInt(durElement.value, 10) : undefined,
+      duration: durElement?.value ? Number.parseInt(durElement.value, 10) : undefined,
       reps: repsElement?.value || undefined
     });
   });
@@ -292,7 +292,7 @@ function collectHiitExercises(): HIITExercise[] {
  * @param resultId - New session ID from database
  */
 function updateHiitCache(key: string, sessionData: Omit<HIITSession, 'id' | 'date'>, existingId: string | null, resultId: string): void {
-  if (!hiitCache[key]) hiitCache[key] = [];
+  hiitCache[key] ??= [];
 
   if (existingId) {
     const idx = hiitCache[key].findIndex(s => s.id === existingId);
@@ -309,7 +309,7 @@ function updateHiitCache(key: string, sessionData: Omit<HIITSession, 'id' | 'dat
  * @param sessionId - ID of the session to delete
  */
 export async function deleteHiitSession(sessionId: string): Promise<void> {
-  if (!confirm('¿Eliminar esta sesión HIIT?')) return;
+  if (!confirm('Â¿Eliminar esta sesiÃ³n HIIT?')) return;
 
   try {
     const key = dk(new Date(hiitDate));
@@ -319,14 +319,14 @@ export async function deleteHiitSession(sessionId: string): Promise<void> {
     // Remove from cache
     hiitCache[key] = (hiitCache[key] || []).filter(s => s.id !== sessionId);
 
-    // TODO: Implement database deletion
+    // NOTE: DB deletion pending integration with persistent API layer.
     // await deleteHiitSessionFromDB(sessionId);
 
     renderHiit();
-    showToast('Sesión HIIT eliminada', 'success');
+    showToast('SesiÃ³n HIIT eliminada', 'success');
   } catch (error) {
     console.error('Error deleting HIIT session:', error);
-    showToast('Error eliminando sesión HIIT', 'error');
+    showToast('Error eliminando sesiÃ³n HIIT', 'error');
   }
 }
 
@@ -337,7 +337,7 @@ export async function deleteHiitSession(sessionId: string): Promise<void> {
  */
 export async function loadHiitSessions(startDate: string, endDate: string): Promise<void> {
   try {
-    // TODO: Implement database loading
+    // NOTE: DB loading pending integration with persistent API layer.
     // const sessions = await loadHiitSessionsFromDB(startDate, endDate);
     // Update cache with loaded sessions
   } catch (error) {
@@ -346,11 +346,11 @@ export async function loadHiitSessions(startDate: string, endDate: string): Prom
 }
 
 // Make functions available globally for onclick handlers
-(window as any).openHiitModal = openHiitModal;
-(window as any).openHiitMod = openHiitModal;
-(window as any).editHiitSession = editHiitSession;
-(window as any).renderHiitProgress = renderHiitProgress;
-(window as any).hiitChangeDay = (dir: number): void => {
+(globalThis as any).openHiitModal = openHiitModal;
+(globalThis as any).openHiitMod = openHiitModal;
+(globalThis as any).editHiitSession = editHiitSession;
+(globalThis as any).renderHiitProgress = renderHiitProgress;
+(globalThis as any).hiitChangeDay = (dir: number): void => {
   const next = new Date(hiitDate);
   next.setDate(next.getDate() + dir);
   hiitDate = dk(next);
@@ -363,7 +363,7 @@ export async function loadHiitSessions(startDate: string, endDate: string): Prom
 
   renderHiitProgress();
 };
-(window as any).deleteHiitSession = deleteHiitSession;
-(window as any).saveHiitSessionModal = saveHiitSessionModal;
-(window as any).selectRPE = selectRPE;
-(window as any).addHiitEx = addHiitEx;
+(globalThis as any).deleteHiitSession = deleteHiitSession;
+(globalThis as any).saveHiitSessionModal = saveHiitSessionModal;
+(globalThis as any).selectRPE = selectRPE;
+(globalThis as any).addHiitEx = addHiitEx;

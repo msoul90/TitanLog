@@ -1,8 +1,8 @@
-// ============================================================
-// types.ts — Definiciones de tipos TypeScript para IronLog
+﻿// ============================================================
+// types.ts â€” Definiciones de tipos TypeScript para IronLog
 // ============================================================
 
-// ── CORE DATA TYPES ──
+// â”€â”€ CORE DATA TYPES â”€â”€
 
 // Exercise entry structure
 export interface Exercise {
@@ -18,11 +18,11 @@ export interface Exercise {
 // Body weight/composition entry
 export interface BodyWeightEntry {
   v: number; // value (weight)
-  u?: string | undefined; // unit
-  fat?: number | undefined; // body fat percentage
-  mmc?: number | undefined; // muscle mass percentage
-  ts?: number | undefined; // timestamp
-  id?: string | undefined;
+  u?: string; // unit
+  fat?: number; // body fat percentage
+  mmc?: number; // muscle mass percentage
+  ts?: number; // timestamp
+  id?: string;
 }
 
 // HIIT session structure
@@ -46,7 +46,7 @@ export interface HIITExercise {
   rounds?: number;
 }
 
-// ── ENUMS & UNION TYPES ──
+// â”€â”€ ENUMS & UNION TYPES â”€â”€
 
 // RPE (Rate of Perceived Exertion) values
 export type RPEValue = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10;
@@ -60,23 +60,23 @@ export type ExerciseCategory =
   | 'Espalda'
   | 'Pecho'
   | 'Hombros'
-  | 'Bíceps'
-  | 'Tríceps'
+  | 'BÃ­ceps'
+  | 'TrÃ­ceps'
   | 'Abdomen'
   | 'Core'
   | 'Cardio'
   | 'Funcional'
   | 'Piernas / Espalda'
   | 'Isquiotibiales'
-  | 'Cuádriceps'
-  | 'Glúteos'
+  | 'CuÃ¡driceps'
+  | 'GlÃºteos'
   | 'Pantorrillas'
-  | 'Pecho / Tríceps'
-  | 'Espalda / Bíceps'
+  | 'Pecho / TrÃ­ceps'
+  | 'Espalda / BÃ­ceps'
   | 'Espalda / Hombros'
   | 'Espalda baja';
 
-// ── APPLICATION STATE TYPES ──
+// â”€â”€ APPLICATION STATE TYPES â”€â”€
 
 // Global application state
 export interface AppState {
@@ -101,7 +101,7 @@ export interface UserProfile {
   created_at?: string;
 }
 
-// ── UI & DOM TYPES ──
+// â”€â”€ UI & DOM TYPES â”€â”€
 
 // Toast notification types
 export type ToastType = 'success' | 'error' | 'info';
@@ -119,7 +119,7 @@ export interface ExerciseGuide {
   tips?: string[];
 }
 
-// ── DATABASE & STORAGE TYPES ──
+// â”€â”€ DATABASE & STORAGE TYPES â”€â”€
 
 // Supabase response types
 export interface SupabaseResponse<T> {
@@ -152,26 +152,17 @@ export interface HIITSessionData {
 
 // Body weight data (cache)
 export interface BodyWeightData {
-  [dateKey: string]: BodyWeightEntry & { id?: string | undefined };
+  [dateKey: string]: BodyWeightEntry & { id?: string };
 }
 
-// ── AUTHENTICATION TYPES ──
+// â”€â”€ AUTHENTICATION TYPES â”€â”€
 
 // Authentication mode
 export type AuthMode = 'signin' | 'signup' | 'reset';
 
-// ── UTILITY TYPES ──
+// â”€â”€ UTILITY TYPES â”€â”€
 
-// Date key format (YYYY-MM-DD)
-export type DateKey = string;
-
-// Week key format (YYYY-WNN)
-export type WeekKey = string;
-
-// Color hex value
-export type ColorHex = string;
-
-// ── FUNCTION SIGNATURES ──
+// â”€â”€ FUNCTION SIGNATURES â”€â”€
 
 // Validation function type
 export type ValidationFunction = (
@@ -187,7 +178,7 @@ export interface ExerciseDatabaseEntry {
   m: string; // muscle group
 }
 
-// ── CONFIGURATION TYPES ──
+// â”€â”€ CONFIGURATION TYPES â”€â”€
 
 // Validation limits
 export interface ValidationLimits {
@@ -209,7 +200,7 @@ export interface StorageKeys {
   HIIT_DATA_PREFIX: string;
 }
 
-// ── EVENT HANDLER TYPES ──
+// â”€â”€ EVENT HANDLER TYPES â”€â”€
 
 // DOM event handlers
 export type EventHandler<T extends Event = Event> = (event: T) => void;
@@ -218,7 +209,7 @@ export type MouseEventHandler = EventHandler<MouseEvent>;
 export type InputEventHandler = EventHandler<InputEvent>;
 export type ChangeEventHandler = EventHandler<Event>;
 
-// ── API RESPONSE TYPES ──
+// â”€â”€ API RESPONSE TYPES â”€â”€
 
 // Generic API response
 export interface ApiResponse<T = any> {
@@ -227,4 +218,5 @@ export interface ApiResponse<T = any> {
   error?: string;
   message?: string;
 }
+
 

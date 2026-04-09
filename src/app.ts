@@ -1,5 +1,5 @@
-// ============================================================
-// app.ts — Estado global, tema, navegación y perfil de usuario
+﻿// ============================================================
+// app.ts â€” Estado global, tema, navegaciÃ³n y perfil de usuario
 // ============================================================
 
 import {
@@ -12,46 +12,45 @@ import {
   StorageKeys,
   ExerciseDatabaseEntry,
 } from './types.js';
-import { dk } from './db.js';
 
-// ── CONSTANTS ──
+// â”€â”€ CONSTANTS â”€â”€
 
 // Exercise database with proper typing
 const EXERCISE_DATABASE: ExerciseDatabaseEntry[] = [
   {n:'Sentadilla',m:'Piernas'},{n:'Sentadilla sumo',m:'Piernas'},{n:'Goblet squat',m:'Piernas'},
   {n:'Peso muerto',m:'Piernas / Espalda'},{n:'Peso muerto rumano',m:'Isquiotibiales'},
-  {n:'Desplantes hacia adelante',m:'Piernas'},{n:'Desplantes hacia atrás',m:'Piernas'},
+  {n:'Desplantes hacia adelante',m:'Piernas'},{n:'Desplantes hacia atrÃ¡s',m:'Piernas'},
   {n:'Desplantes laterales',m:'Piernas'},{n:'Prensa de pierna',m:'Piernas'},
-  {n:'Extensión de cuádriceps',m:'Cuádriceps'},{n:'Curl de pierna acostado',m:'Isquiotibiales'},
-  {n:'Curl de pierna sentado',m:'Isquiotibiales'},{n:'Hip thrust',m:'Glúteos'},
-  {n:'Patada de glúteo',m:'Glúteos'},{n:'Abducción de cadera',m:'Glúteos'},
-  {n:'Elevación de talones',m:'Pantorrillas'},{n:'Step up',m:'Piernas'},
+  {n:'ExtensiÃ³n de cuÃ¡driceps',m:'CuÃ¡driceps'},{n:'Curl de pierna acostado',m:'Isquiotibiales'},
+  {n:'Curl de pierna sentado',m:'Isquiotibiales'},{n:'Hip thrust',m:'GlÃºteos'},
+  {n:'Patada de glÃºteo',m:'GlÃºteos'},{n:'AbducciÃ³n de cadera',m:'GlÃºteos'},
+  {n:'ElevaciÃ³n de talones',m:'Pantorrillas'},{n:'Step up',m:'Piernas'},
   {n:'Press de pecho',m:'Pecho'},{n:'Press de pecho inclinado',m:'Pecho'},
   {n:'Press de pecho declinado',m:'Pecho'},{n:'Press banca con barra',m:'Pecho'},
-  {n:'Apertura con mancuernas',m:'Pecho'},{n:'Fondos en barras',m:'Pecho / Tríceps'},
+  {n:'Apertura con mancuernas',m:'Pecho'},{n:'Fondos en barras',m:'Pecho / TrÃ­ceps'},
   {n:'Flexiones',m:'Pecho'},{n:'Crossover',m:'Pecho'},
   {n:'Remo con barra',m:'Espalda'},{n:'Remo unilateral',m:'Espalda'},
-  {n:'Remo en polea baja',m:'Espalda'},{n:'Jalón al pecho',m:'Espalda'},
-  {n:'Jalón con agarre neutro',m:'Espalda'},{n:'Chin-ups',m:'Espalda / Bíceps'},
+  {n:'Remo en polea baja',m:'Espalda'},{n:'JalÃ³n al pecho',m:'Espalda'},
+  {n:'JalÃ³n con agarre neutro',m:'Espalda'},{n:'Chin-ups',m:'Espalda / BÃ­ceps'},
   {n:'Pull-ups',m:'Espalda'},{n:'Face pull',m:'Espalda / Hombros'},
-  {n:'Buenos días',m:'Espalda baja'},
+  {n:'Buenos dÃ­as',m:'Espalda baja'},
   {n:'Press de hombro con barra',m:'Hombros'},{n:'Press militar',m:'Hombros'},
   {n:'Press Arnold',m:'Hombros'},{n:'Elevaciones laterales',m:'Hombros'},
-  {n:'Elevaciones frontales',m:'Hombros'},{n:'Pájaro',m:'Hombros'},
-  {n:'Curl con barra',m:'Bíceps'},{n:'Curl con mancuernas',m:'Bíceps'},
-  {n:'Martillo',m:'Bíceps'},{n:'Curl predicador',m:'Bíceps'},
-  {n:'Curl concentrado',m:'Bíceps'},{n:'Curl en polea',m:'Bíceps'},
-  {n:'Copa (Skull crusher)',m:'Tríceps'},{n:'Extensión de tríceps',m:'Tríceps'},
-  {n:'Extensión sobre cabeza',m:'Tríceps'},{n:'Press francés',m:'Tríceps'},
-  {n:'Jalón de tríceps en polea',m:'Tríceps'},{n:'Kick back',m:'Tríceps'},
+  {n:'Elevaciones frontales',m:'Hombros'},{n:'PÃ¡jaro',m:'Hombros'},
+  {n:'Curl con barra',m:'BÃ­ceps'},{n:'Curl con mancuernas',m:'BÃ­ceps'},
+  {n:'Martillo',m:'BÃ­ceps'},{n:'Curl predicador',m:'BÃ­ceps'},
+  {n:'Curl concentrado',m:'BÃ­ceps'},{n:'Curl en polea',m:'BÃ­ceps'},
+  {n:'Copa (Skull crusher)',m:'TrÃ­ceps'},{n:'ExtensiÃ³n de trÃ­ceps',m:'TrÃ­ceps'},
+  {n:'ExtensiÃ³n sobre cabeza',m:'TrÃ­ceps'},{n:'Press francÃ©s',m:'TrÃ­ceps'},
+  {n:'JalÃ³n de trÃ­ceps en polea',m:'TrÃ­ceps'},{n:'Kick back',m:'TrÃ­ceps'},
   {n:'Plancha',m:'Core'},{n:'Crunch',m:'Abdomen'},{n:'Crunch en polea',m:'Abdomen'},
-  {n:'Elevación de piernas',m:'Abdomen'},{n:'Russian twist',m:'Abdomen'},
-  {n:'Dead bug',m:'Core'},{n:'Caminadora',m:'Cardio'},{n:'Bicicleta estática',m:'Cardio'},
-  {n:'Elíptica',m:'Cardio'},{n:'Burpees',m:'Funcional'},{n:'Salto a la caja',m:'Funcional'},
+  {n:'ElevaciÃ³n de piernas',m:'Abdomen'},{n:'Russian twist',m:'Abdomen'},
+  {n:'Dead bug',m:'Core'},{n:'Caminadora',m:'Cardio'},{n:'Bicicleta estÃ¡tica',m:'Cardio'},
+  {n:'ElÃ­ptica',m:'Cardio'},{n:'Burpees',m:'Funcional'},{n:'Salto a la caja',m:'Funcional'},
 ];
 
 // UI Constants
-const DAYS_OF_WEEK: readonly string[] = ['domingo','lunes','martes','miércoles','jueves','viernes','sábado'];
+const DAYS_OF_WEEK: readonly string[] = ['domingo','lunes','martes','miÃ©rcoles','jueves','viernes','sÃ¡bado'];
 const MONTHS: readonly string[] = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 
 // Validation Limits
@@ -74,7 +73,7 @@ const STORAGE_KEYS: StorageKeys = {
   HIIT_DATA_PREFIX: 'ironlog_hiit_',
 };
 
-// ── GLOBAL STATE ──
+// â”€â”€ GLOBAL STATE â”€â”€
 
 // Application state with proper typing
 const appState: AppState = {
@@ -95,11 +94,11 @@ const appState: AppState = {
 const prCache = appState.personalRecordCache;
 
 // Global variables defined in db.ts
-// Inicializados como null; db.ts los sobreescribe vía window en el navegador
+// Inicializados como null; db.ts los sobreescribe vÃ­a window en el navegador
 let currentUser: UserProfile | null = null;
 let currentProfile: UserProfile | null = null;
 
-// STORAGE (localStorage — usado solo para import/demo offline)
+// STORAGE (localStorage â€” usado solo para import/demo offline)
 
 /**
  * Saves gym data to localStorage
@@ -157,7 +156,7 @@ function clearPerformanceCache(): void {
  * @param weight - Weight value
  * @returns True if this is a personal record
  */
-function isPR(name: string, curKey: string, weight: string | number | null | undefined): boolean {
+function isPR(name: string, curKey: string, weight: string | number | null | undefined): boolean { // NOSONAR
   if (weight == null) return false;
 
   const w = Number.parseFloat(String(weight));
@@ -205,11 +204,10 @@ function renderToday(): void {
   // Update header with current date and profile info
   const headerElement = document.getElementById('dSub');
   if (headerElement && appState.viewDate) {
-    headerElement.textContent = `${appState.viewDate.getDate()} de ${MONTHS[appState.viewDate.getMonth()]} ${appState.viewDate.getFullYear()} · ${(currentProfile?.name || '')}`;
+    headerElement.textContent = `${appState.viewDate.getDate()} de ${MONTHS[appState.viewDate.getMonth()]} ${appState.viewDate.getFullYear()} Â· ${(currentProfile?.name || '')}`;
   }
 
   // Render exercises for current date
-  const exercises = gD()[dk(appState.viewDate)] || [];
   const exerciseList = document.getElementById('exList');
   if (exerciseList) {
     // This would need the full exercise rendering logic
@@ -218,7 +216,7 @@ function renderToday(): void {
   }
 }
 
-// ── UTILITY FUNCTIONS ──
+// â”€â”€ UTILITY FUNCTIONS â”€â”€
 
 /**
  * Toggles visibility of an input element
@@ -247,10 +245,10 @@ function escHtml(str: string): string {
  */
 function toggleTheme(): void {
   const html = document.documentElement;
-  const currentTheme = html.getAttribute('data-theme');
+  const currentTheme = html.dataset.theme;
   const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
 
-  html.setAttribute('data-theme', newTheme);
+  html.dataset.theme = newTheme;
   localStorage.setItem(STORAGE_KEYS.THEME, newTheme);
 }
 
@@ -259,7 +257,7 @@ function toggleTheme(): void {
  */
 function initTheme(): void {
   const savedTheme = localStorage.getItem(STORAGE_KEYS.THEME) || 'light';
-  document.documentElement.setAttribute('data-theme', savedTheme);
+  document.documentElement.dataset.theme = savedTheme;
 }
 
 /**
@@ -269,7 +267,7 @@ function initTheme(): void {
 function openM(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) {
-    (modal as HTMLElement).style.display = 'block';
+    modal.style.display = 'block';
   }
 }
 
@@ -280,7 +278,7 @@ function openM(modalId: string): void {
 function closeM(modalId: string): void {
   const modal = document.getElementById(modalId);
   if (modal) {
-    (modal as HTMLElement).style.display = 'none';
+    modal.style.display = 'none';
   }
 }
 
@@ -308,7 +306,7 @@ function showS(name: string, btn: HTMLElement): void {
   btn.classList.add('active');
 
   // Update URL hash
-  window.location.hash = name;
+  globalThis.location.hash = name;
 }
 
 /**
@@ -325,7 +323,7 @@ function validateWeight(weight: string | number, errors: ValidationErrors): void
   if (weight === '' || weight === null || weight === undefined) return;
   const w = Number.parseFloat(String(weight));
   if (Number.isNaN(w)) {
-    errors.push('El peso debe ser un número válido');
+    errors.push('El peso debe ser un nÃºmero vÃ¡lido');
   } else if (w < 0) {
     errors.push('El peso no puede ser negativo');
   } else if (w > VALIDATION_LIMITS.MAX_WEIGHT) {
@@ -337,7 +335,7 @@ function validateSets(sets: string | number, errors: ValidationErrors): void {
   if (sets === '' || sets === null || sets === undefined) return;
   const s = Number.parseInt(String(sets), 10);
   if (Number.isNaN(s)) {
-    errors.push('Las series deben ser un número válido');
+    errors.push('Las series deben ser un nÃºmero vÃ¡lido');
   } else if (s < 1) {
     errors.push('Las series deben ser al menos 1');
   } else if (s > VALIDATION_LIMITS.MAX_SETS) {
@@ -354,7 +352,7 @@ function validateReps(reps: string, errors: ValidationErrors): void {
   if (repsValue.endsWith('s')) {
     const timeValue = Number.parseInt(repsValue.slice(0, -1), 10);
     if (Number.isNaN(timeValue)) {
-      errors.push('El formato de tiempo debe ser un número seguido de "s" (ej: 30s)');
+      errors.push('El formato de tiempo debe ser un nÃºmero seguido de "s" (ej: 30s)');
     } else if (timeValue < 1) {
       errors.push('El tiempo debe ser al menos 1 segundo');
     } else if (timeValue > VALIDATION_LIMITS.MAX_DURATION_SECONDS) {
@@ -363,7 +361,7 @@ function validateReps(reps: string, errors: ValidationErrors): void {
   } else {
     const r = Number.parseInt(repsValue, 10);
     if (Number.isNaN(r)) {
-      errors.push('Las repeticiones deben ser un número válido o tiempo (ej: 30s)');
+      errors.push('Las repeticiones deben ser un nÃºmero vÃ¡lido o tiempo (ej: 30s)');
     } else if (r < 1) {
       errors.push('Las repeticiones deben ser al menos 1');
     } else if (r > VALIDATION_LIMITS.MAX_REPS) {
@@ -403,7 +401,7 @@ function validateExerciseInput(
   return errors;
 }
 
-// ── EXPORTS ──
+// â”€â”€ EXPORTS â”€â”€
 
 // Export functions for use in other modules
 export {
@@ -439,19 +437,19 @@ export {
 };
 
 // Make functions globally available for backward compatibility
-(window as any).sD = sD;
-(window as any).gD = gD;
-(window as any).sBW = sBW;
-(window as any).gBW = gBW;
-(window as any).clearPerformanceCache = clearPerformanceCache;
-(window as any).toggleVis = toggleVis;
-(window as any).escHtml = escHtml;
-(window as any).toggleTheme = toggleTheme;
-(window as any).initTheme = initTheme;
-(window as any).openM = openM;
-(window as any).closeM = closeM;
-(window as any).showS = showS;
-(window as any).changeDay = changeDay;
-(window as any).validateExerciseInput = validateExerciseInput;
-(window as any).isPR = isPR;
-(window as any).renderToday = renderToday;
+(globalThis as any).sD = sD;
+(globalThis as any).gD = gD;
+(globalThis as any).sBW = sBW;
+(globalThis as any).gBW = gBW;
+(globalThis as any).clearPerformanceCache = clearPerformanceCache;
+(globalThis as any).toggleVis = toggleVis;
+(globalThis as any).escHtml = escHtml;
+(globalThis as any).toggleTheme = toggleTheme;
+(globalThis as any).initTheme = initTheme;
+(globalThis as any).openM = openM;
+(globalThis as any).closeM = closeM;
+(globalThis as any).showS = showS;
+(globalThis as any).changeDay = changeDay;
+(globalThis as any).validateExerciseInput = validateExerciseInput;
+(globalThis as any).isPR = isPR;
+(globalThis as any).renderToday = renderToday;

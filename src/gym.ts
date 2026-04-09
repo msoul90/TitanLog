@@ -1,5 +1,5 @@
-// ============================================================
-// gym.ts — Pantalla de Gym: ejercicios, composición, timer
+﻿// ============================================================
+// gym.ts â€” Pantalla de Gym: ejercicios, composiciÃ³n, timer
 // ============================================================
 
 import { BodyWeightEntry } from './types.js';
@@ -11,22 +11,22 @@ const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
 const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 const renderToday = (): void => (globalThis as any).renderToday?.();
 
-// ── CONSTANTS ──
+// â”€â”€ CONSTANTS â”€â”€
 
 // Body composition categories and ranges
 const BODY_COMPOSITION_RANGES = {
   FAT: {
-    VERY_LOW: { max: 10, label: 'Muy bajo — revisa con un profesional', class: 'high' },
-    ATHLETIC: { max: 18, label: 'Atlético / muy bajo', class: 'ok' },
-    FITNESS: { max: 25, label: 'Fitness — rango saludable', class: 'ok' },
+    VERY_LOW: { max: 10, label: 'Muy bajo â€” revisa con un profesional', class: 'high' },
+    ATHLETIC: { max: 18, label: 'AtlÃ©tico / muy bajo', class: 'ok' },
+    FITNESS: { max: 25, label: 'Fitness â€” rango saludable', class: 'ok' },
     AVERAGE: { max: 32, label: 'Promedio', class: 'warn' },
-    HIGH: { max: Infinity, label: 'Alto — considera ajustar tu dieta', class: 'high' }
+    HIGH: { max: Infinity, label: 'Alto â€” considera ajustar tu dieta', class: 'high' }
   },
   MMC: {
-    LOW: { max: 30, label: 'Bajo — enfócate en la proteína', class: 'high' },
+    LOW: { max: 30, label: 'Bajo â€” enfÃ³cate en la proteÃ­na', class: 'high' },
     AVERAGE: { max: 40, label: 'Promedio', class: 'warn' },
-    GOOD: { max: 50, label: 'Bueno — ¡sigue así!', class: 'ok' },
-    EXCELLENT: { max: Infinity, label: 'Excelente — masa muscular alta', class: 'ok' }
+    GOOD: { max: 50, label: 'Bueno â€” Â¡sigue asÃ­!', class: 'ok' },
+    EXCELLENT: { max: Infinity, label: 'Excelente â€” masa muscular alta', class: 'ok' }
   }
 } as const;
 
@@ -57,10 +57,10 @@ const DOM_IDS = {
 } as const;
 
 // Date constants
-const DAYS_OF_WEEK: readonly string[] = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado'];
+const DAYS_OF_WEEK: readonly string[] = ['domingo', 'lunes', 'martes', 'miÃ©rcoles', 'jueves', 'viernes', 'sÃ¡bado'];
 const MONTHS: readonly string[] = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
 
-// ── BODY COMPOSITION ──
+// â”€â”€ BODY COMPOSITION â”€â”€
 
 /**
  * Categorizes body fat percentage and returns label and CSS class
@@ -117,9 +117,9 @@ function updateDerived(): void {
  */
 function getBodyCompositionInputs(): { bwV: number; fatV: number; mmcV: number } {
   return {
-    bwV: parseFloat((document.getElementById(DOM_IDS.BW_INPUT) as HTMLInputElement)?.value || ''),
-    fatV: parseFloat((document.getElementById(DOM_IDS.FAT_INPUT) as HTMLInputElement)?.value || ''),
-    mmcV: parseFloat((document.getElementById(DOM_IDS.MMC_INPUT) as HTMLInputElement)?.value || '')
+    bwV: Number.parseFloat((document.getElementById(DOM_IDS.BW_INPUT) as HTMLInputElement)?.value || ''),
+    fatV: Number.parseFloat((document.getElementById(DOM_IDS.FAT_INPUT) as HTMLInputElement)?.value || ''),
+    mmcV: Number.parseFloat((document.getElementById(DOM_IDS.MMC_INPUT) as HTMLInputElement)?.value || '')
   };
 }
 
@@ -131,7 +131,7 @@ function updateFatHint(fatV: number): void {
   const fatHintElement = document.getElementById(DOM_IDS.FAT_HINT);
   if (!fatHintElement) return;
 
-  if (!isNaN(fatV) && fatV > 0) {
+  if (!Number.isNaN(fatV) && fatV > 0) {
     const cat = fatCategory(fatV);
     fatHintElement.textContent = cat.lbl;
     fatHintElement.className = 'pct-hint ' + cat.cls;
@@ -149,7 +149,7 @@ function updateMmcHint(mmcV: number): void {
   const mmcHintElement = document.getElementById(DOM_IDS.MMC_HINT);
   if (!mmcHintElement) return;
 
-  if (!isNaN(mmcV) && mmcV > 0) {
+  if (!Number.isNaN(mmcV) && mmcV > 0) {
     const cat = mmcCategory(mmcV);
     mmcHintElement.textContent = cat.lbl;
     mmcHintElement.className = 'pct-hint ' + cat.cls;
@@ -163,32 +163,36 @@ function updateMmcHint(mmcV: number): void {
  * Updates the derived weight values display
  * @param inputValues - Object with bwV, fatV, mmcV
  */
-function updateDerivedValues(inputValues: { bwV: number; fatV: number; mmcV: number }): void {
+function updateDerivedValues(inputValues: { bwV: number; fatV: number; mmcV: number }): void { // NOSONAR
   const { bwV, fatV, mmcV } = inputValues;
   const derivedElement = document.getElementById(DOM_IDS.BC_DERIVED);
   if (!derivedElement) return;
 
-  if (!isNaN(bwV) && bwV > 0 && (!isNaN(fatV) || !isNaN(mmcV))) {
+  const hasWeight = !Number.isNaN(bwV) && bwV > 0;
+  const hasFat = !Number.isNaN(fatV);
+  const hasMmc = !Number.isNaN(mmcV);
+
+  if (hasWeight && (hasFat || hasMmc)) {
     derivedElement.style.display = 'flex';
     const unit = appState.bodyWeightUnit;
 
-    const fatKg = !isNaN(fatV) ? (bwV * fatV / 100).toFixed(1) : '—';
-    const mmcKg = !isNaN(mmcV) ? (bwV * mmcV / 100).toFixed(1) : '—';
-    const leanKg = !isNaN(fatV) ? (bwV * (100 - fatV) / 100).toFixed(1) : '—';
+    const fatKg = hasFat ? (bwV * fatV / 100).toFixed(1) : '-';
+    const mmcKg = hasMmc ? (bwV * mmcV / 100).toFixed(1) : '-';
+    const leanKg = hasFat ? (bwV * (100 - fatV) / 100).toFixed(1) : '-';
 
     const fatKgElement = document.getElementById(DOM_IDS.BCD_FAT_KG);
     if (fatKgElement) {
-      fatKgElement.textContent = fatKg !== '—' ? fatKg + ' ' + unit : '—';
+      fatKgElement.textContent = hasFat ? fatKg + ' ' + unit : '-';
     }
 
     const mmcKgElement = document.getElementById(DOM_IDS.BCD_MMC_KG);
     if (mmcKgElement) {
-      mmcKgElement.textContent = mmcKg !== '—' ? mmcKg + ' ' + unit : '—';
+      mmcKgElement.textContent = hasMmc ? mmcKg + ' ' + unit : '-';
     }
 
     const leanKgElement = document.getElementById(DOM_IDS.BCD_LEAN_KG);
     if (leanKgElement) {
-      leanKgElement.textContent = leanKg !== '—' ? leanKg + ' ' + unit : '—';
+      leanKgElement.textContent = hasFat ? leanKg + ' ' + unit : '-';
     }
   } else {
     derivedElement.style.display = 'none';
@@ -221,12 +225,14 @@ function getCurrentBodyWeightData(): BodyWeightEntry | null {
 function populateBodyWeightForm(bw: BodyWeightEntry | null): void {
   const bwInput = document.getElementById(DOM_IDS.BW_INPUT) as HTMLInputElement;
   if (bwInput) bwInput.value = bw ? bw.v.toString() : '';
+  const fatValue = bw?.fat;
+  const mmcValue = bw?.mmc;
 
   const fatInput = document.getElementById(DOM_IDS.FAT_INPUT) as HTMLInputElement;
-  if (fatInput) fatInput.value = bw && bw.fat != null ? bw.fat.toString() : '';
+  if (fatInput) fatInput.value = fatValue == null ? '' : fatValue.toString();
 
   const mmcInput = document.getElementById(DOM_IDS.MMC_INPUT) as HTMLInputElement;
-  if (mmcInput) mmcInput.value = bw && bw.mmc != null ? bw.mmc.toString() : '';
+  if (mmcInput) mmcInput.value = mmcValue == null ? '' : mmcValue.toString();
 
   if (bw) setBWU((bw.u as 'lb' | 'kg') ?? 'lb');
 }
@@ -259,7 +265,7 @@ function formatDateForModal(date: Date): string {
   const dayName = DAYS_OF_WEEK[date.getDay()];
   const day = date.getDate();
   const monthName = MONTHS[date.getMonth()];
-  return `📅 ${dayName} ${day} de ${monthName}`;
+  return `ðŸ“… ${dayName} ${day} de ${monthName}`;
 }
 
 /**
@@ -316,7 +322,7 @@ async function saveBW(): Promise<void> {
     await saveBWDay(dk(appState.viewDate), weightData);
     closeM('bwMod');
     renderToday();
-    toast('Medidas guardadas ✓');
+    toast('Medidas guardadas âœ“');
   } catch (err) {
     console.error('Error saving body weight:', err);
     toast('Error guardando medidas. Intenta de nuevo.');
@@ -334,33 +340,33 @@ function validateAndParseBodyWeightData(): BodyWeightEntry | null {
 
   if (!bwInput || !fatInput || !mmcInput) {
     console.error('Required body weight form elements not found');
-    toast('Error en la interfaz. Recarga la página.');
+    toast('Error en la interfaz. Recarga la pÃ¡gina.');
     return null;
   }
 
-  const v = parseFloat(bwInput.value);
+  const v = Number.parseFloat(bwInput.value);
   if (!v || v < VALIDATION_RANGES.WEIGHT.min) {
-    toast('Ingresa un peso válido');
+    toast('Ingresa un peso vÃ¡lido');
     return null;
   }
 
-  const fat = fatInput.value !== '' ? parseFloat(fatInput.value) : undefined;
-  const mmc = mmcInput.value !== '' ? parseFloat(mmcInput.value) : undefined;
+  const fat = fatInput.value === '' ? undefined : Number.parseFloat(fatInput.value);
+  const mmc = mmcInput.value === '' ? undefined : Number.parseFloat(mmcInput.value);
 
   if (fat != null && (fat < VALIDATION_RANGES.FAT_PERCENTAGE.min || fat > VALIDATION_RANGES.FAT_PERCENTAGE.max)) {
-    toast(`% de grasa no válido (${VALIDATION_RANGES.FAT_PERCENTAGE.min}-${VALIDATION_RANGES.FAT_PERCENTAGE.max})`);
+    toast(`% de grasa no vÃ¡lido (${VALIDATION_RANGES.FAT_PERCENTAGE.min}-${VALIDATION_RANGES.FAT_PERCENTAGE.max})`);
     return null;
   }
 
   if (mmc != null && (mmc < VALIDATION_RANGES.MMC_PERCENTAGE.min || mmc > VALIDATION_RANGES.MMC_PERCENTAGE.max)) {
-    toast(`% MMC no válido (${VALIDATION_RANGES.MMC_PERCENTAGE.min}-${VALIDATION_RANGES.MMC_PERCENTAGE.max})`);
+    toast(`% MMC no vÃ¡lido (${VALIDATION_RANGES.MMC_PERCENTAGE.min}-${VALIDATION_RANGES.MMC_PERCENTAGE.max})`);
     return null;
   }
 
   return { v, u: appState.bodyWeightUnit, fat, mmc };
 }
 
-// ── TIMER ──
+// â”€â”€ TIMER â”€â”€
 
 /**
  * Starts the timer with specified duration
@@ -388,7 +394,7 @@ function startT(secs: number, btn: HTMLElement): void {
 
       const timerNumElement = document.getElementById(DOM_IDS.TIMER_NUM);
       if (timerNumElement) {
-        timerNumElement.textContent = '¡Listo!';
+        timerNumElement.textContent = 'Â¡Listo!';
         timerNumElement.classList.add('warn');
       }
 
@@ -440,7 +446,7 @@ function updT(): void {
   }
 }
 
-// ── EXPORTS ──
+// â”€â”€ EXPORTS â”€â”€
 
 export {
   // Constants
@@ -476,23 +482,23 @@ export {
 };
 
 // Make functions globally available for backward compatibility
-(window as any).fatCategory = fatCategory;
-(window as any).mmcCategory = mmcCategory;
-(window as any).updateDerived = updateDerived;
-(window as any).getBodyCompositionInputs = getBodyCompositionInputs;
-(window as any).updateFatHint = updateFatHint;
-(window as any).updateMmcHint = updateMmcHint;
-(window as any).updateDerivedValues = updateDerivedValues;
-(window as any).openBW = openBW;
-(window as any).getCurrentBodyWeightData = getCurrentBodyWeightData;
-(window as any).populateBodyWeightForm = populateBodyWeightForm;
-(window as any).setupBodyWeightModal = setupBodyWeightModal;
-(window as any).formatDateForModal = formatDateForModal;
-(window as any).attachInputListeners = attachInputListeners;
-(window as any).openModalAndFocus = openModalAndFocus;
-(window as any).setBWU = setBWU;
-(window as any).saveBW = saveBW;
-(window as any).validateAndParseBodyWeightData = validateAndParseBodyWeightData;
-(window as any).startT = startT;
-(window as any).resetT = resetT;
-(window as any).updT = updT;
+(globalThis as any).fatCategory = fatCategory;
+(globalThis as any).mmcCategory = mmcCategory;
+(globalThis as any).updateDerived = updateDerived;
+(globalThis as any).getBodyCompositionInputs = getBodyCompositionInputs;
+(globalThis as any).updateFatHint = updateFatHint;
+(globalThis as any).updateMmcHint = updateMmcHint;
+(globalThis as any).updateDerivedValues = updateDerivedValues;
+(globalThis as any).openBW = openBW;
+(globalThis as any).getCurrentBodyWeightData = getCurrentBodyWeightData;
+(globalThis as any).populateBodyWeightForm = populateBodyWeightForm;
+(globalThis as any).setupBodyWeightModal = setupBodyWeightModal;
+(globalThis as any).formatDateForModal = formatDateForModal;
+(globalThis as any).attachInputListeners = attachInputListeners;
+(globalThis as any).openModalAndFocus = openModalAndFocus;
+(globalThis as any).setBWU = setBWU;
+(globalThis as any).saveBW = saveBW;
+(globalThis as any).validateAndParseBodyWeightData = validateAndParseBodyWeightData;
+(globalThis as any).startT = startT;
+(globalThis as any).resetT = resetT;
+(globalThis as any).updT = updT;

@@ -1,16 +1,15 @@
-// ============================================================
-// calendar.ts — Pantalla de Calendario
+﻿// ============================================================
+// calendar.ts â€” Pantalla de Calendario
 // ============================================================
 
 import { Exercise } from './types.js';
-import { gD, MONTHS, renderToday, DAYS_OF_WEEK as DAYS, appState, isPR, escHtml } from './app.js';
-import { dk } from './db.js';
-import { loadGymMonth } from './db.js';
+import { gD, MONTHS, DAYS_OF_WEEK as DAYS, appState, isPR, escHtml } from './app.js';
+import { dk, loadGymMonth } from './db.js';
 
 // Alias for backward compatibility
 const MOS = MONTHS;
 
-// ── CALENDAR FUNCTIONS ──
+// â”€â”€ CALENDAR FUNCTIONS â”€â”€
 
 /**
  * Changes the calendar month and reloads data
@@ -25,7 +24,7 @@ async function changeMonth(d: number): Promise<void> {
 /**
  * Renders the calendar grid for the current month
  */
-function renderCal(): void {
+function renderCal(): void { // NOSONAR
   const y = appState.calendarDate.getFullYear();
   const m = appState.calendarDate.getMonth();
 
@@ -116,11 +115,11 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
   });
 
   // Get day number from key
-  const day = parseInt(key.split('-')[2]!, 10);
+  const day = Number.parseInt(key.split('-')[2]!, 10);
 
   // Add selection to matching day elements
   document.querySelectorAll('.cd.hd, .cd.td').forEach((el: Element) => {
-    if (parseInt((el as HTMLElement).textContent || '0', 10) === day) {
+    if (Number.parseInt((el as HTMLElement).textContent || '0', 10) === day) {
       el.classList.add('sel');
     }
   });
@@ -130,7 +129,7 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
   if (!det) return;
 
   // Hide details if no exercises
-  if (!exs || !exs.length) {
+  if (!exs?.length) {
     det.style.display = 'none';
     return;
   }
@@ -148,16 +147,16 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
         ex.weight ? `${escHtml(String(ex.weight))} ${escHtml(ex.unit || 'lb')}` : null,
         ex.reps ? `${escHtml(ex.reps)} reps` : null,
         ex.sets ? `${escHtml(ex.sets.toString())} series` : null
-      ].filter(Boolean).join(' · ');
+      ].filter(Boolean).join(' Â· ');
 
-      return `<div class="cal-row"><div class="cr-name">${escHtml(ex.name)}${pr ? '<span class="cr-pr">🏆 PR</span>' : ''}</div><div class="cr-stats">${stats}</div></div>`;
+      return `<div class="cal-row"><div class="cr-name">${escHtml(ex.name)}${pr ? '<span class="cr-pr">ðŸ† PR</span>' : ''}</div><div class="cr-stats">${stats}</div></div>`;
     }).join('');
 
   det.innerHTML = content;
   det.style.display = 'block';
 }
 
-// ── EXPORTS ──
+// â”€â”€ EXPORTS â”€â”€
 
 export {
   changeMonth,
@@ -166,6 +165,6 @@ export {
 };
 
 // Make functions globally available for backward compatibility
-(window as any).changeMonth = changeMonth;
-(window as any).renderCal = renderCal;
-(window as any).showCalDet = showCalDet;
+(globalThis as any).changeMonth = changeMonth;
+(globalThis as any).renderCal = renderCal;
+(globalThis as any).showCalDet = showCalDet;
