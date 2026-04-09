@@ -31,7 +31,13 @@ const DOM_IDS = {
   TIMER_ROUNDS: 'htcRounds',
   TIMER_START: 'htcStartBtn',
   TIMER_PROGRESS: 'htcProgress',
+  HIIT_EX_DATALIST: 'hiitExSuggestions',
 } as const;
+
+interface ExerciseSuggestion {
+  n: string;
+  m?: string;
+}
 
 type TimerPhase = 'idle' | 'work' | 'rest' | 'done';
 
@@ -80,6 +86,46 @@ function syncHiitDateFromGlobal(): void {
 
 function syncHiitCacheFromDB(): void {
   hiitCache = gHiit() || {};
+}
+
+function getHiitExerciseSuggestions(): string[] {
+  const byName = new Map<string, string>();
+
+  const appDatabase = ((globalThis as any).EXERCISE_DATABASE || []) as ExerciseSuggestion[];
+  appDatabase.forEach(entry => {
+    const name = entry?.n?.trim();
+    if (!name) return;
+    byName.set(name.toLowerCase(), name);
+  });
+
+  Object.values(hiitCache).forEach(sessions => {
+    sessions.forEach(session => {
+      (session.exercises || []).forEach(exercise => {
+        const name = exercise.name?.trim();
+        if (!name) return;
+        if (!byName.has(name.toLowerCase())) {
+          byName.set(name.toLowerCase(), name);
+        }
+      });
+    });
+  });
+
+  return [...byName.values()].sort((a, b) => a.localeCompare(b, 'es', { sensitivity: 'base' }));
+}
+
+function ensureHiitExerciseDatalist(): void {
+  const modal = getElement<HTMLElement>(DOM_IDS.HIIT_MOD);
+  if (!modal) return;
+
+  let datalist = getElement<HTMLDataListElement>(DOM_IDS.HIIT_EX_DATALIST);
+  if (!datalist) {
+    datalist = document.createElement('datalist');
+    datalist.id = DOM_IDS.HIIT_EX_DATALIST;
+    modal.appendChild(datalist);
+  }
+
+  const options = getHiitExerciseSuggestions();
+  datalist.innerHTML = options.map(name => `<option value="${escHtml(name)}"></option>`).join('');
 }
 
 function parseDateKey(dateKey: string): Date {
@@ -361,6 +407,7 @@ function populateHiitModalFields(session: Partial<HIITSession>): void {
   if (durationElement) durationElement.value = session.duration || '';
   if (notesElement) notesElement.value = session.notes || '';
 
+  ensureHiitExerciseDatalist();
   resetExerciseRows();
 
   const exercises = session.exercises || [];
@@ -371,6 +418,7 @@ function populateHiitModalFields(session: Partial<HIITSession>): void {
 export function openHiitModal(): void {
   hiitEditId = null;
   selectedRPE = null;
+  syncHiitCacheFromDB();
 
   const titleElement = getElement<HTMLElement>(DOM_IDS.HIIT_MOD_TTL);
   if (titleElement) titleElement.textContent = 'Nueva sesión HIIT';
@@ -400,12 +448,14 @@ export function editHiitSession(sessionId: string): void {
 }
 
 export function addHiitEx(data: Partial<HIITExercise> = {}): void {
+  ensureHiitExerciseDatalist();
+
   const id = hiitExCount++;
   const row = document.createElement('div');
   row.className = 'hiit-ex-row';
   row.id = `hiit-ex-${id}`;
   row.innerHTML = `
-    <input class="fi" placeholder="Ejercicio (ej: Burpees)" value="${escHtml(data.name || '')}" id="hex-name-${id}" autocomplete="off">
+    <input class="fi" placeholder="Ejercicio (ej: Burpees)" value="${escHtml(data.name || '')}" id="hex-name-${id}" autocomplete="off" list="${DOM_IDS.HIIT_EX_DATALIST}">
     <input class="fi" placeholder="Seg" type="number" min="1" value="${escHtml(data.duration?.toString() || '')}" id="hex-dur-${id}" style="width:56px">
     <input class="fi" placeholder="Reps" value="${escHtml(String(data.reps || ''))}" id="hex-reps-${id}" style="width:60px">
     <button type="button" class="hiit-ex-del" onclick="document.getElementById('hiit-ex-${id}')?.remove()">✕</button>`;

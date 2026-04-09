@@ -327,6 +327,31 @@
     </div>
   </details>
 
+  <details class="cfg-guides-accordion">
+    <summary class="sec-label cfg-guides-summary">Guías de estiramiento</summary>
+    <div class="cfg-guides-panel">
+      <div class="cfg-guides-tools">
+        <input
+          class="fi cfg-guide-search"
+          id="cfgStretchSearch"
+          type="search"
+          placeholder="Buscar por nombre o zona..."
+          autocomplete="off"
+          oninput="filterStretchCatalog(this.value)">
+        <select
+          class="fi cfg-stretch-filter"
+          id="cfgStretchFilter"
+          onchange="filterStretchCategory(this.value)">
+          <option value="all">Todos</option>
+          <option value="pre">Pre-entreno</option>
+          <option value="post">Post-entreno</option>
+          <option value="both">Pre y Post</option>
+        </select>
+      </div>
+      <div class="cfg-card" id="cfgStretchList"></div>
+    </div>
+  </details>
+
   <div class="sec-label">Perfil y apariencia</div>
   <div class="cfg-card">
     <button type="button" class="cfg-row" onclick="openEditProfile()">
@@ -542,6 +567,28 @@
     <button type="button" class="guide-add-btn" onclick="addFromGuide()">
       <span>＋</span><span id="gAddTxt">Agregar al día de hoy</span>
     </button>
+  </div>
+</dialog>
+
+<!-- Stretch modal -->
+<dialog class="overlay" id="stretchMod" aria-labelledby="stTitle">
+  <div class="guide-modal">
+    <div class="guide-hero">
+      <button type="button" class="guide-close" onclick="closeM('stretchMod')">✕</button>
+      <span class="guide-emoji" id="stEmoji">🤸</span>
+      <div class="guide-title" id="stTitle">Estiramiento</div>
+      <div class="guide-muscle-row" id="stMeta"></div>
+    </div>
+    <div class="guide-body">
+      <div class="guide-section">
+        <div class="guide-section-title">Ejecución</div>
+        <div class="guide-steps" id="stSteps"></div>
+      </div>
+      <div class="guide-section" id="stTipSec">
+        <div class="guide-section-title">Tips</div>
+        <div class="guide-tips" id="stTips"></div>
+      </div>
+    </div>
   </div>
 </dialog>
 

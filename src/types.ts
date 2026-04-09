@@ -119,6 +119,16 @@ export interface ExerciseGuide {
   tips?: string[];
 }
 
+// Stretching guide structure
+export interface StretchGuide {
+  emoji: string;
+  category: 'pre' | 'post' | 'both'; // pre-entreno, post-entreno, o ambos
+  area: string[]; // zonas del cuerpo
+  duration: string; // tiempo recomendado
+  steps: string[];
+  tips?: string[];
+}
+
 // ── DATABASE & STORAGE TYPES ──
 
 // Supabase response types

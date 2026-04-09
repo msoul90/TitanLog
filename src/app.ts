@@ -531,6 +531,7 @@ function showS(name: string, btn: HTMLElement): void {
     (globalThis as any).renderProg?.();
   } else if (name === 'export') {
     (globalThis as any).renderGuidesCatalog?.();
+    (globalThis as any).renderStretchCatalog?.();
   }
 
   // Update URL hash
@@ -687,3 +688,4 @@ export {
 (globalThis as any).isPR = isPR;
 (globalThis as any).renderToday = renderToday;
 (globalThis as any).appState = appState;
+(globalThis as any).EXERCISE_DATABASE = EXERCISE_DATABASE;

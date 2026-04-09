@@ -33,6 +33,10 @@ describe('hiit.ts', () => {
     (globalThis as any).closeM = vi.fn();
     (globalThis as any).confirm = vi.fn(() => true);
     (globalThis as any).hiitDate = new Date(2026, 3, 9);
+    (globalThis as any).EXERCISE_DATABASE = [
+      { n: 'Burpees', m: 'Funcional' },
+      { n: 'Remo', m: 'Espalda' },
+    ];
 
     document.body.innerHTML = `
       <div id="hiitList"></div>
@@ -73,6 +77,18 @@ describe('hiit.ts', () => {
     expect(document.getElementById('hiitModTtl')?.textContent).toContain('Nueva');
     expect(document.querySelectorAll('#hiitExList .hiit-ex-row')).toHaveLength(1);
     expect((globalThis as any).openM).toHaveBeenCalledWith('hiitMod');
+  });
+
+  it('agrega autocomplete en ejercicios HIIT', () => {
+    openHiitModal();
+
+    const input = document.getElementById('hex-name-0') as HTMLInputElement;
+    const datalist = document.getElementById('hiitExSuggestions') as HTMLDataListElement;
+
+    expect(input.getAttribute('list')).toBe('hiitExSuggestions');
+    expect(datalist).toBeTruthy();
+    expect(datalist.innerHTML).toContain('Burpees');
+    expect(datalist.innerHTML).toContain('Remo');
   });
 
   it('selectRPE marca seleccion en UI', () => {

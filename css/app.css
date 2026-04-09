@@ -416,6 +416,14 @@ body {
   border-radius:var(--r); padding:13px; margin-top:4px;
 }
 .cal-det-ttl { font-family:var(--font-head); font-weight:700; font-size:0.92rem; margin-bottom:9px; }
+.cal-sec-ttl {
+  font-size:0.68rem;
+  font-weight:800;
+  letter-spacing:0.06em;
+  text-transform:uppercase;
+  color:var(--text2);
+  margin:10px 0 4px;
+}
 .cal-row {
   display:flex; justify-content:space-between; align-items:center;
   padding:7px 0; border-bottom:1px solid var(--border); font-size:0.82rem;
@@ -524,6 +532,34 @@ body {
   color: var(--text2);
   font-size: 0.8rem;
 }
+
+/* STRETCH FILTER SELECT */
+.cfg-stretch-filter {
+  width: 100%;
+  margin-top: 6px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: var(--text1);
+  font-size: 0.85rem;
+}
+
+/* STRETCH CATEGORY BADGES */
+.stretch-badge {
+  display: inline-block;
+  font-size: 0.65rem;
+  padding: 1px 6px;
+  border-radius: 8px;
+  font-weight: 600;
+  vertical-align: middle;
+  margin-left: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.stretch-badge--pre  { background: rgba(255,179,71,0.22); color: #5c2e0a; }
+.stretch-badge--post { background: rgba(69,200,255,0.22); color: #003d6b; }
+.stretch-badge--both { background: rgba(130,180,100,0.22); color: #1f4014; }
 
 /* AUTOCOMPLETE */
 .ac-wrap { position:relative; }

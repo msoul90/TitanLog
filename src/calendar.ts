@@ -4,7 +4,7 @@
 
 import { Exercise } from './types.js';
 import { gD, MONTHS, DAYS_OF_WEEK as DAYS, appState, isPR, escHtml } from './app.js';
-import { dk, loadGymMonth } from './db.js';
+import { dk, gHiit, loadGymMonth, loadHiitMonth } from './db.js';
 
 // Alias for backward compatibility
 const MOS = MONTHS;
@@ -17,7 +17,10 @@ const MOS = MONTHS;
  */
 async function changeMonth(d: number): Promise<void> {
   appState.calendarDate = new Date(appState.calendarDate.getFullYear(), appState.calendarDate.getMonth() + d, 1);
-  await loadGymMonth(appState.calendarDate.getFullYear(), appState.calendarDate.getMonth());
+  await Promise.all([
+    loadGymMonth(appState.calendarDate.getFullYear(), appState.calendarDate.getMonth()),
+    loadHiitMonth(appState.calendarDate.getFullYear(), appState.calendarDate.getMonth())
+  ]);
   renderCal();
 }
 
@@ -36,6 +39,7 @@ function renderCal(): void { // NOSONAR
 
   // Get data and current date key
   const data = gD();
+  const hiitData = gHiit();
   const tdKey = dk(new Date());
 
   // Calculate first and last day of month
@@ -73,14 +77,18 @@ function renderCal(): void { // NOSONAR
     const key = dk(date);
 
     // Check if day has exercises and if any are personal records
-    const hasData = data[key] && data[key].length > 0;
-    const hasPR = hasData && data[key]!.some((ex: Exercise) => isPR(ex.name, key, ex.weight));
+    const gymSessions = data[key] || [];
+    const hasGymData = gymSessions.length > 0;
+    const hasHiitData = (hiitData[key] || []).length > 0;
+    const hasData = hasGymData || hasHiitData;
+    const hasPR = hasGymData && gymSessions.some((ex: Exercise) => isPR(ex.name, key, ex.weight));
 
     // Create day element
     const el = document.createElement('div');
     el.className = 'cd' +
       (key === tdKey ? ' td' : '') +
       (hasData ? ' hd' : '');
+    el.dataset.key = key;
     el.textContent = d.toString();
 
     // Add PR dot if applicable
@@ -91,7 +99,7 @@ function renderCal(): void { // NOSONAR
     }
 
     // Add click handler
-    el.addEventListener('click', () => showCalDet(key, data[key]));
+    el.addEventListener('click', () => showCalDet(key, gymSessions, hiitData[key]));
 
     grid.appendChild(el);
   }
@@ -108,18 +116,15 @@ function renderCal(): void { // NOSONAR
  * @param key - Date key in format 'YYYY-MM-DD'
  * @param exs - Array of exercises for the day
  */
-function showCalDet(key: string, exs: Exercise[] | undefined): void {
+function showCalDet(key: string, exs: Exercise[] | undefined, hiitSessions: Array<{ name?: string; rounds?: number; duration?: string; rpe?: number; exercises?: Array<{ name?: string }> }> = []): void {
   // Remove selection from all calendar days
   document.querySelectorAll('.cd').forEach((el: Element) => {
     el.classList.remove('sel');
   });
 
-  // Get day number from key
-  const day = Number.parseInt(key.split('-')[2]!, 10);
-
-  // Add selection to matching day elements
-  document.querySelectorAll('.cd.hd, .cd.td').forEach((el: Element) => {
-    if (Number.parseInt((el as HTMLElement).textContent || '0', 10) === day) {
+  // Add selection to matching day element
+  document.querySelectorAll('.cd').forEach((el: Element) => {
+    if ((el as HTMLElement).dataset.key === key) {
       el.classList.add('sel');
     }
   });
@@ -128,20 +133,24 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
   const det = document.getElementById('calDet');
   if (!det) return;
 
-  // Hide details if no exercises
-  if (!exs?.length) {
+  const gymSessions = exs || [];
+  const hiitItems = hiitSessions || [];
+
+  // Hide details if there are no gym or hiit sessions
+  if (!gymSessions.length && !hiitItems.length) {
     det.style.display = 'none';
     return;
   }
 
   // Create date object and title
   const d = new Date(key);
+  const day = Number.parseInt(key.split('-')[2]!, 10);
   const ttl = DAYS[d.getDay()]!.charAt(0).toUpperCase() + DAYS[d.getDay()]!.slice(1) +
     ', ' + day + ' de ' + MOS[d.getMonth()];
 
   // Build HTML content
-  const content = `<div class="cal-det-ttl">${ttl}</div>` +
-    exs.map((ex: Exercise) => {
+  const gymContent = gymSessions.length
+    ? `<div class="cal-sec-ttl">Gym</div>` + gymSessions.map((ex: Exercise) => {
       const pr = isPR(ex.name, key, ex.weight);
       const stats = [
         ex.weight ? `${escHtml(String(ex.weight))} ${escHtml(ex.unit || 'lb')}` : null,
@@ -150,7 +159,23 @@ function showCalDet(key: string, exs: Exercise[] | undefined): void {
       ].filter(Boolean).join(' · ');
 
       return `<div class="cal-row"><div class="cr-name">${escHtml(ex.name)}${pr ? '<span class="cr-pr">🏆 PR</span>' : ''}</div><div class="cr-stats">${stats}</div></div>`;
-    }).join('');
+    }).join('')
+    : '';
+
+  const hiitContent = hiitItems.length
+    ? `<div class="cal-sec-ttl">HIIT</div>` + hiitItems.map((session) => {
+      const stats = [
+        session.rounds ? `${escHtml(String(session.rounds))} rondas` : null,
+        session.duration ? escHtml(session.duration) : null,
+        session.rpe ? `RPE ${escHtml(String(session.rpe))}` : null,
+        session.exercises?.length ? `${escHtml(String(session.exercises.length))} ejercicios` : null
+      ].filter(Boolean).join(' · ');
+
+      return `<div class="cal-row"><div class="cr-name">${escHtml(session.name || 'Sesión HIIT')}</div><div class="cr-stats">${stats}</div></div>`;
+    }).join('')
+    : '';
+
+  const content = `<div class="cal-det-ttl">${ttl}</div>${gymContent}${hiitContent}`;
 
   det.innerHTML = content;
   det.style.display = 'block';
