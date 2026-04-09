@@ -33,6 +33,15 @@ const initTheme = (): void => (globalThis as any).initTheme?.();
 const renderToday = (): void => (globalThis as any).renderToday?.();
 const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
 
+function getPasswordResetRedirectUrl(): string | undefined {
+  if (typeof globalThis.location === 'undefined') return undefined;
+
+  const { origin, pathname } = globalThis.location;
+  if (!origin || !pathname) return undefined;
+
+  return `${origin}${pathname}`;
+}
+
 
 // ── ESTADO GLOBAL ──
 interface DBState {
@@ -488,39 +497,47 @@ async function saveProfile(): Promise<void> {
 // ── AUTH SYSTEM ──
 let authMode: AuthMode = 'signin'; // 'signin' | 'signup'
 
+function applySigninOnlyMode(): void {
+  authMode = 'signin';
+
+  const authTitle = document.getElementById('authTitle');
+  if (authTitle) authTitle.textContent = 'Iniciar sesión';
+
+  const authSub = document.getElementById('authSub');
+  if (authSub) authSub.textContent = 'Accede con tu cuenta de IronLog.';
+
+  const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
+  if (authBtn) authBtn.textContent = 'Entrar';
+
+  const authNameGroup = document.getElementById('authNameGroup');
+  if (authNameGroup) authNameGroup.style.display = 'none';
+
+  const authPw = document.getElementById('authPw') as HTMLInputElement;
+  if (authPw) authPw.setAttribute('autocomplete', 'current-password');
+
+  const authToggleText = document.getElementById('authToggleText');
+  if (authToggleText?.parentElement) {
+    authToggleText.parentElement.style.display = 'none';
+  }
+
+  const authToggleLink = document.getElementById('authToggleLink');
+  if (authToggleLink?.parentElement) {
+    authToggleLink.parentElement.style.display = 'none';
+  }
+
+  const forgotPwHint = document.getElementById('forgotPwHint');
+  if (forgotPwHint) forgotPwHint.style.display = 'block';
+}
+
 /**
  * Toggles between signin and signup modes
  */
 function toggleAuthMode(): void { // NOSONAR
-  authMode = authMode === 'signin' ? 'signup' : 'signin';
-  const isSignup = authMode === 'signup';
-
-  const authTitle = document.getElementById('authTitle');
-  if (authTitle) authTitle.textContent = isSignup ? 'Crear cuenta' : 'Iniciar sesión';
-
-  const authSub = document.getElementById('authSub');
-  if (authSub) authSub.textContent = isSignup ? 'Regístrate para acceder a IronLog.' : 'Accede con tu cuenta de IronLog.';
-
-  const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
-  if (authBtn) authBtn.textContent = isSignup ? 'Crear cuenta' : 'Entrar';
-
-  const authToggleText = document.getElementById('authToggleText');
-  if (authToggleText) authToggleText.textContent = isSignup ? '¿Ya tienes cuenta?' : '¿Primera vez?';
-
-  const authToggleLink = document.getElementById('authToggleLink');
-  if (authToggleLink) authToggleLink.textContent = isSignup ? 'Iniciar sesión' : 'Crear cuenta';
-
-  const authNameGroup = document.getElementById('authNameGroup');
-  if (authNameGroup) authNameGroup.style.display = isSignup ? 'block' : 'none';
-
-  const forgotPwHint = document.getElementById('forgotPwHint');
-  if (forgotPwHint) forgotPwHint.style.display = isSignup ? 'none' : 'block';
-
-  const authPw = document.getElementById('authPw') as HTMLInputElement;
-  if (authPw) authPw.setAttribute('autocomplete', isSignup ? 'new-password' : 'current-password');
+  applySigninOnlyMode();
+  toast('El registro de nuevos usuarios está deshabilitado');
 
   const authErr = document.getElementById('authErr');
-  if (authErr) authErr.textContent = '';
+  if (authErr) authErr.textContent = 'Registro deshabilitado: solo usuarios existentes pueden iniciar sesión.';
 }
 
 /**
@@ -530,12 +547,10 @@ async function doAuthAction(): Promise<void> { // NOSONAR
   try {
     const authEmail = document.getElementById('authEmail') as HTMLInputElement;
     const authPw = document.getElementById('authPw') as HTMLInputElement;
-    const authName = document.getElementById('authName') as HTMLInputElement;
     const authErr = document.getElementById('authErr');
 
     const email = authEmail?.value.trim();
     const pw = authPw?.value;
-    const name = authName?.value.trim() || email?.split('@')[0];
 
     if (authErr) authErr.textContent = '';
 
@@ -551,34 +566,25 @@ async function doAuthAction(): Promise<void> { // NOSONAR
     }
 
     if (authMode === 'signup') {
-      const { error } = await sb.auth.signUp({
-        email,
-        password: pw,
-        options: { data: { name } }
-      });
-
-      if (error) {
-        if (authErr) {
-          authErr.textContent = error.message.includes('already')
-            ? 'Este email ya tiene cuenta. Inicia sesión.'
-            : error.message;
-        }
-      } else if (authErr) {
-        authErr.style.color = 'var(--accent)';
-        authErr.textContent = '¡Cuenta creada! Revisa tu email para confirmar.';
+      applySigninOnlyMode();
+      if (authErr) authErr.textContent = 'Registro deshabilitado: solo usuarios existentes pueden iniciar sesión.';
+      if (authBtn) {
+        authBtn.textContent = 'Entrar';
+        authBtn.disabled = false;
       }
+      return;
+    }
+
+    const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
+
+    if (error) {
+      if (authErr) authErr.textContent = 'Email o contraseña incorrectos';
     } else {
-      const { data, error } = await sb.auth.signInWithPassword({ email, password: pw });
-
-      if (error) {
-        if (authErr) authErr.textContent = 'Email o contraseña incorrectos';
-      } else {
-        await enterApp(data.user);
-      }
+      await enterApp(data.user);
     }
 
     if (authBtn) {
-      authBtn.textContent = authMode === 'signup' ? 'Crear cuenta' : 'Entrar';
+      authBtn.textContent = 'Entrar';
       authBtn.disabled = false;
     }
   } catch (err) {
@@ -589,7 +595,7 @@ async function doAuthAction(): Promise<void> { // NOSONAR
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
-      authBtn.textContent = authMode === 'signup' ? 'Crear cuenta' : 'Entrar';
+      authBtn.textContent = 'Entrar';
       authBtn.disabled = false;
     }
   }
@@ -609,7 +615,11 @@ async function sendResetEmail(): Promise<void> {
       return;
     }
 
-    const { error } = await sb.auth.resetPasswordForEmail(email);
+    const redirectTo = getPasswordResetRedirectUrl();
+    const { error } = await sb.auth.resetPasswordForEmail(
+      email,
+      redirectTo ? { redirectTo } : undefined
+    );
     const authErr = document.getElementById('authErr');
 
     if (error) {
@@ -716,10 +726,7 @@ async function initLogin(): Promise<void> {
     } else {
       const loginScreen = document.getElementById('loginScreen');
       if (loginScreen) loginScreen.style.display = 'flex';
-
-      // Show signup link below
-      const forgotPwHint = document.getElementById('forgotPwHint');
-      if (forgotPwHint) forgotPwHint.style.display = 'block';
+      applySigninOnlyMode();
     }
   } catch (err) {
     console.error('Error initializing login:', err);
