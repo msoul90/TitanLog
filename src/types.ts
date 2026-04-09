@@ -88,7 +88,7 @@ export interface AppState {
   timerSeconds: number;
   autocompleteItems: HTMLElement[];
   autocompleteSelectedIndex: number;
-  exerciseListCache: Exercise[];
+  exerciseListCache: ExerciseDatabaseEntry[];
   personalRecordCache: Map<string, { max: number; weight: number }>;
   autocompleteTimeout: number | null;
 }
