@@ -1,0 +1,46 @@
+# ============================================
+# .gitignore for IronLog Fitness App
+# ============================================
+
+# ── Operating System ──
+.DS_Store
+Thumbs.db
+[Dd]esktop.ini
+$RECYCLE.BIN/
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+*.code-workspace
+
+# ── Node ──
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── Build Output ──
+dist/
+
+# ── Tests ──
+coverage/
+
+# ── Environment Variables ──
+.env
+.env.local
+.env.*.local
+
+# ── Temporary / OS Artifacts ──
+*.log
+*.tmp
+*.swp
+*.swo
+*~
+
+# ── Claude AI ──
+.claude/
+
+# ── Project Specific ──
+config.local.js
+secrets.js
+js_backup/

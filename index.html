@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="IronLog - Registra tus entrenamientos, controla tu progreso y alcanza tus objetivos de fitness. Seguimiento de ejercicios, HIIT, composición corporal y más.">
+  <meta name="keywords" content="fitness, entrenamiento, gym, HIIT, seguimiento de ejercicios, progreso, composición corporal">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#111116">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23111116' width='180' height='180'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='90' fill='white'>🏋️</text></svg>">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'><rect fill='%23111116' width='180' height='180'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='90' fill='white'>🏋️</text></svg>">
+  <link rel="canonical" href="https://ironlog.app">
+  <title>IronLog</title>
+  
+  <!-- Open Graph -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="IronLog - Tu app de fitness">
+  <meta property="og:description" content="Registra tus entrenamientos, controla tu progreso y alcanza tus objetivos de fitness.">
+  <meta property="og:url" content="https://ironlog.app">
+  <meta property="og:image" content="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1200 630'><rect fill='%23111116' width='1200' height='630'/><text x='50%' y='50%' dominant-baseline='middle' text-anchor='middle' font-size='200' fill='white'>🏋️ IronLog</text></svg>">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="IronLog - Tu app de fitness">
+  <meta name="twitter:description" content="Registra tus entrenamientos, controla tu progreso y alcanza tus objetivos de fitness.">
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400&family=Familjen+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- App styles -->
+  <link rel="preload" href="css/app.css" as="style">
+  <link rel="stylesheet" href="css/app.css">
+  
+  <!-- Utility styles -->
+  <style>
+    .login-loading {
+      text-align: center;
+      color: var(--text2);
+      font-size: 0.85rem;
+      margin-top: 16px;
+    }
+    .sec-label-mt { margin-top: 14px; }
+    .stats-grid-mb { margin-bottom: 10px; }
+    .streak-week-card-mb { margin-bottom: 18px; }
+    .bc-section-mb { margin-bottom: 18px; }
+    .input-hidden { display: none; }
+    
+    /* Modal backdrop optimization */
+    .overlay {
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+    }
+    .overlay::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(4px);
+    }
+  </style>
+
+</head>
+<body>
+
+<noscript>
+  <div style="padding:20px;text-align:center;font-family:system-ui,-apple-system,sans-serif;color:#666;background:#f5f5f5;min-height:100vh;display:flex;align-items:center;justify-content:center">
+    <div>
+      <h1 style="margin:0 0 16px;color:#333">JavaScript requerido</h1>
+      <p style="margin:0">IronLog requiere JavaScript habilitado para funcionar correctamente. Por favor, habilita JavaScript en tu navegador.</p>
+    </div>
+  </div>
+</noscript>
+
+<!-- ── LOGIN SCREEN ── -->
+<div id="loginScreen" style="display:none">
+  <div class="login-logo">
+    <div class="login-logo-mark">🏋️</div>
+    <div class="login-logo-text">Iron<em>Log</em></div>
+  </div>
+
+  <div class="login-card" id="loginStep1">
+    <div class="login-step-title" id="authTitle">Iniciar sesión</div>
+    <div class="login-step-sub" id="authSub">Accede con tu cuenta de IronLog.</div>
+
+    <div class="fg">
+      <label class="fl" for="authEmail">Email</label>
+      <input class="fi" id="authEmail" type="email" placeholder="tu@email.com"
+        autocomplete="email" autocapitalize="none">
+    </div>
+    <div class="fg" id="authNameGroup" style="display:none">
+      <label class="fl" for="authName">Tu nombre</label>
+      <input class="fi" id="authName" type="text" placeholder="Ej: Carlos" autocomplete="name">
+    </div>
+    <div class="fg" id="authPwGroup">
+      <label class="fl" for="authPw">Contraseña</label>
+      <div class="login-pw-wrap">
+        <input class="login-pw-input" id="authPw" type="password" placeholder="••••••••"
+          autocomplete="current-password" onkeydown="if(event.key==='Enter')doAuthAction()">
+        <button type="button" class="login-pw-toggle" onclick="toggleVis('authPw')" aria-label="Mostrar contraseña">👁️</button>
+      </div>
+    </div>
+    <div class="login-error-msg" id="authErr"></div>
+    <button type="button" class="login-btn" id="authBtn" onclick="doAuthAction()">Entrar</button>
+    <div class="login-hint" style="margin-top:14px">
+      <span id="authToggleText">¿Primera vez?</span>
+      <button type="button" class="link-btn" onclick="toggleAuthMode()"><span id="authToggleLink">Crear cuenta</span></button>
+    </div>
+    <div class="login-hint" id="forgotPwHint">
+      <button type="button" class="link-btn" onclick="sendResetEmail()">¿Olvidaste tu contraseña?</button>
+    </div>
+  </div>
+
+  <div id="loginLoading" style="display:none" class="login-loading">
+    Cargando…
+  </div>
+</div>
+
+<!-- ── APP SHELL ── -->
+<header class="app-header">
+  <div class="logo">
+    <div class="logo-mark">🏋️</div>
+    <div class="logo-text">Iron<em>Log</em></div>
+  </div>
+  <div class="hdr-right">
+    <button type="button" class="icon-btn" id="themeBtn" onclick="toggleTheme()">☀️</button>
+    <button type="button" class="user-pill" onclick="openEditProfile()">
+      <span class="u-dot" id="uDot">IL</span>
+      <span id="uName">…</span>
+    </button>
+  </div>
+</header>
+
+<main>
+
+<!-- ── SCREEN: GYM (HOY) ── -->
+<div class="screen active" id="screen-today">
+  <div class="date-banner">
+    <div>
+      <div class="date-main" id="dLabel">Hoy</div>
+      <div class="date-sub" id="dSub"></div>
+    </div>
+    <div class="day-arrows">
+      <button type="button" class="arr-btn" aria-label="Día anterior" onclick="changeDay(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button type="button" class="arr-btn" aria-label="Día siguiente" onclick="changeDay(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <button type="button" class="metrics-bar" onclick="openBW()">
+    <span class="mb-metric">
+      <span class="mb-ic">⚖️</span>
+      <span class="mb-info">
+        <span class="mb-val" id="bwShow">—</span>
+        <span class="mb-lbl">Peso</span>
+      </span>
+    </span>
+    <span class="mb-sep"></span>
+    <span class="mb-metric">
+      <span class="mb-ic">🔥</span>
+      <span class="mb-info">
+        <span class="mb-val" id="fatShow">—</span>
+        <span class="mb-lbl">% Grasa</span>
+      </span>
+    </span>
+    <span class="mb-sep"></span>
+    <span class="mb-metric">
+      <span class="mb-ic">💪</span>
+      <span class="mb-info">
+        <span class="mb-val" id="mmcShow">—</span>
+        <span class="mb-lbl">% MMC</span>
+      </span>
+    </span>
+    <span class="mb-edit" id="mbCta">+ Registrar</span>
+  </button>
+
+  <div class="timer-bar">
+    <span>⏱️</span>
+    <span class="timer-lbl">Descanso entre series</span>
+    <div class="timer-num" id="timerNum">0:00</div>
+    <div class="t-presets">
+      <button type="button" class="t-btn" onclick="startT(60,this)">1m</button>
+      <button type="button" class="t-btn" onclick="startT(90,this)">1:30</button>
+      <button type="button" class="t-btn" onclick="startT(120,this)">2m</button>
+      <button type="button" class="t-reset" onclick="resetT()">✕</button>
+    </div>
+  </div>
+
+  <div class="ex-list" id="exList"></div>
+</div>
+
+<!-- ── SCREEN: HIIT ── -->
+<div class="screen" id="screen-hiit">
+  <div class="date-banner">
+    <div>
+      <div class="date-main" id="hiitLabel">HIIT — Hoy</div>
+      <div class="date-sub" id="hiitSub"></div>
+    </div>
+    <div class="day-arrows">
+      <button type="button" class="arr-btn" aria-label="Día anterior" onclick="hiitChangeDay(-1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+      </button>
+      <button type="button" class="arr-btn" aria-label="Día siguiente" onclick="hiitChangeDay(1)">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="hiit-timer-card">
+    <div class="htc-top">
+      <div class="htc-phase" id="htcPhase">Listo</div>
+      <div class="htc-num" id="htcNum">0:00</div>
+    </div>
+    <div class="htc-config">
+      <div class="htc-field">
+        <span class="htc-fl">Trabajo</span>
+        <div class="htc-stepper">
+          <button type="button" onclick="adjustHiitTimer('work',-5)">−</button>
+          <span id="htcWork">40</span>s
+          <button type="button" onclick="adjustHiitTimer('work',5)">+</button>
+        </div>
+      </div>
+      <div class="htc-field">
+        <span class="htc-fl">Descanso</span>
+        <div class="htc-stepper">
+          <button type="button" onclick="adjustHiitTimer('rest',-5)">−</button>
+          <span id="htcRest">20</span>s
+          <button type="button" onclick="adjustHiitTimer('rest',5)">+</button>
+        </div>
+      </div>
+      <div class="htc-field">
+        <span class="htc-fl">Rondas</span>
+        <div class="htc-stepper">
+          <button type="button" onclick="adjustHiitTimer('rounds',-1)">−</button>
+          <span id="htcRounds">8</span>
+          <button type="button" onclick="adjustHiitTimer('rounds',1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="htc-btns">
+      <button type="button" class="htc-start" id="htcStartBtn" onclick="toggleHiitTimer()">▶ Iniciar</button>
+      <button type="button" class="htc-reset" onclick="resetHiitTimer()">↺ Reset</button>
+    </div>
+    <div class="htc-progress" id="htcProgress"></div>
+  </div>
+
+  <div class="sec-label sec-label-mt">Sesiones registradas</div>
+  <div id="hiitList"></div>
+  <button type="button" class="hiit-add-btn" onclick="openHiitMod()">＋ Nueva sesión HIIT</button>
+</div>
+
+<!-- ── SCREEN: CALENDARIO ── -->
+<div class="screen" id="screen-calendar">
+  <div class="cal-hdr">
+    <button type="button" class="arr-btn" aria-label="Mes anterior" onclick="changeMonth(-1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+    </button>
+    <div class="cal-mo" id="calMo"></div>
+    <button type="button" class="arr-btn" aria-label="Mes siguiente" onclick="changeMonth(1)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+  </div>
+  <div class="cal-grid" id="calGrid"></div>
+  <div class="cal-det" id="calDet" style="display:none"></div>
+</div>
+
+<!-- ── SCREEN: PROGRESO ── -->
+<div class="screen" id="screen-progress">
+  <div class="sec-label">Este mes</div>
+  <div class="stats-grid stats-grid-mb">
+    <div class="stat-card"><div class="stat-v" id="sDay">0</div><div class="stat-l">Días entrenados</div></div>
+    <div class="stat-card"><div class="stat-v" id="sEx">0</div><div class="stat-l">Ejercicios totales</div></div>
+    <div class="stat-card"><div class="stat-v" id="sPR">0</div><div class="stat-l">Récords 🏆</div></div>
+    <div class="stat-card"><div class="stat-v" id="sStr">0</div><div class="stat-l">Racha días 🔥</div></div>
+  </div>
+  <div class="streak-week-card streak-week-card-mb">
+    <div class="swc-left">
+      <div class="swc-val" id="sWStr">0</div>
+      <div class="swc-lbl">semanas seguidas 💪</div>
+    </div>
+    <div class="swc-weeks" id="weekDots"></div>
+  </div>
+  <div class="sec-label">Composición corporal</div>
+  <div id="bcSection" class="bc-section-mb"></div>
+  <div class="sec-label">Progreso por ejercicio</div>
+  <div id="progList"></div>
+</div>
+
+<!-- ── SCREEN: CONFIG ── -->
+<div class="screen" id="screen-export">
+  <div class="sec-label">Exportar datos</div>
+  <div class="cfg-card">
+    <button type="button" class="cfg-row" onclick="expJSON()">
+      <span class="cfg-ic" style="background:var(--accent-dim)">📦</span>
+      <span class="cfg-info"><span class="cfg-ttl">Exportar JSON</span><span class="cfg-sub">Backup completo</span></span>
+      <span class="cfg-arr">›</span>
+    </button>
+    <button type="button" class="cfg-row" onclick="expCSV()">
+      <span class="cfg-ic" style="background:rgba(69,200,255,0.12)">📊</span>
+      <span class="cfg-info"><span class="cfg-ttl">Exportar CSV</span><span class="cfg-sub">Abre en Excel o Google Sheets</span></span>
+      <span class="cfg-arr">›</span>
+    </button>
+    <button type="button" class="cfg-row" onclick="impData()">
+      <span class="cfg-ic" style="background:rgba(255,179,71,0.12)">📥</span>
+      <span class="cfg-info"><span class="cfg-ttl">Importar datos</span><span class="cfg-sub">Restaurar desde JSON</span></span>
+      <span class="cfg-arr">›</span>
+    </button>
+  </div>
+<input type="file" id="impFile" accept=".json" class="input-hidden" onchange="handleImp(event)">
+
+  <div class="sec-label">Perfil y apariencia</div>
+  <div class="cfg-card">
+    <button type="button" class="cfg-row" onclick="openEditProfile()">
+      <span class="cfg-ic" style="background:var(--accent-dim)" id="profIc0">✏️</span>
+      <span class="cfg-info"><span class="cfg-ttl" id="profName0">Mi perfil</span><span class="cfg-sub">Editar nombre y color</span></span>
+      <span class="cfg-arr">›</span>
+    </button>
+    <button type="button" class="cfg-row" onclick="toggleTheme()">
+      <span class="cfg-ic" style="background:rgba(255,240,100,0.12)">🎨</span>
+      <span class="cfg-info"><span class="cfg-ttl">Tema</span><span class="cfg-sub" id="themeSub">Oscuro</span></span>
+      <span class="cfg-arr">›</span>
+    </button>
+    <button type="button" class="logout-row" onclick="doLogout()">
+      <span class="cfg-ic" style="background:rgba(255,107,107,0.1);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;">🚪</span>
+      <span class="cfg-info"><span class="cfg-ttl" style="color:var(--danger)">Cerrar sesión</span><span class="cfg-sub">Vuelve a la pantalla de acceso</span></span>
+    </button>
+  </div>
+</div>
+
+<!-- ── FAB ── -->
+<button type="button" class="fab" id="fabBtn" aria-label="Agregar ejercicio" onclick="openAdd()">＋</button>
+
+</main>
+
+<!-- ── NAV ── -->
+<nav class="bottom-nav">
+  <button type="button" class="nav-btn active" aria-current="page" onclick="showS('today',this)">
+    <span class="nav-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/>
+        <polyline points="9 22 9 12 15 12 15 22"/>
+      </svg>
+    </span>
+    Gym
+  </button>
+  <button type="button" class="nav-btn" onclick="showS('hiit',this)">
+    <span class="nav-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>
+      </svg>
+    </span>
+    HIIT
+  </button>
+  <button type="button" class="nav-btn" onclick="showS('calendar',this)">
+    <span class="nav-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <rect x="3" y="4" width="18" height="18" rx="2"/>
+        <path d="M16 2v4M8 2v4M3 10h18"/>
+      </svg>
+    </span>
+    Calendario
+  </button>
+  <button type="button" class="nav-btn" onclick="showS('progress',this)">
+    <span class="nav-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+    </span>
+    Progreso
+  </button>
+  <button type="button" class="nav-btn" onclick="showS('export',this)">
+    <span class="nav-ic">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 010 14.14M4.93 4.93a10 10 0 000 14.14"/>
+      </svg>
+    </span>
+    Config
+  </button>
+</nav>
+
+<!-- ── MODALS ── -->
+
+<!-- Exercise modal -->
+<dialog class="overlay" id="exMod" aria-labelledby="exModTtl">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="exModTtl">Agregar ejercicio</div>
+    <div class="fg ac-wrap">
+      <label class="fl" for="fName">Ejercicio</label>
+      <input class="fi" id="fName" placeholder="Busca o escribe un ejercicio…"
+        autocomplete="off" aria-autocomplete="list"
+        aria-haspopup="listbox" aria-controls="acDrop"
+        oninput="acIn(this.value)" onkeydown="acKey(event)">
+      <div class="ac-drop" id="acDrop" style="display:none"></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl" for="fW">Peso</label><input class="fi" id="fW" type="number" placeholder="25" min="0" step="0.5" autocomplete="off"></div>
+      <div class="fg"><label class="fl" for="fU">Unidad</label><select class="fi" id="fU"><option value="lb">lb</option><option value="kg">kg</option></select></div>
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl" for="fS">Series</label><input class="fi" id="fS" type="number" placeholder="3" min="1" autocomplete="off"></div>
+      <div class="fg"><label class="fl" for="fR">Reps</label><input class="fi" id="fR" placeholder="10 ó 8–12" autocomplete="off"></div>
+    </div>
+    <div class="fg"><label class="fl" for="fN">Observaciones</label><input class="fi" id="fN" placeholder="Forma, sensación, ajustes…" autocomplete="off"></div>
+    <button type="button" class="btn-ok" onclick="saveEx()">Guardar ejercicio</button>
+    <button type="button" class="btn-cl" onclick="closeM('exMod')">Cancelar</button>
+  </div>
+</dialog>
+
+<!-- Body composition modal -->
+<dialog class="overlay" id="bwMod" aria-labelledby="bwModTtl">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="bwModTtl">Composición corporal</div>
+    <div class="bc-date-tag" id="bcDateTag"></div>
+    <div class="fg">
+      <label class="fl" for="bwIn">Peso corporal</label>
+      <div class="bw-row">
+        <input class="fi bw-mi" id="bwIn" type="number" placeholder="70" min="20" max="300" step="0.1" autocomplete="off">
+        <div class="bw-uts">
+          <button type="button" class="bw-ub on" id="bUlb" onclick="setBWU('lb')">lb</button>
+          <button type="button" class="bw-ub" id="bUkg" onclick="setBWU('kg')">kg</button>
+        </div>
+      </div>
+    </div>
+    <div class="fr2">
+      <div class="fg">
+        <label class="fl" for="fatIn">% Grasa corporal</label>
+        <div class="pct-wrap">
+          <input class="fi" id="fatIn" type="number" placeholder="20" min="3" max="60" step="0.1" autocomplete="off">
+          <span class="pct-sym">%</span>
+        </div>
+        <div class="pct-hint" id="fatHint"></div>
+      </div>
+      <div class="fg">
+        <label class="fl" for="mmcIn">% Masa muscular</label>
+        <div class="pct-wrap">
+          <input class="fi" id="mmcIn" type="number" placeholder="40" min="10" max="80" step="0.1" autocomplete="off">
+          <span class="pct-sym">%</span>
+        </div>
+        <div class="pct-hint" id="mmcHint"></div>
+      </div>
+    </div>
+    <div class="bc-derived" id="bcDerived" style="display:none">
+      <div class="bc-derived-row"><span class="bcd-lbl">🔥 Masa grasa</span><span class="bcd-val" id="bcdFatKg">—</span></div>
+      <div class="bc-derived-row"><span class="bcd-lbl">💪 Masa muscular</span><span class="bcd-val" id="bcdMMCKg">—</span></div>
+      <div class="bc-derived-row"><span class="bcd-lbl">🦴 Masa magra total</span><span class="bcd-val" id="bcdLeanKg">—</span></div>
+    </div>
+    <button type="button" class="btn-ok" onclick="saveBW()">Guardar medidas</button>
+    <button type="button" class="btn-cl" onclick="closeM('bwMod')">Cancelar</button>
+  </div>
+</dialog>
+
+<!-- Edit profile modal -->
+<dialog class="overlay" id="editProfMod" aria-labelledby="epTitle">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="epTitle">Editar mi perfil</div>
+    <div class="fg">
+      <label class="fl" for="epName">Nombre</label>
+      <input class="fi" id="epName" placeholder="Ej: Carlos, Mi amor…" maxlength="24" autocomplete="off">
+    </div>
+    <div style="font-size:0.69rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px">Color</div>
+    <div class="ep-colors" id="epColors"></div>
+    <button type="button" class="btn-ok" onclick="saveProfile()">Guardar perfil</button>
+    <button type="button" class="btn-cl" onclick="closeM('editProfMod')">Cancelar</button>
+  </div>
+</dialog>
+
+<!-- HIIT session modal -->
+<dialog class="overlay" id="hiitMod" aria-labelledby="hiitModTtl">
+  <div class="modal">
+    <div class="m-handle"></div>
+    <div class="m-title" id="hiitModTtl">Nueva sesión HIIT</div>
+    <div class="fg">
+      <label class="fl" for="hName">Nombre de la sesión</label>
+      <input class="fi" id="hName" placeholder="Ej: Full body, Tabata piernas…" autocomplete="off">
+    </div>
+    <div class="fr2">
+      <div class="fg"><label class="fl" for="hRounds">Rondas completadas</label><input class="fi" id="hRounds" type="number" placeholder="8" min="1" autocomplete="off"></div>
+      <div class="fg"><label class="fl" for="hDuration">Duración total</label><input class="fi" id="hDuration" placeholder="20 min" autocomplete="off"></div>
+    </div>
+    <div class="sec-label" style="margin:0 0 8px">Ejercicios de la sesión</div>
+    <div id="hiitExList"></div>
+    <button type="button" class="hiit-add-ex-btn" onclick="addHiitEx()">＋ Agregar ejercicio</button>
+    <div class="fg" style="margin-top:12px">
+      <label class="fl" for="hNotes">Observaciones</label>
+      <input class="fi" id="hNotes" placeholder="Cómo te sentiste, intensidad…" autocomplete="off">
+    </div>
+    <fieldset class="fg rpe-fieldset">
+      <legend class="fl">Esfuerzo percibido (RPE)</legend>
+      <div class="rpe-row" id="rpeRow"></div>
+    </fieldset>
+    <button type="button" class="btn-ok" onclick="saveHiitSessionModal()">Guardar sesión</button>
+    <button type="button" class="btn-cl" onclick="closeM('hiitMod')">Cancelar</button>
+  </div>
+</dialog>
+
+<!-- Guide modal -->
+<dialog class="overlay" id="guideMod" aria-labelledby="gTitle">
+  <div class="guide-modal">
+    <div class="guide-hero">
+      <button type="button" class="guide-close" onclick="closeM('guideMod')">✕</button>
+      <span class="guide-emoji" id="gEmoji">🏋️</span>
+      <div class="guide-title" id="gTitle">Ejercicio</div>
+      <div class="guide-muscle-row" id="gMuscles"></div>
+    </div>
+    <div class="guide-body">
+      <div class="guide-section">
+        <div class="guide-section-title">Ejecución</div>
+        <div class="guide-steps" id="gSteps"></div>
+      </div>
+      <div class="guide-section" id="gErrSec">
+        <div class="guide-section-title">Errores comunes</div>
+        <div class="guide-tips" id="gErrors"></div>
+      </div>
+      <div class="guide-section" id="gTipSec">
+        <div class="guide-section-title">Tips pro</div>
+        <div class="guide-tips" id="gTips"></div>
+      </div>
+    </div>
+    <button type="button" class="guide-add-btn" onclick="addFromGuide()">
+      <span>＋</span><span id="gAddTxt">Agregar al día de hoy</span>
+    </button>
+  </div>
+</dialog>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<!-- ── SCRIPTS (orden importa) ── -->
+<script type="module" src="dist/db.js"></script>
+<script type="module" src="dist/app.js"></script>
+<script type="module" src="dist/gym.js"></script>
+<script type="module" src="dist/calendar.js"></script>
+<script type="module" src="dist/progress.js"></script>
+<script type="module" src="dist/guides.js"></script>
+<script type="module" src="dist/hiit.js"></script>
+
+<script>
+  // ── INIT ──
+  // Se ejecuta cuando todos los scripts han cargado
+  document.addEventListener('DOMContentLoaded', async function() {
+    viewDate  = new Date();
+    calDate   = new Date();
+    hiitDate  = new Date();
+    await initLogin();
+    
+    // Cerrar modales al hacer click en el backdrop
+    document.querySelectorAll('.overlay').forEach(overlay => {
+      overlay.addEventListener('click', function(e) {
+        if (e.target === this) this.close();
+      });
+    });
+  });
+</script>
+
+</body>
+</html>

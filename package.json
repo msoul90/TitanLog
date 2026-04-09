@@ -1,0 +1,43 @@
+{
+  "name": "ironlog",
+  "version": "1.0.0",
+  "description": "Progressive Web App for fitness tracking with TypeScript",
+  "main": "dist/app.js",
+  "scripts": {
+    "build": "npx tsc",
+    "dev": "npx tsc --watch",
+    "clean": "rm -rf dist",
+    "type-check": "npx tsc --noEmit",
+    "lint": "eslint src/**/*.ts --ext .ts",
+    "lint:fix": "eslint src/**/*.ts --ext .ts --fix",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "predeploy": "npm run build",
+    "deploy": "npx gh-pages -d _site"
+  },
+  "keywords": [
+    "fitness",
+    "pwa",
+    "typescript",
+    "workout-tracker"
+  ],
+  "author": "IronLog Team",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "@typescript-eslint/parser": "^8.58.1",
+    "@vitest/coverage-v8": "^4.1.4",
+    "eslint": "^8.0.0",
+    "happy-dom": "^20.8.9",
+    "typescript": "^5.0.0",
+    "vitest": "^4.1.4"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.0.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}
