@@ -81,8 +81,9 @@ export function getCurrentProfile(): UserProfile | null {
  */
 async function loadGymMonth(year: number, month: number): Promise<void> {
   try {
+    const lastDay = new Date(year, month + 1, 0).getDate();
     const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const to = `${year}-${String(month + 1).padStart(2, '0')}-31`;
+    const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     const { data, error } = await sb.from('gym_sessions')
       .select('date, exercises, id')
@@ -245,8 +246,9 @@ function gBW(): BodyWeightData {
  */
 async function loadHiitMonth(year: number, month: number): Promise<void> {
   try {
+    const lastDay = new Date(year, month + 1, 0).getDate();
     const from = `${year}-${String(month + 1).padStart(2, '0')}-01`;
-    const to = `${year}-${String(month + 1).padStart(2, '0')}-31`;
+    const to = `${year}-${String(month + 1).padStart(2, '0')}-${String(lastDay).padStart(2, '0')}`;
 
     const { data, error } = await sb.from('hiit_sessions')
       .select('*')

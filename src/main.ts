@@ -4,6 +4,16 @@
 // en window, luego inicializa la app.
 // ============================================================
 
+// toast — notificación temporal en pantalla
+function toast(msg: string): void {
+  const el = document.getElementById('toast');
+  if (!el) return;
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+(globalThis as any).toast = toast;
+
 import './db.js'
 import './app.js'
 import './gym.js'
@@ -27,16 +37,16 @@ function openAdd(): void {
   const drop = document.getElementById('acDrop');
   if (drop) drop.style.display = 'none';
 
-  (window as any).openM('exMod');
+  (globalThis as any).openM('exMod');
 }
-(window as any).openAdd = openAdd;
+(globalThis as any).openAdd = openAdd;
 
 document.addEventListener('DOMContentLoaded', async () => {
-  (window as any).viewDate = new Date();
-  (window as any).calDate  = new Date();
-  (window as any).hiitDate = new Date();
+  (globalThis as any).viewDate = new Date();
+  (globalThis as any).calDate  = new Date();
+  (globalThis as any).hiitDate = new Date();
 
-  await (window as any).initLogin();
+  await (globalThis as any).initLogin();
 
   // Cierra modales al hacer click en el backdrop
   document.querySelectorAll('.overlay').forEach(overlay => {
