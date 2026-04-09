@@ -21,6 +21,7 @@ yarn-error.log*
 
 # ── Build Output ──
 dist/
+_site/
 
 # ── Tests ──
 coverage/
@@ -32,6 +33,7 @@ coverage/
 
 # ── Temporary / OS Artifacts ──
 *.log
+*.zip
 *.tmp
 *.swp
 *.swo
