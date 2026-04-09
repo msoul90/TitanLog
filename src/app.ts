@@ -93,6 +93,14 @@ const appState: AppState = {
 // Short alias used internally for the PR cache
 const prCache = appState.personalRecordCache;
 
+// Capture DB-backed getters registered by db.ts before this module overwrites globals.
+const dbGetGymData = typeof (globalThis as any).gD === 'function'
+  ? ((globalThis as any).gD as () => Record<string, Exercise[]>)
+  : null;
+const dbGetBodyWeightData = typeof (globalThis as any).gBW === 'function'
+  ? ((globalThis as any).gBW as () => Record<string, BodyWeightEntry>)
+  : null;
+
 // Global variables defined in db.ts
 // Inicializados como null; db.ts los sobreescribe vía window en el navegador
 let currentUser: UserProfile | null = null;
@@ -113,6 +121,14 @@ function sD(data: Record<string, Exercise[]>): void {
  * @returns Exercise data object
  */
 function gD(): Record<string, Exercise[]> {
+  if (dbGetGymData) {
+    try {
+      return dbGetGymData();
+    } catch {
+      // Fallback to localStorage below.
+    }
+  }
+
   try {
     const data = localStorage.getItem(STORAGE_KEYS.GYM_DATA_PREFIX + (currentUser?.id || ''));
     return data ? JSON.parse(data) : {};
@@ -134,6 +150,14 @@ function sBW(data: Record<string, BodyWeightEntry>): void {
  * @returns Body weight data object
  */
 function gBW(): Record<string, BodyWeightEntry> {
+  if (dbGetBodyWeightData) {
+    try {
+      return dbGetBodyWeightData();
+    } catch {
+      // Fallback to localStorage below.
+    }
+  }
+
   try {
     const data = localStorage.getItem(STORAGE_KEYS.BODY_WEIGHT_PREFIX + (currentUser?.id || ''));
     return data ? JSON.parse(data) : {};
