@@ -216,6 +216,96 @@ function renderToday(): void {
   }
 }
 
+function hideAutocomplete(): void {
+  const drop = document.getElementById('acDrop');
+  if (!drop) return;
+
+  drop.innerHTML = '';
+  drop.style.display = 'none';
+  appState.autocompleteSelectedIndex = -1;
+}
+
+function applyAutocompleteSelection(index: number): void {
+  const option = appState.exerciseListCache[index];
+  const nameInput = document.getElementById('fName') as HTMLInputElement | null;
+  if (!option || !nameInput) return;
+
+  nameInput.value = option.n;
+  hideAutocomplete();
+}
+
+function renderAutocompleteResults(results: ExerciseDatabaseEntry[]): void {
+  const drop = document.getElementById('acDrop');
+  if (!drop) return;
+
+  if (results.length === 0) {
+    hideAutocomplete();
+    return;
+  }
+
+  appState.exerciseListCache = results;
+  appState.autocompleteSelectedIndex = -1;
+  drop.innerHTML = '';
+
+  results.forEach((exercise, index) => {
+    const item = document.createElement('button');
+    item.type = 'button';
+    item.className = 'ac-it';
+    item.innerHTML = `<span>${escHtml(exercise.n)}</span><span class="ac-mu">${escHtml(exercise.m)}</span>`;
+    item.addEventListener('click', () => applyAutocompleteSelection(index));
+    drop.appendChild(item);
+  });
+
+  drop.style.display = 'block';
+}
+
+function acIn(value: string): void {
+  const query = value.trim().toLowerCase();
+  if (query.length < 2) {
+    hideAutocomplete();
+    return;
+  }
+
+  const results = EXERCISE_DATABASE
+    .filter(exercise => exercise.n.toLowerCase().includes(query))
+    .slice(0, 8);
+
+  renderAutocompleteResults(results);
+}
+
+function acKey(event: KeyboardEvent): void {
+  const drop = document.getElementById('acDrop');
+  if (!drop || drop.style.display === 'none' || appState.exerciseListCache.length === 0) {
+    return;
+  }
+
+  const items = Array.from(drop.querySelectorAll('.ac-it')) as HTMLElement[];
+  if (items.length === 0) return;
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault();
+    appState.autocompleteSelectedIndex = (appState.autocompleteSelectedIndex + 1) % items.length;
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault();
+    appState.autocompleteSelectedIndex = (appState.autocompleteSelectedIndex - 1 + items.length) % items.length;
+  } else if (event.key === 'Enter') {
+    if (appState.autocompleteSelectedIndex >= 0) {
+      event.preventDefault();
+      applyAutocompleteSelection(appState.autocompleteSelectedIndex);
+    }
+    return;
+  } else if (event.key === 'Escape') {
+    hideAutocomplete();
+    return;
+  } else {
+    return;
+  }
+
+  items.forEach((item, index) => {
+    item.classList.toggle('hi', index === appState.autocompleteSelectedIndex);
+  });
+}
+
 // ── UTILITY FUNCTIONS ──
 
 /**
@@ -328,6 +418,22 @@ function showS(name: string, btn: HTMLElement): void {
   });
   btn.classList.add('active');
   btn.setAttribute('aria-current', 'page');
+
+  const fabButton = document.getElementById('fabBtn');
+  if (fabButton) {
+    fabButton.style.display = name === 'today' ? 'flex' : 'none';
+  }
+
+  if (name === 'today') {
+    renderToday();
+  } else if (name === 'hiit') {
+    (globalThis as any).renderHiit?.();
+    (globalThis as any).renderHiitProgress?.();
+  } else if (name === 'calendar') {
+    (globalThis as any).renderCal?.();
+  } else if (name === 'progress') {
+    (globalThis as any).renderProg?.();
+  }
 
   // Update URL hash
   globalThis.location.hash = `#${name}`;
@@ -453,6 +559,8 @@ export {
   initTheme,
   openM,
   closeM,
+  acIn,
+  acKey,
   showS,
   changeDay,
   validateExerciseInput,
@@ -472,6 +580,8 @@ export {
 (globalThis as any).initTheme = initTheme;
 (globalThis as any).openM = openM;
 (globalThis as any).closeM = closeM;
+(globalThis as any).acIn = acIn;
+(globalThis as any).acKey = acKey;
 (globalThis as any).showS = showS;
 (globalThis as any).changeDay = changeDay;
 (globalThis as any).validateExerciseInput = validateExerciseInput;

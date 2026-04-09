@@ -349,6 +349,7 @@ export async function loadHiitSessions(startDate: string, endDate: string): Prom
 (globalThis as any).openHiitModal = openHiitModal;
 (globalThis as any).openHiitMod = openHiitModal;
 (globalThis as any).editHiitSession = editHiitSession;
+(globalThis as any).renderHiit = renderHiit;
 (globalThis as any).renderHiitProgress = renderHiitProgress;
 (globalThis as any).hiitChangeDay = (dir: number): void => {
   const next = new Date(hiitDate);

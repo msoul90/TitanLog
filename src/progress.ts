@@ -79,15 +79,23 @@ function deltaHtml(current: number | null, previous: number | null, unit: string
   if (current == null) return '';
   if (previous == null) return '<div class="bc-lc-delta neu">-</div>';
 
-  const diff = (current - previous).toFixed(1);
-  const isIncrease = Number.parseFloat(diff) > 0;
+  const diffValue = current - previous;
+  const diff = diffValue.toFixed(1);
+  const isIncrease = diffValue > 0;
   const isGoodChange = !invertColor;
   let cssClass = 'neu';
   if (diff !== '0.0') {
     cssClass = isIncrease === isGoodChange ? 'up' : 'dn';
   }
 
-  return `<div class="bc-lc-delta ${cssClass}">${isIncrease ? '?' : '?'} ${Math.abs(Number.parseFloat(diff))} ${unit}</div>`;
+  let deltaPrefix = '';
+  if (diffValue > 0) {
+    deltaPrefix = '+';
+  } else if (diffValue < 0) {
+    deltaPrefix = '-';
+  }
+
+  return `<div class="bc-lc-delta ${cssClass}">${deltaPrefix} ${Math.abs(diffValue).toFixed(1)} ${unit}</div>`;
 }
 
 /**
@@ -834,6 +842,7 @@ function showToast(message: string, type: string = 'info'): void {
 }
 
 // Make functions available globally for onclick handlers
+(globalThis as any).renderProg = renderProg;
 (globalThis as any).expJSON = expJSON;
 (globalThis as any).expCSV = expCSV;
 (globalThis as any).impData = impData;
