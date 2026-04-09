@@ -6,10 +6,10 @@ import { BodyWeightEntry } from './types.js';
 import { appState, gBW } from './app.js';
 import { dk, saveBWDay } from './db.js';
 
-declare const toast: (msg: string) => void;
-declare function openM(modalId: string): void;
-declare function closeM(modalId: string): void;
-declare function renderToday(): void;
+const toast = (msg: string): void => (globalThis as any).toast?.(msg);
+const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
+const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
+const renderToday = (): void => (globalThis as any).renderToday?.();
 
 // ── CONSTANTS ──
 

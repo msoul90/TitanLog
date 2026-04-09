@@ -1,21 +1,21 @@
 import { HIITSession, HIITExercise } from './types.js';
 import { dk, saveHiitSession } from './db.js';
 
-declare function escHtml(value: string): string;
-declare function showToast(message: string, type?: string): void;
-declare function openM(modalId: string): void;
-declare function closeM(modalId: string): void;
+const escHtml = (value: string): string => (globalThis as any).escHtml?.(value) ?? value;
+const showToast = (message: string, _type?: string): void => (globalThis as any).toast?.(message);
+const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
+const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 
 // DOM IDs constants
 const DOM_IDS = {
-  HIIT_MOD: 'hiit-mod',
-  HIIT_MOD_TTL: 'hiit-mod-ttl',
-  H_NAME: 'h-name',
-  H_ROUNDS: 'h-rounds',
-  H_DURATION: 'h-duration',
-  H_NOTES: 'h-notes',
-  HIIT_EX_LIST: 'hiit-ex-list',
-  RPE_ROW: 'rpe-row'
+  HIIT_MOD: 'hiitMod',
+  HIIT_MOD_TTL: 'hiitModTtl',
+  H_NAME: 'hName',
+  H_ROUNDS: 'hRounds',
+  H_DURATION: 'hDuration',
+  H_NOTES: 'hNotes',
+  HIIT_EX_LIST: 'hiitExList',
+  RPE_ROW: 'rpeRow'
 } as const;
 
 // Global variables with proper typing
@@ -39,7 +39,7 @@ export function renderHiitProgress(): void {
   const hiitList = document.getElementById('hiitList');
   if (!hiitList) return;
 
-  const currentDate = dk(new Date());
+  const currentDate = dk(new Date(hiitDate));
   const sessions = hiitCache[currentDate] || [];
 
   if (sessions.length === 0) {
@@ -58,7 +58,7 @@ export function renderHiitProgress(): void {
 export function renderHiit(date?: string): void {
   if (date) hiitDate = date;
 
-  const hiitContainer = document.getElementById('hiit-container');
+  const hiitContainer = document.getElementById('hiitList');
   if (!hiitContainer) return;
 
   const key = dk(new Date(hiitDate));
@@ -347,8 +347,22 @@ export async function loadHiitSessions(startDate: string, endDate: string): Prom
 
 // Make functions available globally for onclick handlers
 (window as any).openHiitModal = openHiitModal;
+(window as any).openHiitMod = openHiitModal;
 (window as any).editHiitSession = editHiitSession;
 (window as any).renderHiitProgress = renderHiitProgress;
+(window as any).hiitChangeDay = (dir: number): void => {
+  const next = new Date(hiitDate);
+  next.setDate(next.getDate() + dir);
+  hiitDate = dk(next);
+  (globalThis as any).hiitDate = next;
+
+  const hiitLabel = document.getElementById('hiitLabel');
+  const hiitSub = document.getElementById('hiitSub');
+  if (hiitLabel) hiitLabel.textContent = `HIIT - ${next.getDate()}/${next.getMonth() + 1}/${next.getFullYear()}`;
+  if (hiitSub) hiitSub.textContent = '';
+
+  renderHiitProgress();
+};
 (window as any).deleteHiitSession = deleteHiitSession;
 (window as any).saveHiitSessionModal = saveHiitSessionModal;
 (window as any).selectRPE = selectRPE;

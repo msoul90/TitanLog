@@ -25,16 +25,13 @@ const PROFILE_COLORS: readonly string[] = ['#aaff45','#ff9f43','#45c8ff','#ff6bb
 
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// For backward compatibility
-declare const toast: (msg: string) => void;
-declare function openM(modalId: string): void;
-declare function closeM(modalId: string): void;
-declare function initTheme(): void;
-declare function renderToday(): void;
-declare function renderHiitProgress(): void;
-declare var viewDate: Date;
-declare var calDate: Date;
-declare var hiitDate: Date;
+// Runtime-safe global wrappers for browser module execution
+const toast = (msg: string): void => (globalThis as any).toast?.(msg);
+const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
+const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
+const initTheme = (): void => (globalThis as any).initTheme?.();
+const renderToday = (): void => (globalThis as any).renderToday?.();
+const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
 
 
 // ── ESTADO GLOBAL ──
@@ -655,9 +652,9 @@ async function enterApp(user: User): Promise<void> {
     showLoading(false);
     initTheme();
     applyUser();
-    viewDate = new Date();
-    calDate = new Date();
-    hiitDate = new Date();
+    (globalThis as any).viewDate = new Date();
+    (globalThis as any).calDate = new Date();
+    (globalThis as any).hiitDate = new Date();
     renderToday();
     renderHiitProgress();
 

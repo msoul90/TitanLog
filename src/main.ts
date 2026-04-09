@@ -41,6 +41,62 @@ function openAdd(): void {
 }
 (globalThis as any).openAdd = openAdd;
 
+function dateKey(date: Date): string {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+}
+
+async function saveEx(): Promise<void> {
+  const name = (document.getElementById('fName') as HTMLInputElement | null)?.value.trim() || '';
+  const reps = (document.getElementById('fR') as HTMLInputElement | null)?.value.trim() || '';
+
+  if (!name) {
+    toast('Escribe el nombre del ejercicio');
+    return;
+  }
+  if (!reps) {
+    toast('Escribe las repeticiones');
+    return;
+  }
+
+  const weightValue = (document.getElementById('fW') as HTMLInputElement | null)?.value.trim() || '';
+  const setsValue = (document.getElementById('fS') as HTMLInputElement | null)?.value.trim() || '';
+  const noteValue = (document.getElementById('fN') as HTMLInputElement | null)?.value.trim() || '';
+  const unitValue = (document.getElementById('fU') as HTMLSelectElement | null)?.value || 'lb';
+
+  const currentViewDate = ((globalThis as any).viewDate as Date | undefined) ?? new Date();
+  const key = dateKey(currentViewDate);
+  const data = ((globalThis as any).gD?.() as Record<string, any[]> | undefined) ?? {};
+  const daily = Array.isArray(data[key]) ? data[key] : [];
+
+  daily.push({
+    name,
+    weight: weightValue === '' ? null : weightValue,
+    unit: unitValue,
+    sets: setsValue === '' ? undefined : setsValue,
+    reps,
+    notes: noteValue === '' ? undefined : noteValue,
+    ts: Date.now()
+  });
+
+  if ((globalThis as any).saveGymDay) {
+    await (globalThis as any).saveGymDay(key, daily);
+  } else if ((globalThis as any).sD) {
+    data[key] = daily;
+    (globalThis as any).sD(data);
+  }
+
+  (globalThis as any).closeM?.('exMod');
+  (globalThis as any).renderToday?.();
+  toast('Ejercicio guardado ✓');
+}
+(globalThis as any).saveEx = saveEx;
+
+// Backward compatibility aliases for legacy HTML handlers
+(globalThis as any).openHiitMod = () => (globalThis as any).openHiitModal?.();
+(globalThis as any).adjustHiitTimer = () => toast('Temporizador HIIT disponible pronto');
+(globalThis as any).toggleHiitTimer = () => toast('Temporizador HIIT disponible pronto');
+(globalThis as any).resetHiitTimer = () => toast('Temporizador HIIT disponible pronto');
+
 document.addEventListener('DOMContentLoaded', async () => {
   (globalThis as any).viewDate = new Date();
   (globalThis as any).calDate  = new Date();

@@ -4,9 +4,9 @@
 
 import { ExerciseGuide } from './types.js';
 
-declare const toast: (msg: string) => void;
-declare function openM(modalId: string): void;
-declare function closeM(modalId: string): void;
+const toast = (msg: string): void => (globalThis as any).toast?.(msg);
+const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
+const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 
 // ── CONSTANTS ──
 
