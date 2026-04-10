@@ -46,3 +46,7 @@ coverage/
 config.local.js
 secrets.js
 js_backup/
+
+# ── Supabase ──
+supabase/.temp/
+supabase/templates/
