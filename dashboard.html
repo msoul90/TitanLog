@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TitanLog — Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<link rel="stylesheet" href="/src/dashboard/dashboard.css">
+</head>
+<body>
+
+<!-- ─── AUTH ─────────────────────────────────────────────────── -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">TitanLog</div>
+    <div class="auth-sub">Dashboard de administración</div>
+    <label class="auth-label" for="auth-email">Email</label>
+    <input class="auth-input" id="auth-email" type="email" placeholder="trainer@gym.com" autocomplete="email">
+    <label class="auth-label" for="auth-password">Contraseña</label>
+    <input class="auth-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password">
+    <button class="auth-btn" id="auth-submit">Iniciar sesión</button>
+    <div class="auth-error" id="auth-error"></div>
+  </div>
+</div>
+
+<!-- ─── NO ACCESS ─────────────────────────────────────────────── -->
+<div id="noaccess-screen">
+  <div class="noaccess-card">
+    <div class="noaccess-logo">TitanLog</div>
+    <div class="noaccess-icon">🔒</div>
+    <div class="noaccess-title">Acceso denegado</div>
+    <div class="noaccess-msg">Tu cuenta no tiene acceso al dashboard de administración. Contacta al administrador del gym.</div>
+    <button class="noaccess-btn" id="noaccess-signout">Cerrar sesión</button>
+  </div>
+</div>
+
+<!-- ─── APP ───────────────────────────────────────────────────── -->
+<div id="app">
+
+  <div id="sidebar-overlay"></div>
+
+  <!-- SIDEBAR -->
+  <nav id="sidebar">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-text">TitanLog</div>
+      <div class="sidebar-logo-sub">Admin Dashboard</div>
+    </div>
+    <div class="sidebar-nav">
+      <button class="nav-item active" data-page="resumen">
+        <span class="nav-icon">📊</span> Resumen
+      </button>
+      <button class="nav-item" data-page="miembros">
+        <span class="nav-icon">👥</span> Miembros
+      </button>
+      <button class="nav-item" data-page="progreso">
+        <span class="nav-icon">📈</span> Progreso
+      </button>
+      <button class="nav-item" data-page="ejercicios">
+        <span class="nav-icon">🏋️</span> Ejercicios
+      </button>
+      <button class="nav-item" data-page="actividad">
+        <span class="nav-icon">📅</span> Actividad
+      </button>
+      <button class="nav-item" data-page="admin">
+        <span class="nav-icon">🔑</span> Acceso
+      </button>
+    </div>
+    <div class="sidebar-user">
+      <div class="sidebar-user-avatar" id="sidebar-avatar">A</div>
+      <div>
+        <div class="sidebar-user-name" id="sidebar-name">Admin</div>
+        <div class="sidebar-user-role">Administrador</div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- TOPBAR -->
+  <header id="topbar">
+    <button class="topbar-hamburger" id="hamburger">☰</button>
+    <div class="topbar-title" id="topbar-title">Resumen</div>
+    <input id="topbar-search" type="text" placeholder="Buscar miembro..." style="display:none">
+    <button class="topbar-btn" id="theme-toggle" title="">
+      <span id="theme-icon">☀️</span>
+      <span class="tooltip" id="theme-tooltip">Cambiar a modo claro</span>
+    </button>
+    <button class="topbar-btn" id="refresh-btn">
+      <span>↻</span>
+      <span class="tooltip">Actualizar datos</span>
+    </button>
+    <button class="signout-btn" id="signout-btn">Cerrar sesión</button>
+  </header>
+
+  <!-- MAIN -->
+  <main id="main">
+
+    <!-- ── PAGE: RESUMEN ─────────────────────────────────────── -->
+    <div id="page-resumen" class="page active">
+      <div class="grid-4 mb-20" id="kpi-grid">
+        <div class="stat-card accent skeleton-parent" id="kpi-activos">
+          <div class="stat-label">Miembros activos</div>
+          <div class="stat-value" id="kpi-activos-val">—</div>
+          <div class="stat-sub">Últimos 7 días</div>
+        </div>
+        <div class="stat-card accent2" id="kpi-hoy">
+          <div class="stat-label">Sesiones hoy</div>
+          <div class="stat-value" id="kpi-hoy-val">—</div>
+          <div class="stat-sub" id="kpi-hoy-date">—</div>
+        </div>
+        <div class="stat-card accent3" id="kpi-prs">
+          <div class="stat-label">PRs este mes</div>
+          <div class="stat-value" id="kpi-prs-val">—</div>
+          <div class="stat-sub">Récords personales</div>
+        </div>
+        <div class="stat-card warn" id="kpi-inactivos">
+          <div class="stat-label">Inactivos 7+ días</div>
+          <div class="stat-value" id="kpi-inactivos-val">—</div>
+          <div class="stat-sub">Sin sesiones recientes</div>
+        </div>
+      </div>
+
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-title">Sesiones — últimas 4 semanas</div>
+          <div class="chart-wrap">
+            <canvas id="chart-sessions"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Top 8 ejercicios más populares</div>
+          <div id="top-exercises-list"></div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">Actividad reciente</div>
+          <div id="activity-feed"></div>
+        </div>
+        <div class="card">
+          <div class="card-title">PRs del mes</div>
+          <div id="pr-feed"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: MIEMBROS ────────────────────────────────────── -->
+    <div id="page-miembros" class="page">
+      <div class="flex-ac justify-between mb-16">
+        <div></div>
+        <button class="topbar-btn" id="export-csv-btn" style="border-color:var(--border2)">
+          ⬇ Exportar CSV
+        </button>
+      </div>
+      <div class="card">
+        <div class="table-scroll">
+          <table class="data-table" id="members-table">
+            <thead>
+              <tr>
+                <th>Miembro</th>
+                <th>Última sesión</th>
+                <th>Sesiones mes</th>
+                <th>Actividad 28d</th>
+                <th>Mejor PR</th>
+                <th>Estado</th>
+              </tr>
+            </thead>
+            <tbody id="members-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: PROGRESO ────────────────────────────────────── -->
+    <div id="page-progreso" class="page">
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-title">Peso corporal promedio (gym)</div>
+          <div class="chart-wrap">
+            <canvas id="chart-weight-avg"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">% Grasa promedio (gym)</div>
+          <div class="chart-wrap">
+            <canvas id="chart-fat-avg"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title mb-16">Métricas individuales</div>
+        <div class="table-scroll">
+          <table class="data-table" id="progress-table">
+            <thead>
+              <tr>
+                <th>Miembro</th>
+                <th>Fecha</th>
+                <th>Peso</th>
+                <th>% Grasa</th>
+                <th>% Músculo</th>
+                <th>Masa grasa</th>
+                <th>Masa muscular</th>
+              </tr>
+            </thead>
+            <tbody id="progress-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: EJERCICIOS ──────────────────────────────────── -->
+    <div id="page-ejercicios" class="page">
+      <div class="grid-2 mb-20">
+        <div class="card">
+          <div class="card-title">Top 12 ejercicios</div>
+          <div class="chart-wrap tall">
+            <canvas id="chart-top-exercises"></canvas>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-title">Distribución por grupo muscular</div>
+          <div class="chart-wrap">
+            <canvas id="chart-muscle-group"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title mb-16">Todos los ejercicios</div>
+        <div class="table-scroll">
+          <table class="data-table" id="exercises-table">
+            <thead>
+              <tr>
+                <th>Ejercicio</th>
+                <th>Frecuencia total</th>
+                <th>Miembros únicos</th>
+                <th>Grupo muscular</th>
+              </tr>
+            </thead>
+            <tbody id="exercises-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ACTIVIDAD ───────────────────────────────────── -->
+    <div id="page-actividad" class="page">
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title mb-16">Últimas 30 sesiones</div>
+          <div id="activity-log"></div>
+        </div>
+        <div class="card">
+          <div class="card-title mb-16">Heatmap 12 semanas</div>
+          <div class="heatmap-12w" id="heatmap-12w"></div>
+          <div class="flex-ac gap-8 mt-4" style="margin-top:10px">
+            <span class="text-xs text3">Menos</span>
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--surface3)"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.35"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--accent);opacity:.65"></div>
+            <div style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></div>
+            <span class="text-xs text3">Más</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: ADMIN ───────────────────────────────────────── -->
+    <div id="page-admin" class="page">
+      <div class="card">
+        <div class="flex-ac justify-between mb-16">
+          <div class="card-title mb-0">Gestión de acceso al dashboard</div>
+          <input class="search-input" id="admin-search" type="text" placeholder="Buscar por nombre…">
+        </div>
+        <div class="text-sm text3 mb-16" style="background:var(--surface2);padding:10px 14px;border-radius:var(--radius-sm)">
+          Los admins acceden al dashboard. Los miembros solo a la app de entrenamiento.
+        </div>
+        <div class="table-scroll">
+          <table class="data-table" id="admin-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acceso dashboard</th>
+              </tr>
+            </thead>
+            <tbody id="admin-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ── DETAIL PANEL ─────────────────────────────────────────── -->
+<div id="detail-overlay"></div>
+<aside id="detail-panel">
+  <div class="detail-header">
+    <div class="avatar" id="detail-avatar" style="width:42px;height:42px;font-size:1rem">A</div>
+    <div>
+      <div class="detail-name" id="detail-name">—</div>
+      <div class="text-sm text3" id="detail-email">—</div>
+    </div>
+    <button class="detail-close" id="detail-close">✕</button>
+  </div>
+  <div class="detail-body">
+    <div class="mini-stats">
+      <div class="mini-stat">
+        <div class="mini-stat-val" id="detail-sessions">—</div>
+        <div class="mini-stat-lbl">Sesiones mes</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-val" id="detail-prs">—</div>
+        <div class="mini-stat-lbl">PRs mes</div>
+      </div>
+      <div class="mini-stat">
+        <div class="mini-stat-val" id="detail-streak">—</div>
+        <div class="mini-stat-lbl">Racha días</div>
+      </div>
+    </div>
+
+    <div class="card-title">Actividad 28 días</div>
+    <div class="heatmap mb-20" id="detail-heatmap" style="margin-bottom:16px"></div>
+
+    <div class="card-title">Peso corporal</div>
+    <div class="chart-wrap" style="margin-bottom:16px">
+      <canvas id="chart-member-weight"></canvas>
+    </div>
+
+    <div class="card-title">Mejores cargas por ejercicio</div>
+    <div id="detail-prs-list"></div>
+  </div>
+</aside>
+
+<!-- ── TOAST CONTAINER ─────────────────────────────────────── -->
+<div id="toast-container"></div>
+
+<script type="module" src="/src/dashboard/main.ts"></script>
+</body>
+</html>
+
