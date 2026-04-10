@@ -7,6 +7,7 @@ type MockState = {
   signInError: { message: string } | null;
   resetThrow: boolean;
   resetError: { message: string } | null;
+  signOutThrow: boolean;
   updateUserError: { message: string } | null;
   profileExists: boolean;
   profileInsertError: boolean;
@@ -38,6 +39,7 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
     signInError: null,
     resetThrow: false,
     resetError: null,
+    signOutThrow: false,
     updateUserError: null,
     profileExists: true,
     profileInsertError: false,
@@ -217,6 +219,9 @@ vi.mock('@supabase/supabase-js', () => {
         }),
         updateUser: vi.fn(async () => ({ error: mockState.updateUserError })),
         signOut: vi.fn(async () => {
+          if (mockState.signOutThrow) {
+            throw new Error('signout failed');
+          }
           signOutCalls.count += 1;
           return { error: null };
         }),
@@ -237,6 +242,7 @@ describe('db.ts', () => {
     mockState.signInError = null;
     mockState.resetThrow = false;
     mockState.resetError = null;
+    mockState.signOutThrow = false;
     mockState.updateUserError = null;
     mockState.profileExists = true;
     mockState.profileInsertError = false;
@@ -816,6 +822,22 @@ describe('db.ts', () => {
     expect(signOutCalls.count).toBe(1);
     expect(Object.keys(gD())).toHaveLength(0);
     expect(reloadSpy).toHaveBeenCalled();
+  });
+
+  it('doLogout recarga aun si signOut falla', async () => {
+    const { enterApp, saveGymDay, doLogout, gD } = await import('../db.js');
+    (globalThis as any).confirm = vi.fn(() => true);
+    mockState.signOutThrow = true;
+    const reloadSpy = vi.spyOn(globalThis.location, 'reload').mockImplementation(() => {});
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await saveGymDay('2026-04-09', [{ name: 'Press', reps: '8', ts: 1 } as any]);
+
+    await doLogout();
+
+    expect(Object.keys(gD())).toHaveLength(0);
+    expect(reloadSpy).toHaveBeenCalled();
+    expect((globalThis as any).toast).toHaveBeenCalled();
   });
 
   it('enterApp maneja error en render final', async () => {

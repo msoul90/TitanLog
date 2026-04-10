@@ -1006,8 +1006,15 @@ function clearCache(): void {
 async function doLogout(): Promise<void> {
   if (!confirm('¿Cerrar sesión?')) return;
   clearCache();
-  await sb.auth.signOut();
-  location.reload();
+
+  try {
+    await sb.auth.signOut();
+  } catch (err) {
+    console.error('Error during sign out:', err);
+    toast('No se pudo cerrar sesión en el servidor, pero saliste localmente.');
+  } finally {
+    globalThis.location.reload();
+  }
 }
 
 /**

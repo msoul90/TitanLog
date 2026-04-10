@@ -231,9 +231,16 @@ export function getCurrentUser(): AuthUser | null {
 }
 
 export async function signOut(): Promise<void> {
-  await sb.auth.signOut();
   currentUser = null;
   showScreen('auth');
+
+  // Always return to login UI, even if remote sign-out fails.
+  try {
+    await sb.auth.signOut();
+  } catch (error) {
+    console.error('Error while signing out:', getErrorMessage(error));
+    setAuthError('No se pudo cerrar sesión en el servidor, pero saliste localmente.');
+  }
 }
 
 export async function initAuth(onAuthorized: () => Promise<void> | void): Promise<void> {
