@@ -117,4 +117,26 @@ describe('guides.ts', () => {
     expect(document.getElementById('stSteps')?.innerHTML).toContain('guide-step');
     expect((globalThis as any).openM).toHaveBeenCalledWith('stretchMod');
   });
+
+  it('escapa contenido dinamico en catalogo y detalle', () => {
+    GUIDES['Ejercicio <img src=x onerror=alert(1)>'] = {
+      emoji: '<svg onload=alert(1)>',
+      primary: ['Pecho<script>'],
+      secondary: ['Triceps<img>'],
+      steps: ['Paso <b>1</b>'],
+      errors: ['Error <img src=x>'],
+      tips: ['Tip <script>alert(1)</script>'],
+    } as any;
+
+    renderGuidesCatalog('Ejercicio <img');
+    expect(document.getElementById('cfgGuideList')?.innerHTML).not.toContain('<img');
+    expect(document.getElementById('cfgGuideList')?.innerHTML).toContain('decodeURIComponent(');
+
+    openGuide('Ejercicio <img src=x onerror=alert(1)>');
+    expect(document.getElementById('gSteps')?.innerHTML).toContain('&lt;b&gt;1&lt;/b&gt;');
+    expect(document.getElementById('gErrors')?.innerHTML).not.toContain('<img');
+    expect(document.getElementById('gTips')?.innerHTML).not.toContain('<script>');
+
+    delete GUIDES['Ejercicio <img src=x onerror=alert(1)>'];
+  });
 });

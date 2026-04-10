@@ -106,18 +106,18 @@ const dbGetBodyWeightData = typeof (globalThis as any).gBW === 'function'
 let currentUser: UserProfile | null = null;
 let currentProfile: UserProfile | null = null;
 
-// STORAGE (localStorage — usado solo para import/demo offline)
+// STORAGE (sessionStorage — fallback temporal para import/demo offline)
 
 /**
- * Saves gym data to localStorage
+ * Saves gym data to sessionStorage
  * @param data - Exercise data object
  */
 function sD(data: Record<string, Exercise[]>): void {
-  localStorage.setItem(STORAGE_KEYS.GYM_DATA_PREFIX + (currentUser?.id || ''), JSON.stringify(data));
+  sessionStorage.setItem(STORAGE_KEYS.GYM_DATA_PREFIX + (currentUser?.id || ''), JSON.stringify(data));
 }
 
 /**
- * Loads gym data from localStorage
+ * Loads gym data from sessionStorage
  * @returns Exercise data object
  */
 function gD(): Record<string, Exercise[]> {
@@ -125,12 +125,12 @@ function gD(): Record<string, Exercise[]> {
     try {
       return dbGetGymData();
     } catch {
-      // Fallback to localStorage below.
+      // Fallback to sessionStorage below.
     }
   }
 
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.GYM_DATA_PREFIX + (currentUser?.id || ''));
+    const data = sessionStorage.getItem(STORAGE_KEYS.GYM_DATA_PREFIX + (currentUser?.id || ''));
     return data ? JSON.parse(data) : {};
   } catch {
     return {};
@@ -138,15 +138,15 @@ function gD(): Record<string, Exercise[]> {
 }
 
 /**
- * Saves body weight data to localStorage
+ * Saves body weight data to sessionStorage
  * @param data - Body weight data object
  */
 function sBW(data: Record<string, BodyWeightEntry>): void {
-  localStorage.setItem(STORAGE_KEYS.BODY_WEIGHT_PREFIX + (currentUser?.id || ''), JSON.stringify(data));
+  sessionStorage.setItem(STORAGE_KEYS.BODY_WEIGHT_PREFIX + (currentUser?.id || ''), JSON.stringify(data));
 }
 
 /**
- * Loads body weight data from localStorage
+ * Loads body weight data from sessionStorage
  * @returns Body weight data object
  */
 function gBW(): Record<string, BodyWeightEntry> {
@@ -154,12 +154,12 @@ function gBW(): Record<string, BodyWeightEntry> {
     try {
       return dbGetBodyWeightData();
     } catch {
-      // Fallback to localStorage below.
+      // Fallback to sessionStorage below.
     }
   }
 
   try {
-    const data = localStorage.getItem(STORAGE_KEYS.BODY_WEIGHT_PREFIX + (currentUser?.id || ''));
+    const data = sessionStorage.getItem(STORAGE_KEYS.BODY_WEIGHT_PREFIX + (currentUser?.id || ''));
     return data ? JSON.parse(data) : {};
   } catch {
     return {};

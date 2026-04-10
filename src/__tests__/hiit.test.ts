@@ -73,6 +73,21 @@ describe('hiit.ts', () => {
     expect(document.getElementById('hiitList')?.innerHTML).toContain('No hay sesiones HIIT');
   });
 
+  it('renderHiit blinda ids en acciones inline', async () => {
+    hoisted.setHiitData({
+      '2026-04-09': [
+        { id: `sess' onmouseover='alert(1)`, date: '2026-04-09', name: 'Sprint', exercises: [{ name: 'Sprint' }] },
+      ],
+    });
+
+    renderHiit();
+
+    const html = document.getElementById('hiitList')?.innerHTML || '';
+    expect(html).toContain('data-hiit-action="edit"');
+    expect(html).toContain('sess%27%20onmouseover%3D%27alert(1)');
+    expect(html).not.toContain('onclick=');
+  });
+
   it('openHiitModal abre modal y prepara titulo', () => {
     openHiitModal();
     expect(document.getElementById('hiitModTtl')?.textContent).toContain('Nueva');

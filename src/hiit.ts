@@ -319,7 +319,12 @@ function sessionSortTimestamp(session: HIITSession): number {
   return 0;
 }
 
+function encodeSessionId(value: string): string {
+  return encodeURIComponent(value).replaceAll("'", '%27');
+}
+
 function renderHiitSession(session: HIITSession): string {
+  const encodedSessionId = encodeSessionId(String(session.id || ''));
   const metaChips: string[] = [];
 
   if (session.rounds) {
@@ -351,13 +356,28 @@ function renderHiitSession(session: HIITSession): string {
         <div class="hsc-meta">${metaChips.join('')}</div>
       </div>
       <div class="ex-acts">
-        <button type="button" class="act-btn act-edit" onclick="editHiitSession('${session.id}')">Editar</button>
-        <button type="button" class="act-btn act-del" onclick="deleteHiitSession('${session.id}')">Eliminar</button>
+        <button type="button" class="act-btn act-edit" data-hiit-action="edit" data-session-id="${encodedSessionId}">Editar</button>
+        <button type="button" class="act-btn act-del" data-hiit-action="delete" data-session-id="${encodedSessionId}">Eliminar</button>
       </div>
     </div>
     <div class="hsc-exs">${exercises}</div>
     ${session.notes ? `<div class="hsc-note">📝 ${escHtml(session.notes)}</div>` : ''}
   </article>`;
+}
+
+function bindHiitActionButtons(container: HTMLElement): void {
+  container.querySelectorAll<HTMLButtonElement>('[data-hiit-action][data-session-id]').forEach(button => {
+    button.onclick = null;
+    button.addEventListener('click', () => {
+      const encodedId = button.dataset.sessionId || '';
+      const sessionId = decodeURIComponent(encodedId);
+      if (button.dataset.hiitAction === 'edit') {
+        editHiitSession(sessionId);
+        return;
+      }
+      void deleteHiitSession(sessionId);
+    });
+  });
 }
 
 export function renderHiitProgress(): void {
@@ -376,6 +396,7 @@ export function renderHiitProgress(): void {
   }
 
   listElement.innerHTML = sessions.map(renderHiitSession).join('');
+  bindHiitActionButtons(listElement);
 }
 
 export function renderHiit(date?: string): void {

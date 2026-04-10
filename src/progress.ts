@@ -48,6 +48,12 @@ const EXPORT_CONSTANTS = {
   TOAST_DURATION: 2400
 } as const;
 
+function sanitizeCsvCell(value: string | number | boolean | null | undefined): string {
+  const text = value == null ? '' : String(value);
+  const normalized = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${normalized.replaceAll('"', '""')}"`;
+}
+
 // Type definitions for progress calculations
 interface MonthlyStats {
   trainingDays: number;
@@ -559,13 +565,13 @@ export function expCSV(): void {
       const dailyExercises = exerciseData[dateKey] ?? [];
       for (const exercise of dailyExercises) {
         const row = [
-          `"${dateKey}"`,
-          `"${exercise.name || ''}"`,
-          `"${exercise.weight || ''}"`,
-          `"${exercise.unit || 'lb'}"`,
-          `"${exercise.sets || ''}"`,
-          `"${exercise.reps || ''}"`,
-          `"${exercise.notes || ''}"`
+          sanitizeCsvCell(dateKey),
+          sanitizeCsvCell(exercise.name || ''),
+          sanitizeCsvCell(exercise.weight || ''),
+          sanitizeCsvCell(exercise.unit || 'lb'),
+          sanitizeCsvCell(exercise.sets || ''),
+          sanitizeCsvCell(exercise.reps || ''),
+          sanitizeCsvCell(exercise.notes || '')
         ].join(',');
         csvContent += row + '\n';
       }

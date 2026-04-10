@@ -125,6 +125,7 @@ describe('validateExerciseInput', () => {
 describe('isPR', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     clearPerformanceCache();
   });
 
@@ -143,28 +144,28 @@ describe('isPR', () => {
 
   it('retorna true cuando supera el maximo historico', () => {
     // Historial: 80kg en fecha anterior
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 80, reps: '10', ts: 0 }],
     }));
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(true);
   });
 
   it('retorna false cuando no supera el maximo historico', () => {
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 120, reps: '5', ts: 0 }],
     }));
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(false);
   });
 
   it('retorna false cuando iguala exactamente el maximo', () => {
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Sentadilla', weight: 100, reps: '5', ts: 0 }],
     }));
     expect(isPR('Sentadilla', '2024-01-10', 100)).toBe(false);
   });
 
   it('ignora sesiones de la misma fecha o posteriores', () => {
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-10': [{ name: 'Sentadilla', weight: 200, reps: '1', ts: 0 }],
       '2024-01-15': [{ name: 'Sentadilla', weight: 300, reps: '1', ts: 0 }],
     }));
@@ -173,7 +174,7 @@ describe('isPR', () => {
   });
 
   it('no mezcla ejercicios distintos', () => {
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'Press banca', weight: 120, reps: '5', ts: 0 }],
     }));
     // Sentadilla no tiene historial propio
@@ -181,7 +182,7 @@ describe('isPR', () => {
   });
 
   it('la comparacion de nombre no distingue mayusculas', () => {
-    localStorage.setItem('ironlog_gym_', JSON.stringify({
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
       '2024-01-05': [{ name: 'SENTADILLA', weight: 80, reps: '10', ts: 0 }],
     }));
     expect(isPR('sentadilla', '2024-01-10', 100)).toBe(true);
@@ -191,6 +192,7 @@ describe('isPR', () => {
 describe('app UI helpers', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     document.body.innerHTML = `
       <input id="pw" type="password" />
       <dialog id="m1"></dialog>
@@ -278,19 +280,23 @@ describe('app UI helpers', () => {
     expect(appState.viewDate.getDate()).toBe(10);
   });
 
-  it('sD/gD y sBW/gBW persisten en localStorage', () => {
+  it('sD/gD y sBW/gBW persisten solo en sessionStorage', () => {
     sD({ '2026-04-09': [{ name: 'Press', reps: '8', ts: 1 }] as any });
     const data = gD();
     expect(data['2026-04-09']?.length).toBe(1);
+    expect(localStorage.getItem('ironlog_gym_')).toBeNull();
+    expect(sessionStorage.getItem('ironlog_gym_')).toContain('Press');
 
     sBW({ '2026-04-09': { v: 80, u: 'kg' } as any });
     const bw = gBW();
     expect(bw['2026-04-09']?.v).toBe(80);
+    expect(localStorage.getItem('ironlog_bw_')).toBeNull();
+    expect(sessionStorage.getItem('ironlog_bw_')).toContain('80');
   });
 
   it('gD y gBW devuelven {} si JSON está corrupto', () => {
-    localStorage.setItem('ironlog_gym_', '{');
-    localStorage.setItem('ironlog_bw_', '{');
+    sessionStorage.setItem('ironlog_gym_', '{');
+    sessionStorage.setItem('ironlog_bw_', '{');
 
     expect(gD()).toEqual({});
     expect(gBW()).toEqual({});

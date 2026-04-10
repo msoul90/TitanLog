@@ -8,6 +8,17 @@ const toast = (msg: string): void => (globalThis as any).toast?.(msg);
 const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
 const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 
+function escHtml(value: string | number | boolean | null | undefined): string {
+  const text = value == null ? '' : String(value);
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+function encodeInlineValue(value: string): string {
+  return encodeURIComponent(value).replaceAll("'", '%27');
+}
+
 // ── CONSTANTS ──
 
 /**
@@ -1183,11 +1194,12 @@ function renderStretchCatalog(filter: string = '', categoryFilter: string = 'all
   }
 
   listEl.innerHTML = entries.map(([name, s]) => {
-    const subtitle = s.area.slice(0, 3).join(' · ');
-    const categoryBadge = `<span class="stretch-badge stretch-badge--${s.category}">${STRETCH_CATEGORY_LABELS[s.category]}</span>`;
-    return `<button type="button" class="cfg-row cfg-guide-row" onclick='openStretch(${JSON.stringify(name)})'>
-      <span class="cfg-ic" style="background:var(--accent-dim)">${s.emoji}</span>
-      <span class="cfg-info"><span class="cfg-ttl">${name}</span><span class="cfg-sub cfg-guide-sub">${subtitle} ${categoryBadge}</span></span>
+    const encodedName = encodeInlineValue(name);
+    const subtitle = escHtml(s.area.slice(0, 3).join(' · '));
+    const categoryBadge = `<span class="stretch-badge stretch-badge--${s.category}">${escHtml(STRETCH_CATEGORY_LABELS[s.category])}</span>`;
+    return `<button type="button" class="cfg-row cfg-guide-row" onclick='openStretch(decodeURIComponent("${encodedName}"))'>
+      <span class="cfg-ic" style="background:var(--accent-dim)">${escHtml(s.emoji)}</span>
+      <span class="cfg-info"><span class="cfg-ttl">${escHtml(name)}</span><span class="cfg-sub cfg-guide-sub">${subtitle} ${categoryBadge}</span></span>
       <span class="cfg-arr">›</span>
     </button>`;
   }).join('');
@@ -1220,15 +1232,15 @@ function openStretch(name: string): void {
 
   const metaEl = el('stMeta');
   if (metaEl) {
-    const cat = STRETCH_CATEGORY_LABELS[s.category] ?? '';
-    const areas = s.area.map(a => `<span class="muscle-tag primary">${a}</span>`).join('');
-    metaEl.innerHTML = `${areas}<span class="muscle-tag secondary">⏱ ${s.duration}</span><span class="muscle-tag secondary">🏷 ${cat}</span>`;
+    const cat = escHtml(STRETCH_CATEGORY_LABELS[s.category] ?? '');
+    const areas = s.area.map(a => `<span class="muscle-tag primary">${escHtml(a)}</span>`).join('');
+    metaEl.innerHTML = `${areas}<span class="muscle-tag secondary">⏱ ${escHtml(s.duration)}</span><span class="muscle-tag secondary">🏷 ${cat}</span>`;
   }
 
   const stepsEl = el('stSteps');
   if (stepsEl) {
     stepsEl.innerHTML = s.steps.map((step, i) =>
-      `<div class="guide-step"><div class="step-num">${i + 1}</div><div class="step-text">${step}</div></div>`
+      `<div class="guide-step"><div class="step-num">${i + 1}</div><div class="step-text">${escHtml(step)}</div></div>`
     ).join('');
   }
 
@@ -1237,7 +1249,7 @@ function openStretch(name: string): void {
   if (tipsEl && tipsSec) {
     if (s.tips && s.tips.length > 0) {
       tipsEl.innerHTML = s.tips.map(t =>
-        `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${t}</span></div>`
+        `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${escHtml(t)}</span></div>`
       ).join('');
       tipsSec.style.display = '';
     } else {
@@ -1289,13 +1301,14 @@ function renderGuidesCatalog(filter: string = ''): void {
   }
 
   listElement.innerHTML = filteredEntries.map(([name, guide]) => {
+    const encodedName = encodeInlineValue(name);
     const subtitle = [...(guide.primary || []).slice(0, 2), ...(guide.secondary || []).slice(0, 1)]
       .filter(Boolean)
       .join(' · ');
 
-    return `<button type="button" class="cfg-row cfg-guide-row" onclick='openGuide(${JSON.stringify(name)})'>
-      <span class="cfg-ic" style="background:var(--accent-dim)">${guide.emoji || '📖'}</span>
-      <span class="cfg-info"><span class="cfg-ttl">${name}</span><span class="cfg-sub cfg-guide-sub">${subtitle || 'Ver técnica y consejos'}</span></span>
+    return `<button type="button" class="cfg-row cfg-guide-row" onclick='openGuide(decodeURIComponent("${encodedName}"))'>
+      <span class="cfg-ic" style="background:var(--accent-dim)">${escHtml(guide.emoji || '📖')}</span>
+      <span class="cfg-info"><span class="cfg-ttl">${escHtml(name)}</span><span class="cfg-sub cfg-guide-sub">${escHtml(subtitle || 'Ver técnica y consejos')}</span></span>
       <span class="cfg-arr">›</span>
     </button>`;
   }).join('');
@@ -1378,10 +1391,10 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const musclesElement = document.getElementById(GUIDE_DOM_IDS.MUSCLES);
   if (musclesElement) {
     const primaryMuscles = (guide.primary || []).filter(Boolean).map((m: string) =>
-      `<span class="muscle-tag primary">${m}</span>`
+      `<span class="muscle-tag primary">${escHtml(m)}</span>`
     ).join('');
     const secondaryMuscles = (guide.secondary || []).filter(Boolean).map((m: string) =>
-      `<span class="muscle-tag secondary">${m}</span>`
+      `<span class="muscle-tag secondary">${escHtml(m)}</span>`
     ).join('');
     musclesElement.innerHTML = primaryMuscles + secondaryMuscles;
   }
@@ -1390,7 +1403,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const stepsElement = document.getElementById(GUIDE_DOM_IDS.STEPS);
   if (stepsElement) {
     stepsElement.innerHTML = (guide.steps || []).map((step: string, index: number) =>
-      `<div class="guide-step"><div class="step-num">${index + 1}</div><div class="step-text">${step}</div></div>`
+      `<div class="guide-step"><div class="step-num">${index + 1}</div><div class="step-text">${escHtml(step)}</div></div>`
     ).join('');
   }
 
@@ -1398,7 +1411,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const errorsElement = document.getElementById(GUIDE_DOM_IDS.ERRORS);
   if (errorsElement) {
     errorsElement.innerHTML = (guide.errors || []).map((error: string) =>
-      `<div class="guide-tip err"><span class="tip-icon">❌</span><span>${error}</span></div>`
+      `<div class="guide-tip err"><span class="tip-icon">❌</span><span>${escHtml(error)}</span></div>`
     ).join('');
   }
 
@@ -1406,7 +1419,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   const tipsElement = document.getElementById(GUIDE_DOM_IDS.TIPS);
   if (tipsElement) {
     tipsElement.innerHTML = (guide.tips || []).map((tip: string) =>
-      `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${tip}</span></div>`
+      `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${escHtml(tip)}</span></div>`
     ).join('');
   }
 
