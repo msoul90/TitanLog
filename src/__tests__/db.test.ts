@@ -10,9 +10,20 @@ type MockState = {
   profileExists: boolean;
   profileInsertError: boolean;
   updateProfileError: boolean;
+  updateProfileThrow: boolean;
+  gymUpdateError: boolean;
+  gymInsertError: boolean;
   gymMonthError: boolean;
+  gymMonthNullData: boolean;
+  bwUpdateError: boolean;
+  bwInsertError: boolean;
   bwMonthError: boolean;
+  bwMonthNullData: boolean;
+  hiitUpdateError: boolean;
+  hiitInsertError: boolean;
+  hiitInsertNoData: boolean;
   hiitMonthError: boolean;
+  hiitMonthNullData: boolean;
   gymMonthData: Array<{ date: string; exercises: any[]; id: string }>;
   bwMonthData: Array<{ date: string; weight: number; weight_unit: string; fat_pct?: number; muscle_pct?: number; id: string }>;
   hiitMonthData: Array<{ date: string; name: string; id: string; exercises: any[] }>;
@@ -29,9 +40,20 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
     profileExists: true,
     profileInsertError: false,
     updateProfileError: false,
+    updateProfileThrow: false,
+    gymUpdateError: false,
+    gymInsertError: false,
     gymMonthError: false,
+    gymMonthNullData: false,
+    bwUpdateError: false,
+    bwInsertError: false,
     bwMonthError: false,
+    bwMonthNullData: false,
+    hiitUpdateError: false,
+    hiitInsertError: false,
+    hiitInsertNoData: false,
     hiitMonthError: false,
+    hiitMonthNullData: false,
     gymMonthData: [],
     bwMonthData: [],
     hiitMonthData: [],
@@ -63,8 +85,20 @@ vi.mock('@supabase/supabase-js', () => {
       eq: vi.fn((field: string, value: unknown) => {
         eqFilters.push({ field, value });
         if (lastOp === 'update' || lastOp === 'delete') {
+          if (table === 'profiles' && lastOp === 'update' && mockState.updateProfileThrow) {
+            throw new Error('profile update throw');
+          }
           if (table === 'profiles' && lastOp === 'update' && mockState.updateProfileError) {
             return Promise.resolve({ error: { message: 'profile update error' } });
+          }
+          if (table === 'gym_sessions' && lastOp === 'update' && mockState.gymUpdateError) {
+            return Promise.resolve({ error: { message: 'gym update error' } });
+          }
+          if (table === 'body_metrics' && lastOp === 'update' && mockState.bwUpdateError) {
+            return Promise.resolve({ error: { message: 'bw update error' } });
+          }
+          if (table === 'hiit_sessions' && lastOp === 'update' && mockState.hiitUpdateError) {
+            return Promise.resolve({ error: { message: 'hiit update error' } });
           }
           fromCalls.push({ table, op: lastOp, payload, eq: eqFilters });
           return Promise.resolve({ error: null });
@@ -75,12 +109,15 @@ vi.mock('@supabase/supabase-js', () => {
       lte: vi.fn(async () => {
         if (table === 'gym_sessions' && mockState.gymMonthError) return { data: null, error: { message: 'gym error' } };
         if (table === 'hiit_sessions' && mockState.hiitMonthError) return { data: null, error: { message: 'hiit error' } };
+        if (table === 'gym_sessions' && mockState.gymMonthNullData) return { data: null, error: null };
+        if (table === 'hiit_sessions' && mockState.hiitMonthNullData) return { data: null, error: null };
         if (table === 'gym_sessions') return { data: mockState.gymMonthData, error: null };
         if (table === 'hiit_sessions') return { data: mockState.hiitMonthData, error: null };
         return { data: [], error: null };
       }),
       order: vi.fn(async () => {
         if (table === 'body_metrics' && mockState.bwMonthError) return { data: null, error: { message: 'bw error' } };
+        if (table === 'body_metrics' && mockState.bwMonthNullData) return { data: null, error: null };
         return { data: mockState.bwMonthData, error: null };
       }),
       update: vi.fn((nextPayload: unknown) => {
@@ -111,6 +148,27 @@ vi.mock('@supabase/supabase-js', () => {
             return { data: null, error: { message: 'profile insert error' } };
           }
           return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
+        }
+
+        if (table === 'gym_sessions' && (lastOp === 'insert' || lastOp === 'insert_select')) {
+          if (mockState.gymInsertError) {
+            return { data: null, error: { message: 'gym insert error' } };
+          }
+        }
+
+        if (table === 'body_metrics' && (lastOp === 'insert' || lastOp === 'insert_select')) {
+          if (mockState.bwInsertError) {
+            return { data: null, error: { message: 'bw insert error' } };
+          }
+        }
+
+        if (table === 'hiit_sessions' && (lastOp === 'insert' || lastOp === 'insert_select')) {
+          if (mockState.hiitInsertError) {
+            return { data: null, error: { message: 'hiit insert error' } };
+          }
+          if (mockState.hiitInsertNoData) {
+            return { data: null, error: null };
+          }
         }
 
         if (lastOp === 'insert' || lastOp === 'insert_select') {
@@ -177,9 +235,20 @@ describe('db.ts', () => {
     mockState.profileExists = true;
     mockState.profileInsertError = false;
     mockState.updateProfileError = false;
+    mockState.updateProfileThrow = false;
+    mockState.gymUpdateError = false;
+    mockState.gymInsertError = false;
     mockState.gymMonthError = false;
+    mockState.gymMonthNullData = false;
+    mockState.bwUpdateError = false;
+    mockState.bwInsertError = false;
     mockState.bwMonthError = false;
+    mockState.bwMonthNullData = false;
+    mockState.hiitUpdateError = false;
+    mockState.hiitInsertError = false;
+    mockState.hiitInsertNoData = false;
     mockState.hiitMonthError = false;
+    mockState.hiitMonthNullData = false;
     mockState.gymMonthData = [];
     mockState.bwMonthData = [];
     mockState.hiitMonthData = [];
@@ -360,6 +429,13 @@ describe('db.ts', () => {
     expect((globalThis as any).toast).toHaveBeenCalled();
   });
 
+  it('toggleAuthMode no falla si faltan elementos del auth DOM', async () => {
+    const { toggleAuthMode } = await import('../db.js');
+    document.body.innerHTML = '<div></div>';
+
+    expect(toggleAuthMode).not.toThrow();
+  });
+
   it('saveGymDay/gD y deleteGymDay actualizan cache local', async () => {
     const { enterApp, saveGymDay, gD, deleteGymDay } = await import('../db.js');
 
@@ -372,6 +448,25 @@ describe('db.ts', () => {
     expect(gD()['2026-04-09']).toBeUndefined();
   });
 
+  it('saveGymDay y deleteGymDay cubren errores y dia inexistente', async () => {
+    const { enterApp, saveGymDay, gD, deleteGymDay } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await saveGymDay('2026-04-09', [{ name: 'Press', reps: '8', ts: 1 } as any]);
+
+    mockState.gymUpdateError = true;
+    await saveGymDay('2026-04-09', [{ name: 'Row', reps: '10', ts: 2 } as any]);
+    expect(gD()['2026-04-09']?.[0]?.name).toBe('Press');
+
+    mockState.gymUpdateError = false;
+    mockState.gymInsertError = true;
+    await saveGymDay('2026-04-10', [{ name: 'Curl', reps: '12', ts: 3 } as any]);
+    expect(gD()['2026-04-10']).toBeUndefined();
+
+    await deleteGymDay('2099-01-01');
+    expect(gD()['2026-04-09']).toHaveLength(1);
+  });
+
   it('loadGymMonth muestra error cuando la consulta falla', async () => {
     mockState.gymMonthError = true;
     const { enterApp, loadGymMonth } = await import('../db.js');
@@ -380,6 +475,16 @@ describe('db.ts', () => {
     await loadGymMonth(2026, 3);
 
     expect((globalThis as any).toast).toHaveBeenCalled();
+  });
+
+  it('loadGymMonth tolera data nula sin error', async () => {
+    mockState.gymMonthNullData = true;
+    const { enterApp, loadGymMonth, gD } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await loadGymMonth(2026, 3);
+
+    expect(Object.keys(gD())).toHaveLength(0);
   });
 
   it('saveBWDay/gBW guardan metrica corporal', async () => {
@@ -391,6 +496,22 @@ describe('db.ts', () => {
     expect(gBW()['2026-04-09']?.v).toBe(80);
   });
 
+  it('saveBWDay cubre errores de update e insert', async () => {
+    const { enterApp, saveBWDay, gBW } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await saveBWDay('2026-04-09', { v: 80, u: 'kg', fat: 19, mmc: 35, ts: 1 });
+
+    mockState.bwUpdateError = true;
+    await saveBWDay('2026-04-09', { v: 81, u: 'kg', fat: 18, mmc: 36, ts: 2 });
+    expect(gBW()['2026-04-09']?.v).toBe(80);
+
+    mockState.bwUpdateError = false;
+    mockState.bwInsertError = true;
+    await saveBWDay('2026-04-10', { v: 82, u: 'kg', fat: 17, mmc: 37, ts: 3 });
+    expect(gBW()['2026-04-10']).toBeUndefined();
+  });
+
   it('loadBWAll muestra error cuando la consulta falla', async () => {
     mockState.bwMonthError = true;
     const { enterApp, loadBWAll } = await import('../db.js');
@@ -399,6 +520,16 @@ describe('db.ts', () => {
     await loadBWAll();
 
     expect((globalThis as any).toast).toHaveBeenCalled();
+  });
+
+  it('loadBWAll tolera data nula sin error', async () => {
+    mockState.bwMonthNullData = true;
+    const { enterApp, loadBWAll, gBW } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await loadBWAll();
+
+    expect(Object.keys(gBW())).toHaveLength(0);
   });
 
   it('saveHiitSession/gHiit/deleteHiitSession gestionan sesiones HIIT', async () => {
@@ -421,6 +552,55 @@ describe('db.ts', () => {
     expect(gHiit()['2026-04-09']).toBeUndefined();
   });
 
+  it('saveHiitSession cubre update fallido, insert fallido y update sin indice', async () => {
+    const { enterApp, saveHiitSession, gHiit } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+
+    const pushedId = await saveHiitSession('2026-04-09', {
+      name: 'EMOM',
+      exercises: [{ name: 'Burpees' }],
+    } as any, 'missing-id');
+    expect(pushedId).toBe('missing-id');
+    expect(gHiit()['2026-04-09']?.some(session => session.id === 'missing-id')).toBe(true);
+
+    mockState.hiitUpdateError = true;
+    const updateFailed = await saveHiitSession('2026-04-09', {
+      name: 'EMOM 2',
+      exercises: [{ name: 'Sprint' }],
+    } as any, 'missing-id');
+    expect(updateFailed).toBe(false);
+
+    mockState.hiitUpdateError = false;
+    mockState.hiitInsertError = true;
+    const insertFailed = await saveHiitSession('2026-04-10', {
+      name: 'Tabata',
+      exercises: [{ name: 'Jump' }],
+    } as any);
+    expect(insertFailed).toBe(false);
+
+    mockState.hiitInsertError = false;
+    mockState.hiitInsertNoData = true;
+    const noDataInsert = await saveHiitSession('2026-04-11', {
+      name: 'Circuito',
+      exercises: [{ name: 'Row' }],
+    } as any);
+    expect(noDataInsert).toBe(false);
+  });
+
+  it('deleteHiitSession conserva fechas con otras sesiones', async () => {
+    const { enterApp, saveHiitSession, deleteHiitSession, gHiit } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    const firstId = await saveHiitSession('2026-04-09', { name: 'A', exercises: [{ name: 'Burpees' }] } as any, 'first-id');
+    const secondId = await saveHiitSession('2026-04-09', { name: 'B', exercises: [{ name: 'Sprint' }] } as any, 'second-id');
+
+    await deleteHiitSession(String(firstId));
+
+    expect(gHiit()['2026-04-09']).toHaveLength(1);
+    expect(gHiit()['2026-04-09']?.[0]?.id).toBe(secondId);
+  });
+
   it('loadHiitMonth muestra error cuando la consulta falla', async () => {
     mockState.hiitMonthError = true;
     const { enterApp, loadHiitMonth } = await import('../db.js');
@@ -429,6 +609,16 @@ describe('db.ts', () => {
     await loadHiitMonth(2026, 3);
 
     expect((globalThis as any).toast).toHaveBeenCalled();
+  });
+
+  it('loadHiitMonth tolera data nula sin error', async () => {
+    mockState.hiitMonthNullData = true;
+    const { enterApp, loadHiitMonth, gHiit } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    await loadHiitMonth(2026, 3);
+
+    expect(Object.keys(gHiit())).toHaveLength(0);
   });
 
   it('openEditProfile + saveProfile actualizan nombre y color', async () => {
@@ -445,6 +635,17 @@ describe('db.ts', () => {
     expect((globalThis as any).closeM).toHaveBeenCalledWith('editProfMod');
   });
 
+  it('openEditProfile usa fallback si no hay perfil cargado', async () => {
+    const { openEditProfile, renderColorPicker } = await import('../db.js');
+
+    renderColorPicker();
+    openEditProfile();
+
+    expect(document.getElementById('epTitle')?.textContent).toContain('Editar mi perfil');
+    expect((document.getElementById('epName') as HTMLInputElement).value).toBe('');
+    expect(document.querySelectorAll('#epColors .ep-col').length).toBeGreaterThan(0);
+  });
+
   it('saveProfile valida nombre vacio y maneja error de update', async () => {
     const { enterApp, saveProfile } = await import('../db.js');
 
@@ -457,6 +658,64 @@ describe('db.ts', () => {
     (document.getElementById('epName') as HTMLInputElement).value = 'Mario';
     await saveProfile();
     expect((globalThis as any).toast).toHaveBeenCalled();
+
+    mockState.updateProfileError = false;
+    mockState.updateProfileThrow = true;
+    await saveProfile();
+    expect((globalThis as any).toast).toHaveBeenCalled();
+  });
+
+  it('sendResetEmail muestra confirmacion en éxito', async () => {
+    const { sendResetEmail } = await import('../db.js');
+    const authErr = document.getElementById('authErr') as HTMLElement;
+    (document.getElementById('authEmail') as HTMLInputElement).value = 'mail@test.com';
+
+    await sendResetEmail();
+
+    expect(authErr.textContent).toContain('Email de recuperación enviado');
+    expect(authErr.style.color).toContain('var(--accent)');
+  });
+
+  it('sendResetEmail omite redirectTo si location no es usable y tolera falta de authErr', async () => {
+    const { sendResetEmail } = await import('../db.js');
+    const originalLocation = globalThis.location;
+    document.body.innerHTML = '<input id="authEmail" />';
+    (document.getElementById('authEmail') as HTMLInputElement).value = 'mail@test.com';
+
+    Object.defineProperty(globalThis, 'location', {
+      configurable: true,
+      value: { origin: '', pathname: '' },
+    });
+
+    await sendResetEmail();
+
+    expect(resetPasswordArgs.at(-1)?.options).toBeUndefined();
+
+    Object.defineProperty(globalThis, 'location', {
+      configurable: true,
+      value: originalLocation,
+    });
+  });
+
+  it('showLoading alterna visibilidad de login y formulario', async () => {
+    const { showLoading } = await import('../db.js');
+
+    showLoading(true);
+    expect((document.getElementById('loginLoading') as HTMLElement).style.display).toBe('block');
+    expect((document.getElementById('loginStep1') as HTMLElement).style.display).toBe('none');
+
+    showLoading(false);
+    expect((document.getElementById('loginLoading') as HTMLElement).style.display).toBe('none');
+    expect((document.getElementById('loginStep1') as HTMLElement).style.display).toBe('block');
+  });
+
+  it('showLoading e initLogin toleran ausencia de nodos de login', async () => {
+    const { showLoading, initLogin } = await import('../db.js');
+    document.body.innerHTML = '';
+    mockState.sessionError = true;
+
+    expect(() => showLoading(true)).not.toThrow();
+    await initLogin();
   });
 
   it('clearCache limpia datos expuestos en gD/gBW/gHiit', async () => {

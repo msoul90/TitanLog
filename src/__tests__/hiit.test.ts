@@ -23,7 +23,7 @@ vi.mock('../db.js', () => ({
 }));
 
 // @ts-ignore Vitest resolves .js imports to TS sources at runtime.
-import { openHiitModal, renderHiit, renderHiitProgress, selectRPE, saveHiitSessionModal, editHiitSession, deleteHiitSession, hiitChangeDay, adjustHiitTimer, toggleHiitTimer, resetHiitTimer } from '../hiit.js';
+import { addHiitEx, openHiitModal, renderHiit, renderHiitProgress, selectRPE, saveHiitSessionModal, editHiitSession, deleteHiitSession, hiitChangeDay, adjustHiitTimer, toggleHiitTimer, resetHiitTimer, initHiit } from '../hiit.js';
 
 describe('hiit.ts', () => {
   beforeEach(() => {
@@ -65,6 +65,7 @@ describe('hiit.ts', () => {
     hoisted.loadHiitMonthMock.mockClear();
     hoisted.gHiitMock.mockClear();
     vi.useRealTimers();
+    resetHiitTimer();
   });
 
   it('renderHiitProgress muestra estado vacio si no hay sesiones', () => {
@@ -91,6 +92,17 @@ describe('hiit.ts', () => {
     expect(datalist.innerHTML).toContain('Remo');
   });
 
+  it('initHiit sincroniza fecha global y renderiza cabecera con fecha no-hoy', () => {
+    const nonToday = new Date(2099, 0, 15);
+    (globalThis as any).hiitDate = nonToday;
+
+    initHiit();
+
+    const expectedLabel = `${nonToday.getDate()}/${nonToday.getMonth() + 1}/${nonToday.getFullYear()}`;
+    expect(document.getElementById('hiitLabel')?.textContent).toContain(expectedLabel);
+    expect(document.getElementById('hiitSub')?.textContent).toContain(`${nonToday.getDate()} de`);
+  });
+
   it('selectRPE marca seleccion en UI', () => {
     openHiitModal();
     selectRPE(7);
@@ -101,6 +113,35 @@ describe('hiit.ts', () => {
     await saveHiitSessionModal();
     expect((globalThis as any).toast).toHaveBeenCalled();
     expect(hoisted.saveHiitSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('saveHiitSessionModal valida que exista al menos un ejercicio', async () => {
+    openHiitModal();
+    (document.getElementById('hName') as HTMLInputElement).value = 'Tabata';
+
+    await saveHiitSessionModal();
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Agrega al menos un ejercicio');
+    expect(hoisted.saveHiitSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('saveHiitSessionModal ignora ejercicios vacios y duraciones invalidas', async () => {
+    openHiitModal();
+    (document.getElementById('hName') as HTMLInputElement).value = 'Circuito';
+    (document.getElementById('hex-name-0') as HTMLInputElement).value = '   ';
+    addHiitEx({ name: 'Remo' });
+    (document.getElementById('hex-dur-1') as HTMLInputElement).value = 'abc';
+    (document.getElementById('hex-reps-1') as HTMLInputElement).value = '12';
+
+    await saveHiitSessionModal();
+
+    expect(hoisted.saveHiitSessionMock).toHaveBeenCalledWith(
+      '2026-04-09',
+      expect.objectContaining({
+        exercises: [expect.objectContaining({ name: 'Remo', duration: undefined, reps: '12' })],
+      }),
+      null
+    );
   });
 
   it('saveHiitSessionModal guarda una nueva sesion HIIT', async () => {
@@ -151,6 +192,35 @@ describe('hiit.ts', () => {
     );
   });
 
+  it('muestra toast cuando intenta editar una sesion inexistente', () => {
+    editHiitSession('missing');
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('No se encontró la sesión HIIT');
+  });
+
+  it('saveHiitSessionModal muestra error si guardar devuelve null', async () => {
+    hoisted.saveHiitSessionMock.mockResolvedValueOnce(null);
+    openHiitModal();
+    (document.getElementById('hName') as HTMLInputElement).value = 'Tabata';
+    (document.getElementById('hex-name-0') as HTMLInputElement).value = 'Burpees';
+
+    await saveHiitSessionModal();
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Error guardando sesión HIIT. Intenta de nuevo.');
+    expect((globalThis as any).closeM).not.toHaveBeenCalledWith('hiitMod');
+  });
+
+  it('saveHiitSessionModal maneja excepciones inesperadas', async () => {
+    hoisted.saveHiitSessionMock.mockRejectedValueOnce(new Error('save failed'));
+    openHiitModal();
+    (document.getElementById('hName') as HTMLInputElement).value = 'Tabata';
+    (document.getElementById('hex-name-0') as HTMLInputElement).value = 'Burpees';
+
+    await saveHiitSessionModal();
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Error guardando sesión HIIT. Intenta de nuevo.');
+  });
+
   it('elimina una sesion HIIT', async () => {
     hoisted.setHiitData({
       '2026-04-09': [
@@ -163,12 +233,62 @@ describe('hiit.ts', () => {
     expect(document.getElementById('hiitList')?.innerHTML).toContain('No hay sesiones HIIT');
   });
 
+  it('deleteHiitSession corta si el usuario cancela', async () => {
+    (globalThis as any).confirm = vi.fn(() => false);
+    hoisted.deleteHiitSessionMock.mockClear();
+
+    await deleteHiitSession('sess-del');
+
+    expect(hoisted.deleteHiitSessionMock).not.toHaveBeenCalled();
+  });
+
+  it('deleteHiitSession maneja errores del borrado', async () => {
+    hoisted.deleteHiitSessionMock.mockRejectedValueOnce(new Error('delete failed'));
+
+    await deleteHiitSession('sess-del');
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Error eliminando sesión HIIT. Intenta de nuevo.');
+  });
+
   it('hiitChangeDay cambia fecha y recarga el mes', async () => {
     await hiitChangeDay(1);
 
     expect(hoisted.loadHiitMonthMock).toHaveBeenCalledWith(2026, 3);
     expect((globalThis as any).hiitDate).toBeInstanceOf(Date);
     expect((globalThis as any).hiitDate.getDate()).toBe(10);
+  });
+
+  it('renderHiitProgress ordena por created_at y contempla fechas invalidas', () => {
+    hoisted.setHiitData({
+      '2026-04-09': [
+        {
+          id: 'older',
+          date: '2026-04-09',
+          name: 'A',
+          created_at: '2026-04-09T10:00:00.000Z',
+          exercises: [{ name: 'Remo' }],
+        },
+        {
+          id: 'invalid',
+          date: '2026-04-09',
+          name: 'B',
+          created_at: 'not-a-date',
+          exercises: [{ name: 'Burpees' }],
+        },
+        {
+          id: 'newer',
+          date: '2026-04-09',
+          name: 'C',
+          created_at: '2026-04-09T11:00:00.000Z',
+          exercises: [{ name: 'Sprint' }],
+        },
+      ],
+    });
+
+    renderHiitProgress();
+
+    const html = document.getElementById('hiitList')?.innerHTML || '';
+    expect(html.indexOf('C')).toBeLessThan(html.indexOf('A'));
   });
 
   it('temporizador HIIT inicia, pausa y resetea', () => {
@@ -190,6 +310,40 @@ describe('hiit.ts', () => {
     expect(document.getElementById('htcStartBtn')?.textContent).toContain('Iniciar');
   });
 
+  it('adjustHiitTimer respeta limites y bloquea cambios mientras corre', () => {
+    renderHiit();
+
+    adjustHiitTimer('work', -100);
+    adjustHiitTimer('rest', 1000);
+    adjustHiitTimer('rounds', -100);
+
+    expect(document.getElementById('htcWork')?.textContent).toBe('5');
+    expect(document.getElementById('htcRest')?.textContent).toBe('600');
+    expect(document.getElementById('htcRounds')?.textContent).toBe('1');
+
+    toggleHiitTimer();
+    adjustHiitTimer('work', 5);
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Pausa el temporizador para ajustar valores');
+  });
+
+  it('toggleHiitTimer reinicia desde estado completado', () => {
+    vi.useFakeTimers();
+    renderHiit();
+
+    (document.getElementById('htcWork') as HTMLElement).textContent = '1';
+    (document.getElementById('htcRest') as HTMLElement).textContent = '1';
+    (document.getElementById('htcRounds') as HTMLElement).textContent = '1';
+
+    toggleHiitTimer();
+    vi.advanceTimersByTime(3000);
+    toggleHiitTimer();
+
+    expect(document.getElementById('htcPhase')?.textContent).toContain('Trabajo - ronda 1/1');
+    expect(document.getElementById('htcStartBtn')?.textContent).toContain('Pausar');
+    vi.useRealTimers();
+  });
+
   it('temporizador HIIT completa una ronda y finaliza', () => {
     vi.useFakeTimers();
     renderHiit();
@@ -199,7 +353,7 @@ describe('hiit.ts', () => {
     (document.getElementById('htcRounds') as HTMLElement).textContent = '1';
 
     toggleHiitTimer();
-    vi.advanceTimersByTime(2000);
+    vi.advanceTimersByTime(3000);
 
     expect(document.getElementById('htcPhase')?.textContent).toBe('Completado');
     expect((globalThis as any).toast).toHaveBeenCalledWith('HIIT completado ⚡');

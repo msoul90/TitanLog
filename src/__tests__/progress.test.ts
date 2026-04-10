@@ -72,6 +72,18 @@ describe('progress.ts', () => {
     expect(clickSpy).toHaveBeenCalled();
   });
 
+  it('expJSON maneja errores de exportacion', () => {
+    const original = URL.createObjectURL;
+    URL.createObjectURL = vi.fn(() => {
+      throw new Error('blob fail');
+    }) as any;
+
+    expect(() => expJSON()).not.toThrow();
+    expect(document.getElementById('toast')?.textContent).toContain('Error al exportar JSON');
+
+    URL.createObjectURL = original;
+  });
+
   it('renderProg completa estadisticas y progreso', () => {
     gDMock.mockReturnValue({
       '2026-04-08': [{ name: 'Press', weight: '60', unit: 'kg', sets: '3', reps: '8', ts: 1 }],
@@ -101,6 +113,18 @@ describe('progress.ts', () => {
     expect(clickSpy).toHaveBeenCalled();
   });
 
+  it('expCSV maneja errores de exportacion', () => {
+    const original = URL.createObjectURL;
+    URL.createObjectURL = vi.fn(() => {
+      throw new Error('csv fail');
+    }) as any;
+
+    expect(() => expCSV()).not.toThrow();
+    expect(document.getElementById('toast')?.textContent).toContain('Error al exportar CSV');
+
+    URL.createObjectURL = original;
+  });
+
   it('handleImp importa y fusiona datos sin duplicar por ts', async () => {
     gDMock.mockReturnValue({
       '2026-04-09': [{ name: 'A', reps: '10', ts: 1 }],
@@ -126,6 +150,38 @@ describe('progress.ts', () => {
     expect((event.target as HTMLInputElement).value).toBe('');
   });
 
+  it('handleImp maneja JSON invalido', async () => {
+    const event = {
+      target: {
+        files: [{ text: () => Promise.resolve('{ no-json') }],
+        value: 'x',
+      },
+    } as unknown as Event;
+
+    handleImp(event);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('toast')?.textContent).toContain('archivo inválido');
+    expect((event.target as HTMLInputElement).value).toBe('');
+  });
+
+  it('handleImp maneja error de lectura de archivo', async () => {
+    const event = {
+      target: {
+        files: [{ text: () => Promise.reject(new Error('read fail')) }],
+        value: 'x',
+      },
+    } as unknown as Event;
+
+    handleImp(event);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('toast')?.textContent).toContain('Error leyendo archivo');
+    expect((event.target as HTMLInputElement).value).toBe('');
+  });
+
   it('loadDemo guarda rutina demo cuando se confirma', () => {
     gDMock.mockReturnValue({});
 
@@ -143,5 +199,16 @@ describe('progress.ts', () => {
     loadDemo();
 
     expect(sDMock).not.toHaveBeenCalled();
+  });
+
+  it('renderProg muestra vacios cuando no hay datos', () => {
+    gDMock.mockReturnValue({});
+    gBWMock.mockReturnValue({});
+
+    renderProg();
+
+    expect(document.getElementById('bcSection')?.innerHTML).toContain('Registra tu composición corporal');
+    expect(document.getElementById('progList')?.innerHTML).toContain('Registra ejercicios con peso');
+    expect(document.getElementById('weekDots')?.innerHTML).toContain('week-dot');
   });
 });

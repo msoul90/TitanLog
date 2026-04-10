@@ -220,4 +220,42 @@ describe('main.ts', () => {
     expect((globalThis as any).toggleHiitTimer).toHaveBeenCalled();
     expect((globalThis as any).resetHiitTimer).toHaveBeenCalled();
   });
+
+  it('toast global no falla si no existe elemento #toast', async () => {
+    await import('../main.js');
+    document.getElementById('toast')?.remove();
+
+    expect(() => (globalThis as any).toast('x')).not.toThrow();
+  });
+
+  it('saveEx funciona cuando no existe appState global', async () => {
+    await import('../main.js');
+    delete (globalThis as any).appState;
+    (globalThis as any).viewDate = new Date(2026, 3, 9);
+
+    await (globalThis as any).saveEx();
+
+    expect((globalThis as any).saveGymDay).toHaveBeenCalled();
+  });
+
+  it('saveEx usa new Date cuando viewDate no es valido', async () => {
+    await import('../main.js');
+    (globalThis as any).appState = { viewDate: 'bad-date', editExerciseId: null };
+    (globalThis as any).viewDate = 'bad-date';
+
+    await (globalThis as any).saveEx();
+
+    expect((globalThis as any).saveGymDay).toHaveBeenCalled();
+  });
+
+  it('saveEx agrega ejercicio cuando editId parsea pero ts no existe', async () => {
+    await import('../main.js');
+    (globalThis as any).appState.editExerciseId = '2026-04-09::999';
+    (globalThis as any).gD = vi.fn(() => ({ '2026-04-09': [{ name: 'A', reps: '8', ts: 111 }] }));
+
+    await (globalThis as any).saveEx();
+
+    const payload = (globalThis as any).saveGymDay.mock.calls[0]?.[1] || [];
+    expect(payload.length).toBe(2);
+  });
 });
