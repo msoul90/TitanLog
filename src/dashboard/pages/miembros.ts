@@ -1,6 +1,6 @@
 import { fetchBodyMetrics, fetchGymSessions, fetchHiitSessions, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
-import { daysAgo, initials, niceDate, showToast, statusBadge, today } from '../helpers';
+import { daysAgo, escapeHtml, initials, niceDate, safeColor, sanitizeCsvCell, showToast, statusBadge, today } from '../helpers';
 import { ChartCtor, ChartLike, GymSession, MemberBestPR, MemberData } from '../types';
 
 declare const Chart: ChartCtor;
@@ -34,7 +34,13 @@ export function initMiembrosPage(): void {
       let status = 'Inactivo';
       if (days <= 3) status = 'Activo';
       else if (days <= 7) status = 'Advertencia';
-      return [m.name || '', m.lastDate || '', m.sesMonth, pr, status].join(',');
+      return [
+        sanitizeCsvCell(m.name || ''),
+        sanitizeCsvCell(m.lastDate || ''),
+        sanitizeCsvCell(m.sesMonth),
+        sanitizeCsvCell(pr),
+        sanitizeCsvCell(status),
+      ].join(',');
     });
     const csv = [header.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -99,14 +105,18 @@ function renderMembersTable(data: MemberData[]): void {
 
   tbody.innerHTML = data
     .map((m) => {
+      const color = safeColor(m.color, '#4ab8ff');
+      const name = escapeHtml(m.name || '—');
+      const avatar = escapeHtml(initials(m.name));
+      const userId = escapeHtml(m.id);
       const heatCells = m.heatmap
         .map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}" style="width:9px;height:9px"></div>`)
         .join('');
-      const pr = m.bestPR ? `${m.bestPR.name} ${m.bestPR.w}${m.bestPR.unit}` : '—';
-      return `<tr data-uid="${m.id}">
+      const pr = m.bestPR ? `${escapeHtml(m.bestPR.name)} ${m.bestPR.w}${escapeHtml(m.bestPR.unit)}` : '—';
+      return `<tr data-uid="${userId}">
       <td><div class="avatar-cell">
-        <div class="avatar" style="background:${(m.color || '#4ab8ff') + '33'};color:${m.color || '#4ab8ff'}">${initials(m.name)}</div>
-        <span class="avatar-name">${m.name || '—'}</span>
+        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
+        <span class="avatar-name">${name}</span>
       </div></td>
       <td>${niceDate(m.lastDate)}</td>
       <td class="text-mono">${m.sesMonth}</td>
@@ -155,8 +165,9 @@ function renderMemberHeader(member: MemberData): void {
   if (detailEmail) detailEmail.textContent = '—';
   if (detailAvatar) {
     detailAvatar.textContent = initials(member.name);
-    detailAvatar.style.background = (member.color || '#4ab8ff') + '33';
-    detailAvatar.style.color = member.color || '#4ab8ff';
+    const avatarColor = safeColor(member.color, '#4ab8ff');
+    detailAvatar.style.background = avatarColor + '33';
+    detailAvatar.style.color = avatarColor;
   }
 }
 
@@ -240,8 +251,8 @@ async function openMemberPanel(uid: string): Promise<void> {
           .map(
             ([name, d]) => `
     <div class="pr-row">
-      <span class="pr-name">${name}</span>
-      <span class="pr-value">${d.w} ${d.unit}${d.isPR ? '<span class="pr-badge">PR</span>' : ''}</span>
+      <span class="pr-name">${escapeHtml(name)}</span>
+      <span class="pr-value">${d.w} ${escapeHtml(d.unit)}${d.isPR ? '<span class="pr-badge">PR</span>' : ''}</span>
     </div>`,
           )
           .join('')

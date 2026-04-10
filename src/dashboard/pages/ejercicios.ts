@@ -1,6 +1,6 @@
 import { fetchGymSessions } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
-import { colorForMuscle, daysAgo, muscleGroup } from '../helpers';
+import { colorForMuscle, daysAgo, escapeHtml, muscleGroup } from '../helpers';
 import { ChartCtor, ChartLike } from '../types';
 
 declare const Chart: ChartCtor;
@@ -15,7 +15,7 @@ export async function loadEjercicios(): Promise<void> {
   gymSessions.forEach((s) => {
     (s.exercises || []).forEach((ex) => {
       if (!ex.name) return;
-      if (!exStats[ex.name]) exStats[ex.name] = { count: 0, users: new Set() };
+      exStats[ex.name] ??= { count: 0, users: new Set() };
       const stats = exStats[ex.name];
       if (!stats) return;
       stats.count++;
@@ -99,10 +99,10 @@ export async function loadEjercicios(): Promise<void> {
     ? sorted
         .map(
           ([name, d]) => `<tr>
-    <td>${name}</td>
+    <td>${escapeHtml(name)}</td>
     <td class="text-mono">${d.count}</td>
     <td class="text-mono">${d.users.size}</td>
-    <td><span class="badge badge-member">${muscleGroup(name)}</span></td>
+    <td><span class="badge badge-member">${escapeHtml(muscleGroup(name))}</span></td>
   </tr>`,
         )
         .join('')

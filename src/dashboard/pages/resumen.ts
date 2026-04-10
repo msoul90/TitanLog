@@ -1,6 +1,6 @@
 import { fetchGymSessions, fetchHiitSessions, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors, setActiveChart } from '../theme';
-import { daysAgo, niceDate, today } from '../helpers';
+import { daysAgo, escapeHtml, niceDate, today } from '../helpers';
 import { ChartCtor, ChartLike, DashboardSession, ExerciseEntry, GymSession, Profile } from '../types';
 
 declare const Chart: ChartCtor;
@@ -127,7 +127,7 @@ export async function loadResumen(): Promise<void> {
         .map(
           ([name, cnt]) => `
     <div class="progress-bar-wrap" style="margin-bottom:9px">
-      <div style="font-size:0.83rem;color:var(--text2);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${name}</div>
+      <div style="font-size:0.83rem;color:var(--text2);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(name)}</div>
       <div class="progress-bar"><div class="progress-bar-fill" style="width:${Math.round((cnt / maxEx) * 100)}%"></div></div>
       <div class="progress-count">${cnt}</div>
     </div>`,
@@ -147,7 +147,7 @@ export async function loadResumen(): Promise<void> {
           return `<div class="feed-item">
       <div class="feed-dot" style="background:${type === 'HIIT' ? 'var(--accent2)' : 'var(--accent)'}"></div>
       <div class="feed-content">
-        <div class="feed-title">${p.name || 'Miembro'} — ${type}</div>
+        <div class="feed-title">${escapeHtml(p.name || 'Miembro')} — ${type}</div>
         <div class="feed-meta">${niceDate(s.date)}</div>
       </div>
     </div>`;
@@ -191,8 +191,8 @@ export async function loadResumen(): Promise<void> {
     <div class="feed-item feed-pr">
       <div class="feed-dot"></div>
       <div class="feed-content">
-        <div class="feed-title">${pr.name} — <strong>${pr.ex}</strong> <span class="pr-badge">PR</span></div>
-        <div class="feed-meta">${pr.weight} ${pr.unit} · ${niceDate(pr.date)}</div>
+        <div class="feed-title">${escapeHtml(pr.name)} — <strong>${escapeHtml(pr.ex)}</strong> <span class="pr-badge">PR</span></div>
+        <div class="feed-meta">${pr.weight} ${escapeHtml(pr.unit)} · ${niceDate(pr.date)}</div>
       </div>
     </div>`,
         )

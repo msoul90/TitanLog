@@ -80,4 +80,19 @@ describe('dashboard resumen page', () => {
     expect(document.getElementById('top-exercises-list')?.innerHTML).toContain('Sin datos');
     expect(document.getElementById('activity-feed')?.innerHTML).toContain('Sin actividad reciente');
   });
+
+  it('escapa nombres y ejercicios en feeds', async () => {
+    fetchProfiles.mockResolvedValue([{ id: 'u1', name: '<img src=x onerror=alert(1)>', color: '#4ab8ff' }]);
+    fetchGymSessions.mockResolvedValue([
+      { id: 'g1', user_id: 'u1', date: '2026-04-10', exercises: [{ name: '<svg onload=alert(1)>', weight: 100, unit: 'kg' }] },
+    ]);
+    fetchHiitSessions.mockResolvedValue([]);
+
+    const mod = await import('../../dashboard/pages/resumen');
+    await mod.loadResumen();
+
+    expect(document.querySelector('#activity-feed img')).toBeNull();
+    expect(document.getElementById('activity-feed')?.innerHTML).toContain('&lt;img');
+    expect(document.getElementById('pr-feed')?.innerHTML).toContain('&lt;svg');
+  });
 });

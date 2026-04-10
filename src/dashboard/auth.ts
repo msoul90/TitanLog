@@ -1,3 +1,4 @@
+import { safeColor } from './helpers';
 import { getDashboardSupabaseError, sb } from './data';
 import type { AuthUser } from './types';
 
@@ -53,8 +54,9 @@ async function loadProfile(userId: string): Promise<void> {
   if (sidebarAvatar) {
     sidebarAvatar.textContent = name[0]?.toUpperCase() || 'A';
     if (data?.color) {
-      sidebarAvatar.style.background = data.color + '33';
-      sidebarAvatar.style.color = data.color;
+      const avatarColor = safeColor(data.color, '#4ab8ff');
+      sidebarAvatar.style.background = avatarColor + '33';
+      sidebarAvatar.style.color = avatarColor;
     }
   }
 }

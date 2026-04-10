@@ -1,7 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  escapeHtml,
   showToast,
+  safeColor,
+  sanitizeCsvCell,
   colorForMuscle,
   daysAgo,
   initials,
@@ -57,6 +60,21 @@ describe('dashboard helpers text utils', () => {
 
   it('initials toma hasta 2 iniciales', () => {
     expect(initials('Iron Log Team')).toBe('IL');
+  });
+
+  it('escapeHtml neutraliza etiquetas y atributos', () => {
+    expect(escapeHtml('<img src=x onerror=alert(1)>')).toContain('&lt;img');
+    expect(escapeHtml('"quoted"')).toContain('&quot;');
+  });
+
+  it('safeColor acepta solo hex y usa fallback si es invalido', () => {
+    expect(safeColor('#4ab8ff', '#000000')).toBe('#4ab8ff');
+    expect(safeColor('url(javascript:alert(1))', '#000000')).toBe('#000000');
+  });
+
+  it('sanitizeCsvCell neutraliza formulas de hoja de calculo', () => {
+    expect(sanitizeCsvCell('=2+3')).toBe('"\'=2+3"');
+    expect(sanitizeCsvCell('normal')).toBe('"normal"');
   });
 });
 

@@ -13,6 +13,8 @@ vi.mock('../../dashboard/data', () => ({
 }));
 
 describe('dashboard miembros page', () => {
+  let createdBlob: Blob | null = null;
+
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
@@ -48,7 +50,11 @@ describe('dashboard miembros page', () => {
       createObjectURL?: (obj: Blob) => string;
       revokeObjectURL?: (url: string) => void;
     };
-    urlApi.createObjectURL = vi.fn(() => 'blob:mock');
+    createdBlob = null;
+    urlApi.createObjectURL = vi.fn((obj: Blob) => {
+      createdBlob = obj;
+      return 'blob:mock';
+    });
     urlApi.revokeObjectURL = vi.fn();
 
     fetchProfiles.mockResolvedValue([{ id: 'u1', name: 'Ana', color: '#4ab8ff' }]);
@@ -92,5 +98,27 @@ describe('dashboard miembros page', () => {
 
     (document.getElementById('detail-close') as HTMLButtonElement).click();
     expect(document.getElementById('detail-panel')?.classList.contains('open')).toBe(false);
+  });
+
+  it('escapa html en tabla y neutraliza formulas en csv', async () => {
+    fetchProfiles.mockResolvedValue([{ id: 'u1', name: '<img src=x onerror=alert(1)>', color: 'url(javascript:alert(1))' }]);
+    fetchGymSessions.mockResolvedValue([
+      { id: 'g1', user_id: 'u1', date: '2026-04-10', exercises: [{ name: '=CMD()', weight: 100, unit: 'kg' }] },
+    ]);
+    fetchHiitSessions.mockResolvedValue([]);
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+    await mod.loadMiembros();
+
+    expect(document.querySelector('#members-tbody img')).toBeNull();
+    expect(document.getElementById('members-tbody')?.innerHTML).toContain('&lt;img');
+    expect(document.getElementById('members-tbody')?.innerHTML).toContain('#4ab8ff');
+
+    (document.getElementById('export-csv-btn') as HTMLButtonElement).click();
+    const csv = await createdBlob?.text();
+
+    expect(csv).toContain('"<img src=x onerror=alert(1)>"');
+    expect(csv).toContain('"\'=CMD() 100kg"');
   });
 });

@@ -8,6 +8,38 @@ export function showToast(msg: string, type = ''): void {
   setTimeout(() => el.remove(), 2400);
 }
 
+function toText(value: unknown): string {
+  if (value == null) return '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number' || typeof value === 'boolean' || typeof value === 'bigint') return `${value}`;
+  if (typeof value === 'symbol') return value.description || '';
+  try {
+    return JSON.stringify(value) || '';
+  } catch {
+    return '';
+  }
+}
+
+export function escapeHtml(value: unknown): string {
+  return toText(value)
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;');
+}
+
+export function safeColor(value: string | null | undefined, fallback: string): string {
+  const normalized = (value || '').trim();
+  return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(normalized) ? normalized : fallback;
+}
+
+export function sanitizeCsvCell(value: unknown): string {
+  const text = toText(value);
+  const normalized = /^[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${normalized.replaceAll('"', '""')}"`;
+}
+
 export function today(): string {
   return new Date().toISOString().slice(0, 10);
 }

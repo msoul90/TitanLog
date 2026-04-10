@@ -1,5 +1,5 @@
 import { fetchGymSessions, fetchHiitSessions, fetchProfiles } from '../data';
-import { daysAgo, niceDate } from '../helpers';
+import { daysAgo, escapeHtml, niceDate } from '../helpers';
 import { DashboardSession, Profile } from '../types';
 
 function renderActivityLog(sessions: DashboardSession[], profileMap: Record<string, Profile>): string {
@@ -12,12 +12,12 @@ function renderActivityLog(sessions: DashboardSession[], profileMap: Record<stri
       const isHiit = 'name' in s && Boolean(s.name);
       const type = isHiit ? 'HIIT' : 'Gym';
       const dotColor = type === 'HIIT' ? 'var(--accent2)' : 'var(--accent)';
-      const sub = isHiit ? `${s.name || ''} · ${s.rounds || '?'} rondas · RPE ${s.rpe || '?'}` : '';
+      const sub = isHiit ? `${escapeHtml(s.name || '')} · ${s.rounds || '?'} rondas · RPE ${s.rpe || '?'}` : '';
       const meta = sub ? `${niceDate(s.date)} · ${sub}` : niceDate(s.date);
       return `<div class="feed-item" style="cursor:pointer">
       <div class="feed-dot" style="background:${dotColor}"></div>
       <div class="feed-content">
-        <div class="feed-title">${p.name || 'Miembro'} — ${type}</div>
+        <div class="feed-title">${escapeHtml(p.name || 'Miembro')} — ${type}</div>
         <div class="feed-meta">${meta}</div>
       </div>
     </div>`;

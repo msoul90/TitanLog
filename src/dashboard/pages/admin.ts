@@ -1,5 +1,5 @@
 import { fetchAdmins, fetchProfiles, sb } from '../data';
-import { initials, showToast } from '../helpers';
+import { escapeHtml, initials, safeColor, showToast } from '../helpers';
 import { AdminUserRow, AuthUser } from '../types';
 
 let adminData: AdminUserRow[] = [];
@@ -29,12 +29,17 @@ function renderAdminTable(data: AdminUserRow[]): void {
 
   tbody.innerHTML = data.length
     ? data
-        .map(
-          (u) => `<tr data-uid="${u.id}">
+        .map((u) => {
+          const color = safeColor(u.color, '#9090b8');
+          const name = escapeHtml(u.name || '—');
+          const avatar = escapeHtml(initials(u.name));
+          const userId = escapeHtml(u.id);
+
+          return `<tr data-uid="${userId}">
     <td><div class="avatar-cell">
-      <div class="avatar" style="background:${(u.color || '#9090b8') + '33'};color:${u.color || '#9090b8'}">${initials(u.name)}</div>
+      <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
       <div>
-        <div class="avatar-name">${u.name || '—'}</div>
+        <div class="avatar-name">${name}</div>
       </div>
     </div></td>
     <td class="text-sm text2">—</td>
@@ -42,14 +47,14 @@ function renderAdminTable(data: AdminUserRow[]): void {
     <td>
       <label class="toggle-wrap">
         <label class="toggle">
-          <input type="checkbox" ${u.isAdmin ? 'checked' : ''} data-uid="${u.id}" class="admin-toggle">
+          <input type="checkbox" ${u.isAdmin ? 'checked' : ''} data-uid="${userId}" class="admin-toggle">
           <span class="toggle-slider"></span>
         </label>
         <span class="text-sm text3">${u.isAdmin ? 'Activo' : 'Sin acceso'}</span>
       </label>
     </td>
-  </tr>`,
-        )
+  </tr>`;
+        })
         .join('')
     : '<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">Sin usuarios</div></div></td></tr>';
 

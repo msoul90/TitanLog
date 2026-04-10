@@ -1,6 +1,6 @@
 import { fetchBodyMetrics, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
-import { initials, niceDate } from '../helpers';
+import { escapeHtml, initials, niceDate, safeColor } from '../helpers';
 import { BodyMetric, ChartCtor, ChartLike, Profile } from '../types';
 
 declare const Chart: ChartCtor;
@@ -96,6 +96,9 @@ export async function loadProgreso(): Promise<void> {
     ? rows
         .map((m) => {
           const p: Profile = profileMap[m.user_id] || { id: m.user_id, name: 'Miembro', color: '#4ab8ff' };
+          const color = safeColor(p.color, '#4ab8ff');
+          const name = escapeHtml(p.name || '—');
+          const avatar = escapeHtml(initials(p.name));
           const rawWeight = toNumber(m.weight);
           const wKg = m.weight_unit === 'lb' ? rawWeight * 0.453592 : rawWeight;
           const fatVal = m.fat_pct == null ? null : toNumber(m.fat_pct);
@@ -106,8 +109,8 @@ export async function loadProgreso(): Promise<void> {
           const muscMass = musc != null && wKg ? (wKg * musc / 100).toFixed(1) : '—';
           return `<tr>
       <td><div class="avatar-cell">
-        <div class="avatar" style="background:${(p.color || '#4ab8ff') + '33'};color:${p.color || '#4ab8ff'}">${initials(p.name)}</div>
-        <span class="avatar-name">${p.name || '—'}</span>
+        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
+        <span class="avatar-name">${name}</span>
       </div></td>
       <td>${niceDate(m.date)}</td>
       <td class="text-mono">${wKg > 0 ? wKg.toFixed(1) + ' kg' : '—'}</td>
