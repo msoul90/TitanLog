@@ -636,6 +636,44 @@ select.fi { appearance:none; cursor:pointer; }
   background:transparent; color:var(--text2); border:none;
   cursor:pointer; font-family:var(--font-body); font-size:0.88rem;
 }
+.ep-divider {
+  font-size:0.69rem;
+  font-weight:800;
+  color:var(--text2);
+  text-transform:uppercase;
+  letter-spacing:0.7px;
+  margin:14px 0 10px;
+}
+.ep-password-rules {
+  display:grid;
+  gap:6px;
+  margin:-2px 0 14px;
+}
+.ep-password-rule {
+  color:var(--text3);
+  font-size:0.8rem;
+  padding-left:16px;
+  position:relative;
+}
+.ep-password-rule::before {
+  content:'•';
+  position:absolute;
+  left:0;
+  color:var(--border2);
+}
+.ep-password-rule.is-ok {
+  color:var(--accent);
+}
+.ep-password-rule.is-ok::before {
+  content:'✓';
+  color:var(--accent);
+}
+.ep-password-error {
+  min-height:18px;
+  margin:-2px 0 10px;
+  color:var(--danger);
+  font-size:0.82rem;
+}
 
 /* BW modal unit toggle */
 .bw-row { display:flex; gap:8px; }

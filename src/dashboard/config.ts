@@ -7,6 +7,7 @@ export const PAGE_TITLES = {
   ejercicios: 'Ejercicios',
   actividad: 'Actividad',
   admin: 'Administracion de acceso',
+  config: 'Configuracion',
 } as const;
 
 export type PageKey = keyof typeof PAGE_TITLES;

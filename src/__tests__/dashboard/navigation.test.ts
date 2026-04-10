@@ -2,24 +2,26 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyNavigationState, initNavigation } from '../../dashboard/navigation';
 
-describe('dashboard navigation', () => {
-  function mountDom() {
-    document.body.innerHTML = `
-      <div id="sidebar" class="open"></div>
-      <div id="sidebar-overlay" class="open"></div>
-      <button id="hamburger"></button>
-      <button id="theme-toggle"></button>
-      <button id="refresh-btn"></button>
-      <h1 id="topbar-title"></h1>
-      <input id="topbar-search" />
-      <div id="page-resumen" class="page"></div>
-      <div id="page-miembros" class="page"></div>
-      <button class="nav-item" data-page="resumen"></button>
-      <button class="nav-item" data-page="miembros"></button>
-      <button class="nav-item" data-page="admin"></button>
-    `;
-  }
+function mountDom() {
+  document.body.innerHTML = `
+    <div id="sidebar" class="open"></div>
+    <div id="sidebar-overlay" class="open"></div>
+    <button id="hamburger"></button>
+    <button id="theme-toggle"></button>
+    <button id="refresh-btn"></button>
+    <h1 id="topbar-title"></h1>
+    <input id="topbar-search" />
+    <div id="page-resumen" class="page"></div>
+    <div id="page-miembros" class="page"></div>
+    <div id="page-config" class="page"></div>
+    <button class="nav-item" data-page="resumen"></button>
+    <button class="nav-item" data-page="miembros"></button>
+    <button class="nav-item" data-page="admin"></button>
+    <button class="nav-item" data-page="config"></button>
+  `;
+}
 
+describe('dashboard navigation', () => {
   it('applyNavigationState activa pagina, nav y titulo', () => {
     mountDom();
     applyNavigationState('miembros');
@@ -47,5 +49,14 @@ describe('dashboard navigation', () => {
     expect(onNavigate).toHaveBeenCalledWith('admin');
     expect(onToggleTheme).toHaveBeenCalled();
     expect(onRefresh).toHaveBeenCalled();
+  });
+
+  it('applyNavigationState muestra titulo de configuracion y oculta busqueda', () => {
+    mountDom();
+    applyNavigationState('config');
+
+    expect(document.getElementById('page-config')?.classList.contains('active')).toBe(true);
+    expect(document.getElementById('topbar-title')?.textContent).toContain('Configuracion');
+    expect((document.getElementById('topbar-search') as HTMLInputElement).style.display).toBe('none');
   });
 });

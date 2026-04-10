@@ -12,6 +12,7 @@ describe('dashboard config', () => {
     expect(Object.keys(PAGE_TITLES).sort((left, right) => left.localeCompare(right))).toEqual([
       'actividad',
       'admin',
+      'config',
       'ejercicios',
       'miembros',
       'progreso',

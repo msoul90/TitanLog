@@ -59,7 +59,7 @@ describe('dashboard admin page', () => {
       if (fn === 'is_super_admin') return Promise.resolve({ data: true, error: null });
       return Promise.resolve({ data: null, error: null });
     });
-    invoke.mockResolvedValue({ data: { invited_email: 'nuevo@test.com' }, error: null });
+    invoke.mockResolvedValue({ data: { invited_email: 'nuevo@test.com', default_password_masked: 'Ele******26' }, error: null });
 
     fetchProfiles.mockResolvedValue([
       { id: 'u1', name: 'Ana', color: '#111' },
@@ -148,6 +148,6 @@ describe('dashboard admin page', () => {
         Authorization: 'Bearer jwt-token-123',
       },
     });
-    expect(showToast).toHaveBeenCalledWith('Invitacion enviada a nuevo@test.com', 'success');
+    expect(showToast).toHaveBeenCalledWith('Usuario creado: nuevo@test.com. Password temporal configurado: Ele******26', 'success');
   });
 });

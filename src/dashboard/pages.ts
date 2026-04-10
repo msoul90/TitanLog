@@ -1,6 +1,7 @@
 import { PageKey } from './config';
 import { loadActividad } from './pages/actividad';
 import { initAdminPage, loadAdmin } from './pages/admin';
+import { initConfigPage, loadConfig } from './pages/config';
 import { loadEjercicios } from './pages/ejercicios';
 import { initMiembrosPage, loadMiembros } from './pages/miembros';
 import { loadProgreso } from './pages/progreso';
@@ -10,6 +11,7 @@ import type { AuthUser } from './types';
 export function initPages(options: { getCurrentUser: () => AuthUser | null; signOut: () => Promise<void> }): void {
   initMiembrosPage();
   initAdminPage(options);
+  initConfigPage(options);
 }
 
 export async function loadPage(page: PageKey): Promise<void> {
@@ -31,6 +33,9 @@ export async function loadPage(page: PageKey): Promise<void> {
       break;
     case 'admin':
       await loadAdmin();
+      break;
+    case 'config':
+      await loadConfig();
       break;
   }
 }

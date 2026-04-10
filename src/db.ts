@@ -54,6 +54,15 @@ function setAuthError(message: string): void {
   if (authErr) authErr.textContent = message;
 }
 
+function validateStrongPassword(password: string): string | null {
+  if (password.length < 8) return 'Mínimo 8 caracteres.';
+  if (!/[A-Z]/.test(password)) return 'Debe incluir al menos una letra mayúscula.';
+  if (!/[a-z]/.test(password)) return 'Debe incluir al menos una letra minúscula.';
+  if (!/\d/.test(password)) return 'Debe incluir al menos un número.';
+  if (!/[^A-Za-z\d]/.test(password)) return 'Debe incluir al menos un símbolo.';
+  return null;
+}
+
 function getPasswordResetRedirectUrl(): string | undefined {
   const locationObject = (globalThis as { location?: Location }).location;
   if (!locationObject) return undefined;
@@ -572,6 +581,138 @@ function applyUser(): void {
 // EDIT PROFILE (single user)
 let selectedColor: string = '#aaff45';
 
+function setEditProfilePasswordError(message: string): void {
+  const errorEl = document.getElementById('epPasswordError');
+  if (errorEl) errorEl.textContent = message;
+}
+
+function updateEditProfilePasswordRules(password: string): void {
+  const rules: Record<string, boolean> = {
+    length: password.length >= 8,
+    upper: /[A-Z]/.test(password),
+    lower: /[a-z]/.test(password),
+    digit: /\d/.test(password),
+    symbol: /[^A-Za-z\d]/.test(password),
+  };
+
+  Object.entries(rules).forEach(([rule, passed]) => {
+    const node = document.querySelector(`#epPasswordRules [data-rule="${rule}"]`);
+    if (node) node.classList.toggle('is-ok', passed);
+  });
+}
+
+function initEditProfileSecurity(): void {
+  const passwordInput = document.getElementById('epPassword') as HTMLInputElement | null;
+  const confirmInput = document.getElementById('epPasswordConfirm') as HTMLInputElement | null;
+
+  if (passwordInput && passwordInput.dataset.bound !== 'true') {
+    passwordInput.dataset.bound = 'true';
+    passwordInput.addEventListener('input', () => {
+      updateEditProfilePasswordRules(passwordInput.value);
+      setEditProfilePasswordError('');
+    });
+  }
+
+  if (confirmInput && confirmInput.dataset.bound !== 'true') {
+    confirmInput.dataset.bound = 'true';
+    confirmInput.addEventListener('input', () => {
+      setEditProfilePasswordError('');
+    });
+  }
+
+  updateEditProfilePasswordRules(passwordInput?.value || '');
+}
+
+function getEditProfileFormValues(): {
+  name: string;
+  password: string;
+  passwordConfirm: string;
+  wantsPasswordChange: boolean;
+} {
+  const epName = document.getElementById('epName') as HTMLInputElement | null;
+  const epPassword = document.getElementById('epPassword') as HTMLInputElement | null;
+  const epPasswordConfirm = document.getElementById('epPasswordConfirm') as HTMLInputElement | null;
+
+  const name = epName?.value.trim() || '';
+  const password = epPassword?.value || '';
+  const passwordConfirm = epPasswordConfirm?.value || '';
+
+  return {
+    name,
+    password,
+    passwordConfirm,
+    wantsPasswordChange: Boolean(password || passwordConfirm),
+  };
+}
+
+function validateEditProfileForm(values: {
+  name: string;
+  password: string;
+  passwordConfirm: string;
+  wantsPasswordChange: boolean;
+}): boolean {
+  if (!values.name) {
+    toast('Escribe un nombre');
+    return false;
+  }
+
+  setEditProfilePasswordError('');
+  if (!values.wantsPasswordChange) return true;
+
+  if (!values.password || !values.passwordConfirm) {
+    setEditProfilePasswordError('Completa ambos campos de contraseña.');
+    return false;
+  }
+
+  if (values.password !== values.passwordConfirm) {
+    setEditProfilePasswordError('Las contraseñas no coinciden.');
+    return false;
+  }
+
+  const passwordError = validateStrongPassword(values.password);
+  if (passwordError) {
+    setEditProfilePasswordError(passwordError);
+    return false;
+  }
+
+  return true;
+}
+
+async function saveProfileIdentity(name: string): Promise<boolean> {
+  const { error } = await sb.from('profiles')
+    .update({ name, color: selectedColor })
+    .eq('id', currentUser!.id);
+
+  if (error) {
+    console.error('Error updating profile:', error);
+    toast('Error guardando perfil');
+    return false;
+  }
+
+  return true;
+}
+
+async function saveProfilePassword(password: string, wantsPasswordChange: boolean): Promise<boolean> {
+  if (!wantsPasswordChange) return true;
+
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) {
+    setEditProfilePasswordError(error.message);
+    return false;
+  }
+
+  return true;
+}
+
+function resetEditProfilePasswordFields(): void {
+  const epPassword = document.getElementById('epPassword') as HTMLInputElement | null;
+  const epPasswordConfirm = document.getElementById('epPasswordConfirm') as HTMLInputElement | null;
+
+  if (epPassword) epPassword.value = '';
+  if (epPasswordConfirm) epPasswordConfirm.value = '';
+  updateEditProfilePasswordRules('');
+}
+
 /**
  * Opens the edit profile modal
  */
@@ -584,6 +725,12 @@ function openEditProfile(): void {
 
   selectedColor = currentProfile?.color || '#aaff45';
   renderColorPicker();
+  const epPassword = document.getElementById('epPassword') as HTMLInputElement | null;
+  const epPasswordConfirm = document.getElementById('epPasswordConfirm') as HTMLInputElement | null;
+  if (epPassword) epPassword.value = '';
+  if (epPasswordConfirm) epPasswordConfirm.value = '';
+  setEditProfilePasswordError('');
+  initEditProfileSecurity();
   openM('editProfMod');
   setTimeout(() => {
     const el = document.getElementById('epName') as HTMLInputElement;
@@ -629,28 +776,16 @@ function selectColor(c: string): void {
  */
 async function saveProfile(): Promise<void> {
   try {
-    const epName = document.getElementById('epName') as HTMLInputElement;
-    const name = epName?.value.trim();
+    const values = getEditProfileFormValues();
+    if (!validateEditProfileForm(values)) return;
+    if (!(await saveProfileIdentity(values.name))) return;
+    if (!(await saveProfilePassword(values.password, values.wantsPasswordChange))) return;
 
-    if (!name) {
-      toast('Escribe un nombre');
-      return;
-    }
-
-    const { error } = await sb.from('profiles')
-      .update({ name, color: selectedColor })
-      .eq('id', currentUser!.id);
-
-    if (error) {
-      console.error('Error updating profile:', error);
-      toast('Error guardando perfil');
-      return;
-    }
-
-    currentProfile = { ...(currentProfile as UserProfile), name, color: selectedColor };
+    currentProfile = { ...(currentProfile as UserProfile), name: values.name, color: selectedColor };
+    resetEditProfilePasswordFields();
     closeM('editProfMod');
     applyUser();
-    toast('Perfil actualizado ✓');
+    toast(values.wantsPasswordChange ? 'Perfil y contraseña actualizados ✓' : 'Perfil actualizado ✓');
   } catch (err) {
     console.error('Exception in saveProfile:', err);
     toast('Error guardando perfil. Intenta de nuevo.');

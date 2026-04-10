@@ -356,7 +356,7 @@
   <div class="cfg-card">
     <button type="button" class="cfg-row" onclick="openEditProfile()">
       <span class="cfg-ic" style="background:var(--accent-dim)" id="profIc0">✏️</span>
-      <span class="cfg-info"><span class="cfg-ttl" id="profName0">Mi perfil</span><span class="cfg-sub">Editar nombre y color</span></span>
+      <span class="cfg-info"><span class="cfg-ttl" id="profName0">Mi perfil</span><span class="cfg-sub">Editar nombre, color y contraseña</span></span>
       <span class="cfg-arr">›</span>
     </button>
     <button type="button" class="cfg-row" onclick="toggleTheme()">
@@ -507,7 +507,24 @@
     </div>
     <div style="font-size:0.69rem;font-weight:800;color:var(--text2);text-transform:uppercase;letter-spacing:0.7px;margin-bottom:8px">Color</div>
     <div class="ep-colors" id="epColors"></div>
-    <button type="button" class="btn-ok" onclick="saveProfile()">Guardar perfil</button>
+    <div class="ep-divider">Seguridad</div>
+    <div class="fg">
+      <label class="fl" for="epPassword">Nueva contraseña</label>
+      <input class="fi" id="epPassword" type="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+    <div class="ep-password-rules" id="epPasswordRules">
+      <div class="ep-password-rule" data-rule="length">Mínimo 8 caracteres</div>
+      <div class="ep-password-rule" data-rule="upper">Al menos una mayúscula</div>
+      <div class="ep-password-rule" data-rule="lower">Al menos una minúscula</div>
+      <div class="ep-password-rule" data-rule="digit">Al menos un número</div>
+      <div class="ep-password-rule" data-rule="symbol">Al menos un símbolo</div>
+    </div>
+    <div class="fg">
+      <label class="fl" for="epPasswordConfirm">Confirmar contraseña</label>
+      <input class="fi" id="epPasswordConfirm" type="password" placeholder="••••••••" autocomplete="new-password">
+    </div>
+    <div class="ep-password-error" id="epPasswordError"></div>
+    <button type="button" class="btn-ok" onclick="saveProfile()">Guardar cambios</button>
     <button type="button" class="btn-cl" onclick="closeM('editProfMod')">Cancelar</button>
   </div>
 </dialog>

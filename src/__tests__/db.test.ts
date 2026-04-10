@@ -7,6 +7,7 @@ type MockState = {
   signInError: { message: string } | null;
   resetThrow: boolean;
   resetError: { message: string } | null;
+  updateUserError: { message: string } | null;
   profileExists: boolean;
   profileInsertError: boolean;
   updateProfileError: boolean;
@@ -37,6 +38,7 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
     signInError: null,
     resetThrow: false,
     resetError: null,
+    updateUserError: null,
     profileExists: true,
     profileInsertError: false,
     updateProfileError: false,
@@ -213,6 +215,7 @@ vi.mock('@supabase/supabase-js', () => {
           resetPasswordArgs.push({ email, options });
           return { error: mockState.resetError };
         }),
+        updateUser: vi.fn(async () => ({ error: mockState.updateUserError })),
         signOut: vi.fn(async () => {
           signOutCalls.count += 1;
           return { error: null };
@@ -234,6 +237,7 @@ describe('db.ts', () => {
     mockState.signInError = null;
     mockState.resetThrow = false;
     mockState.resetError = null;
+    mockState.updateUserError = null;
     mockState.profileExists = true;
     mockState.profileInsertError = false;
     mockState.updateProfileError = false;
@@ -277,6 +281,16 @@ describe('db.ts', () => {
       <div id="profName0"></div>
       <div id="profIc0"></div>
       <input id="epName" />
+      <input id="epPassword" />
+      <input id="epPasswordConfirm" />
+      <div id="epPasswordError"></div>
+      <div id="epPasswordRules">
+        <div data-rule="length"></div>
+        <div data-rule="upper"></div>
+        <div data-rule="lower"></div>
+        <div data-rule="digit"></div>
+        <div data-rule="symbol"></div>
+      </div>
       <div id="epColors"></div>
       <div id="epTitle"></div>
     `;
@@ -646,6 +660,40 @@ describe('db.ts', () => {
 
     expect(document.getElementById('uName')?.textContent).toBe('Nuevo');
     expect((globalThis as any).closeM).toHaveBeenCalledWith('editProfMod');
+  });
+
+  it('saveProfile permite cambiar contraseña a usuario normal', async () => {
+    const { enterApp, openEditProfile, saveProfile } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    openEditProfile();
+    (document.getElementById('epName') as HTMLInputElement).value = 'Mario';
+    (document.getElementById('epPassword') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('epPasswordConfirm') as HTMLInputElement).value = 'Segura1!';
+
+    await saveProfile();
+
+    expect((globalThis as any).toast).toHaveBeenCalledWith('Perfil y contraseña actualizados ✓');
+    expect(document.getElementById('epPasswordError')?.textContent).toBe('');
+  });
+
+  it('saveProfile valida contraseña fuerte y coincidencia', async () => {
+    const { enterApp, openEditProfile, saveProfile } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+    openEditProfile();
+    (document.getElementById('epName') as HTMLInputElement).value = 'Mario';
+    (document.getElementById('epPassword') as HTMLInputElement).value = 'abc';
+    (document.getElementById('epPasswordConfirm') as HTMLInputElement).value = 'abc';
+
+    await saveProfile();
+    expect(document.getElementById('epPasswordError')?.textContent).toContain('Mínimo 8');
+
+    (document.getElementById('epPassword') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('epPasswordConfirm') as HTMLInputElement).value = 'Otra1!';
+
+    await saveProfile();
+    expect(document.getElementById('epPasswordError')?.textContent).toContain('no coinciden');
   });
 
   it('openEditProfile usa fallback si no hay perfil cargado', async () => {

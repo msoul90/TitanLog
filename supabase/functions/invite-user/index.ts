@@ -11,6 +11,11 @@ type InvitePayload = {
   grant_dashboard_access?: boolean;
 };
 
+function maskSecret(secret: string): string {
+  if (secret.length <= 4) return '*'.repeat(secret.length);
+  return `${secret.slice(0, 3)}${'*'.repeat(Math.max(4, secret.length - 5))}${secret.slice(-2)}`;
+}
+
 function jsonResponse(status: number, payload: Record<string, unknown>): Response {
   return new Response(JSON.stringify(payload), {
     status,
@@ -32,7 +37,8 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
   const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-  if (!supabaseUrl || !serviceRoleKey) {
+  const demoDefaultPassword = Deno.env.get('DEMO_DEFAULT_PASSWORD') || '';
+  if (!supabaseUrl || !serviceRoleKey || !demoDefaultPassword) {
     return jsonResponse(500, { error: 'missing_supabase_env' });
   }
 
@@ -65,7 +71,7 @@ Deno.serve(async (req: Request) => {
 
   const email = (body.email || '').trim().toLowerCase();
   const grantDashboardAccess = Boolean(body.grant_dashboard_access);
-  if (!email || !email.includes('@')) {
+  if (!email?.includes('@')) {
     return jsonResponse(400, { error: 'invalid_email' });
   }
 
@@ -91,9 +97,13 @@ Deno.serve(async (req: Request) => {
     return jsonResponse(403, { error: 'only_super_admin_can_grant_dashboard_access' });
   }
 
-  const inviteRes = await admin.auth.admin.inviteUserByEmail(email, {
-    data: {
+  const inviteRes = await admin.auth.admin.createUser({
+    email,
+    password: demoDefaultPassword,
+    email_confirm: true,
+    user_metadata: {
       invited_by: actorId,
+      demo_default_password: true,
     },
   });
 
@@ -121,5 +131,6 @@ Deno.serve(async (req: Request) => {
     invited_email: email,
     invited_user_id: invitedUserId,
     dashboard_access_granted: dashboardGranted,
+    default_password_masked: maskSecret(demoDefaultPassword),
   });
 });

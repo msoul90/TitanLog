@@ -84,6 +84,9 @@
       <button class="nav-item" data-page="admin">
         <span class="nav-icon">🔑</span> Acceso
       </button>
+      <button class="nav-item" data-page="config">
+        <span class="nav-icon">⚙️</span> Config
+      </button>
     </div>
     <div class="sidebar-user">
       <div class="sidebar-user-avatar" id="sidebar-avatar">A</div>
@@ -327,6 +330,43 @@
             </thead>
             <tbody id="admin-tbody"></tbody>
           </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: CONFIG ──────────────────────────────────────── -->
+    <div id="page-config" class="page">
+      <div class="grid-2 config-grid">
+        <div class="card">
+          <div class="card-title mb-12">Seguridad de la cuenta</div>
+          <div class="text-sm text3 mb-16">
+            Cambia tu contraseña desde tu sesion activa mientras resuelves el envio por correo y el dominio del SMTP.
+          </div>
+          <form id="config-password-form" class="config-password-form" autocomplete="off">
+            <label class="auth-label" for="config-password-new">Nueva contraseña</label>
+            <input id="config-password-new" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••">
+            <div class="config-password-rules mb-16" id="config-password-rules">
+              <div class="config-password-rule" data-rule="length">Minimo 8 caracteres</div>
+              <div class="config-password-rule" data-rule="upper">Al menos una mayuscula</div>
+              <div class="config-password-rule" data-rule="lower">Al menos una minuscula</div>
+              <div class="config-password-rule" data-rule="digit">Al menos un numero</div>
+              <div class="config-password-rule" data-rule="symbol">Al menos un simbolo</div>
+            </div>
+            <label class="auth-label" for="config-password-confirm">Confirmar contraseña</label>
+            <input id="config-password-confirm" class="auth-input" type="password" autocomplete="new-password" placeholder="••••••••">
+            <button class="auth-btn" id="config-password-submit" type="submit">Actualizar contraseña</button>
+            <div class="auth-error" id="config-password-error"></div>
+          </form>
+        </div>
+        <div class="card">
+          <div class="card-title mb-12">Cuenta activa</div>
+          <div class="config-account-line">
+            <span class="text-sm text3">Email</span>
+            <strong id="config-account-email">—</strong>
+          </div>
+          <div class="config-account-note text-sm text3">
+            El cambio aplica de inmediato para futuros inicios de sesion y no depende del flujo de recovery por email.
+          </div>
         </div>
       </div>
     </div>

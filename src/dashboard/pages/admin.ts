@@ -81,7 +81,7 @@ async function submitInvite(): Promise<void> {
   const submitButton = document.getElementById('invite-submit') as HTMLButtonElement | null;
 
   const emailRaw = (emailInput?.value || '').trim().toLowerCase();
-  if (!emailRaw || !emailRaw.includes('@')) {
+  if (!emailRaw?.includes('@')) {
     showToast('Ingresa un email valido', 'error');
     return;
   }
@@ -117,8 +117,10 @@ async function submitInvite(): Promise<void> {
     });
     if (error) throw error;
 
-    const invited = (data as { invited_email?: string } | null)?.invited_email || emailRaw;
-    showToast(`Invitacion enviada a ${invited}`, 'success');
+    const inviteResult = (data as { invited_email?: string; default_password_masked?: string } | null) || null;
+    const invited = inviteResult?.invited_email || emailRaw;
+    const maskedPassword = inviteResult?.default_password_masked || 'Ele******26';
+    showToast(`Usuario creado: ${invited}. Password temporal configurado: ${maskedPassword}`, 'success');
     if (emailInput) emailInput.value = '';
     if (grantInput) grantInput.checked = false;
   } catch (err: unknown) {
@@ -141,16 +143,15 @@ function renderAdminTable(data: AdminUserRow[]): void {
           const name = escapeHtml(u.name || '—');
           const avatar = escapeHtml(initials(u.name));
           const userId = escapeHtml(u.id);
-          const roleSideBadge = u.isSuperAdmin
-            ? '<span class="badge badge-side badge-super-admin">Super Admin</span>'
-            : u.isAdmin
-              ? '<span class="badge badge-side badge-gym-admin">Gym Admin</span>'
-              : '<span class="badge badge-side badge-member">Miembro</span>';
-          const roleColBadge = u.isSuperAdmin
-            ? '<span class="badge badge-super-admin">Super Admin</span>'
-            : u.isAdmin
-              ? '<span class="badge badge-gym-admin">Gym Admin</span>'
-              : '<span class="badge badge-member">Miembro</span>';
+          let roleSideBadge = '<span class="badge badge-side badge-member">Miembro</span>';
+          let roleColBadge = '<span class="badge badge-member">Miembro</span>';
+          if (u.isSuperAdmin) {
+            roleSideBadge = '<span class="badge badge-side badge-super-admin">Super Admin</span>';
+            roleColBadge = '<span class="badge badge-super-admin">Super Admin</span>';
+          } else if (u.isAdmin) {
+            roleSideBadge = '<span class="badge badge-side badge-gym-admin">Gym Admin</span>';
+            roleColBadge = '<span class="badge badge-gym-admin">Gym Admin</span>';
+          }
 
           return `<tr data-uid="${userId}">
     <td><div class="avatar-cell">

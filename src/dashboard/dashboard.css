@@ -958,6 +958,59 @@ input, button { outline: none; }
   gap: 10px;
 }
 
+.config-grid {
+  align-items: start;
+}
+
+.config-password-form {
+  display: grid;
+  gap: 10px;
+}
+
+.config-password-rules {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.config-password-rule {
+  color: var(--text3);
+  font-size: 0.82rem;
+  padding-left: 18px;
+  position: relative;
+}
+
+.config-password-rule::before {
+  content: '•';
+  color: var(--border2);
+  position: absolute;
+  left: 0;
+}
+
+.config-password-rule.is-ok {
+  color: var(--accent-text);
+}
+
+.config-password-rule.is-ok::before {
+  content: '✓';
+  color: var(--accent-text);
+}
+
+.config-account-line {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  margin-bottom: 12px;
+}
+
+.config-account-note {
+  line-height: 1.6;
+}
+
 .is-hidden {
   display: none;
 }
