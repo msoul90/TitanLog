@@ -94,8 +94,8 @@ export function initMiembrosPage(): void {
   document.querySelectorAll('.detail-section-toggle').forEach((btn) => {
     const trigger = btn as HTMLButtonElement;
     const targetId = trigger.dataset.target || '';
-    if (targetId && Object.prototype.hasOwnProperty.call(sectionsState, targetId)) {
-      applyDetailSectionState(trigger, sectionsState[targetId]);
+    if (targetId && Object.hasOwn(sectionsState, targetId)) {
+      applyDetailSectionState(trigger, sectionsState[targetId] ?? true);
     }
 
     btn.addEventListener('click', () => {
@@ -246,9 +246,119 @@ function buildExerciseTimeline(gymUser: GymSession[], exerciseName: string): {
   const dates = Object.keys(byDate).sort((a, b) => a.localeCompare(b));
   return {
     labels: dates.map((d) => niceDate(d)),
-    data: dates.map((d) => byDate[d]),
+    data: dates.map((d) => byDate[d] ?? null),
     unit,
   };
+}
+
+function renderMemberSummary(member: MemberData): { gymUser: GymSession[]; prSetM: Set<string> } {
+  const startOfMonth = today().slice(0, 7) + '-01';
+  const sesMonth = member.userSessions.filter((s) => s.date >= startOfMonth).length;
+  const detailSessions = document.getElementById('detail-sessions');
+  if (detailSessions) detailSessions.textContent = String(sesMonth);
+
+  let streak = 0;
+  const sessionDates = new Set(member.userSessions.map((s) => s.date));
+  for (let i = 0; i <= 365; i++) {
+    if (sessionDates.has(daysAgo(i))) streak++;
+    else if (i > 0) break;
+  }
+  const detailStreak = document.getElementById('detail-streak');
+  if (detailStreak) detailStreak.textContent = String(streak);
+
+  const gymUser = member.gymUser;
+  const prSetM = computeMemberMonthPrs(gymUser, startOfMonth);
+  const detailPrs = document.getElementById('detail-prs');
+  if (detailPrs) detailPrs.textContent = String(prSetM.size);
+
+  const heatEl = document.getElementById('detail-heatmap');
+  if (heatEl) heatEl.innerHTML = member.heatmap.map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}"></div>`).join('');
+
+  return { gymUser, prSetM };
+}
+
+async function renderMemberWeightChart(uid: string): Promise<void> {
+  const metrics = await fetchBodyMetrics();
+  const userMetrics = metrics.filter((m) => m.user_id === uid).sort((a, b) => a.date.localeCompare(b.date));
+  const wLabels = userMetrics.map((m) => niceDate(m.date));
+  const wData = userMetrics.map((m) => {
+    const n = toNumber(m.weight);
+    return n > 0 ? n : null;
+  });
+  const c = chartColors();
+
+  if (memberWeightChart) memberWeightChart.destroy();
+  memberWeightChart = new Chart(document.getElementById('chart-member-weight'), {
+    type: 'line',
+    data: {
+      labels: wLabels,
+      datasets: [
+        {
+          data: wData,
+          borderColor: c.accent2,
+          backgroundColor: c.accent2 + '22',
+          tension: 0.4,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: c.accent2,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
+  });
+}
+
+function computeBestWeights(gymUser: GymSession[], prSetM: Set<string>): Record<string, { w: number; unit: string; isPR: boolean }> {
+  const bestWeights: Record<string, { w: number; unit: string; isPR: boolean }> = {};
+  gymUser.forEach((s) => {
+    (s.exercises || []).forEach((ex) => {
+      const w = toNumber(ex.weight);
+      const current = bestWeights[ex.name];
+      if (!current || w > current.w) {
+        bestWeights[ex.name] = { w, unit: ex.unit || 'kg', isPR: prSetM.has(ex.name) };
+      }
+    });
+  });
+  return bestWeights;
+}
+
+function renderMemberExerciseList(gymUser: GymSession[], bestWeights: Record<string, { w: number; unit: string; isPR: boolean }>): string | null {
+  const prListEl = document.getElementById('detail-prs-list');
+  const entries = Object.entries(bestWeights)
+    .sort((a, b) => b[1].w - a[1].w)
+    .slice(0, 15);
+
+  if (prListEl) {
+    prListEl.innerHTML = entries.length
+      ? entries
+          .map(
+            ([name, d]) => `
+    <button class="pr-row is-button" type="button" data-exercise="${escapeHtml(name)}">
+      <span class="pr-name">${escapeHtml(name)}</span>
+      <span class="pr-value">${d.w} ${escapeHtml(d.unit)}${d.isPR ? '<span class="pr-badge">PR</span>' : ''}</span>
+    </button>`,
+          )
+          .join('')
+      : '<div class="empty-state"><div class="empty-state-icon">🏋️</div><div class="empty-state-text">Sin ejercicios</div></div>';
+
+    prListEl.querySelectorAll<HTMLButtonElement>('button[data-exercise]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const exerciseName = btn.dataset.exercise || '';
+        if (!exerciseName) return;
+        renderExerciseTrend(gymUser, exerciseName);
+        const body = document.getElementById('detail-exercise-progress-body');
+        const toggle = document.querySelector<HTMLButtonElement>('.detail-section-toggle[data-target="detail-exercise-progress-body"]');
+        if (body && toggle) {
+          body.classList.remove('collapsed');
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+  }
+
+  return entries[0]?.[0] ?? null;
 }
 
 function renderExerciseTrend(gymUser: GymSession[], exerciseName: string): void {
@@ -290,105 +400,14 @@ async function openMemberPanel(uid: string): Promise<void> {
 
   renderMemberHeader(member);
 
-  const startOfMonth = today().slice(0, 7) + '-01';
-  const sesMonth = member.userSessions.filter((s) => s.date >= startOfMonth).length;
-  const detailSessions = document.getElementById('detail-sessions');
-  if (detailSessions) detailSessions.textContent = String(sesMonth);
+  const { gymUser, prSetM } = renderMemberSummary(member);
+  await renderMemberWeightChart(uid);
 
-  let streak = 0;
-  const sessionDates = new Set(member.userSessions.map((s) => s.date));
-  for (let i = 0; i <= 365; i++) {
-    if (sessionDates.has(daysAgo(i))) streak++;
-    else if (i > 0) break;
-  }
-  const detailStreak = document.getElementById('detail-streak');
-  if (detailStreak) detailStreak.textContent = String(streak);
+  const bestWeights = computeBestWeights(gymUser, prSetM);
+  const firstExerciseName = renderMemberExerciseList(gymUser, bestWeights);
 
-  const gymUser = member.gymUser;
-  const prSetM = computeMemberMonthPrs(gymUser, startOfMonth);
-
-  const detailPrs = document.getElementById('detail-prs');
-  if (detailPrs) detailPrs.textContent = String(prSetM.size);
-
-  const heatEl = document.getElementById('detail-heatmap');
-  if (heatEl) heatEl.innerHTML = member.heatmap.map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}"></div>`).join('');
-
-  const metrics = await fetchBodyMetrics();
-  const userMetrics = metrics.filter((m) => m.user_id === uid).sort((a, b) => a.date.localeCompare(b.date));
-  const wLabels = userMetrics.map((m) => niceDate(m.date));
-  const wData = userMetrics.map((m) => {
-    const n = toNumber(m.weight);
-    return n > 0 ? n : null;
-  });
-  const c = chartColors();
-
-  if (memberWeightChart) memberWeightChart.destroy();
-  memberWeightChart = new Chart(document.getElementById('chart-member-weight'), {
-    type: 'line',
-    data: {
-      labels: wLabels,
-      datasets: [
-        {
-          data: wData,
-          borderColor: c.accent2,
-          backgroundColor: c.accent2 + '22',
-          tension: 0.4,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: c.accent2,
-          spanGaps: true,
-        },
-      ],
-    },
-    options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
-  });
-
-  const bestWeights: Record<string, { w: number; unit: string; isPR: boolean }> = {};
-  gymUser.forEach((s) => {
-    (s.exercises || []).forEach((ex) => {
-      const w = toNumber(ex.weight);
-      const current = bestWeights[ex.name];
-      if (!current || w > current.w) {
-        bestWeights[ex.name] = { w, unit: ex.unit || 'kg', isPR: prSetM.has(ex.name) };
-      }
-    });
-  });
-
-  const prListEl = document.getElementById('detail-prs-list');
-  const entries = Object.entries(bestWeights)
-    .sort((a, b) => b[1].w - a[1].w)
-    .slice(0, 15);
-  if (prListEl) {
-    prListEl.innerHTML = entries.length
-      ? entries
-          .map(
-            ([name, d]) => `
-    <button class="pr-row is-button" type="button" data-exercise="${escapeHtml(name)}">
-      <span class="pr-name">${escapeHtml(name)}</span>
-      <span class="pr-value">${d.w} ${escapeHtml(d.unit)}${d.isPR ? '<span class="pr-badge">PR</span>' : ''}</span>
-    </button>`,
-          )
-          .join('')
-      : '<div class="empty-state"><div class="empty-state-icon">🏋️</div><div class="empty-state-text">Sin ejercicios</div></div>';
-
-    prListEl.querySelectorAll<HTMLButtonElement>('button[data-exercise]').forEach((btn) => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const exerciseName = btn.dataset.exercise || '';
-        if (!exerciseName) return;
-        renderExerciseTrend(gymUser, exerciseName);
-        const body = document.getElementById('detail-exercise-progress-body');
-        const toggle = document.querySelector<HTMLButtonElement>('.detail-section-toggle[data-target="detail-exercise-progress-body"]');
-        if (body && toggle) {
-          body.classList.remove('collapsed');
-          toggle.setAttribute('aria-expanded', 'true');
-        }
-      });
-    });
-  }
-
-  if (entries.length) {
-    renderExerciseTrend(gymUser, entries[0][0]);
+  if (firstExerciseName) {
+    renderExerciseTrend(gymUser, firstExerciseName);
   } else {
     const titleEl = document.getElementById('detail-exercise-progress-title');
     if (titleEl) titleEl.textContent = 'Evolucion por ejercicio';

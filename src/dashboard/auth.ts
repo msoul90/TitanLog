@@ -58,9 +58,9 @@ function computeStrength(p: string): { score: number; label: string; color: stri
   if (/[a-z]/.test(p)) score++;
   if (/\d/.test(p)) score++;
   if (/[^A-Za-z\d]/.test(p)) score++;
-  const labels = ['', 'Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte'];
-  const colors = ['', '#e53935', '#fb8c00', '#fdd835', '#7cb342', '#2e7d32'];
-  return { score, label: labels[score], color: colors[score] };
+  const labels = ['', 'Muy débil', 'Débil', 'Regular', 'Fuerte', 'Muy fuerte'] as const;
+  const colors = ['', '#e53935', '#fb8c00', '#fdd835', '#7cb342', '#2e7d32'] as const;
+  return { score, label: labels[score] ?? '', color: colors[score] ?? '' };
 }
 
 function initSetPasswordForm(onAuthorized: () => Promise<void> | void, mode: 'invite' | 'recovery' = 'invite'): void {
@@ -120,7 +120,7 @@ function initSetPasswordForm(onAuthorized: () => Promise<void> | void, mode: 'in
         return;
       }
       // Remove invite tokens from URL so refreshing doesn't re-trigger the flow
-      window.history.replaceState(null, '', window.location.pathname + window.location.search);
+      globalThis.history.replaceState(null, '', globalThis.location.pathname + globalThis.location.search);
       await handleUser(currentUser, onAuthorized);
     } catch (err) {
       if (errorEl) errorEl.textContent = getErrorMessage(err);
@@ -271,7 +271,7 @@ export async function initAuth(onAuthorized: () => Promise<void> | void): Promis
         data: { session?: { user?: AuthUser | null } | null };
       };
       if (session?.user) {
-        currentUser = session.user as AuthUser;
+        currentUser = session.user;
         showScreen('set-password');
         initSetPasswordForm(onAuthorized, 'recovery');
       }
@@ -279,7 +279,7 @@ export async function initAuth(onAuthorized: () => Promise<void> | void): Promis
   });
 
   // Detect invite/recovery flow from URL hash
-  const hashParams = new URLSearchParams(window.location.hash.replace(/^#/, ''));
+  const hashParams = new URLSearchParams(globalThis.location.hash.replace(/^#/, ''));
   const hashType = hashParams.get('type');
   const isSetPasswordFlow = hashType === 'invite' || hashType === 'recovery';
 
@@ -291,9 +291,9 @@ export async function initAuth(onAuthorized: () => Promise<void> | void): Promis
     };
 
     if (isSetPasswordFlow && session?.user) {
-      currentUser = session.user as AuthUser;
+      currentUser = session.user;
       showScreen('set-password');
-      initSetPasswordForm(onAuthorized, hashType as 'invite' | 'recovery');
+      initSetPasswordForm(onAuthorized, hashType === 'recovery' ? 'recovery' : 'invite');
       return;
     }
 

@@ -1,5 +1,4 @@
-import { PAGE_TITLES } from './config';
-import { PageKey } from './config';
+import { PAGE_TITLES, PageKey } from './config';
 
 function openSidebar(): void {
   document.getElementById('sidebar')?.classList.add('open');

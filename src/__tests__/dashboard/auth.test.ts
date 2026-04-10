@@ -159,8 +159,8 @@ describe('dashboard auth', () => {
   });
 
   it('detecta flujo de invitación y muestra pantalla set-password', async () => {
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
       writable: true,
     });
     getSession.mockResolvedValue({
@@ -174,15 +174,15 @@ describe('dashboard auth', () => {
     expect(document.getElementById('auth-screen')?.style.display).toBe('none');
 
     // Reset hash for other tests
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
       writable: true,
     });
   });
 
   it('activa cuenta exitosamente y avanza al app', async () => {
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
       writable: true,
     });
     getSession.mockResolvedValue({
@@ -202,15 +202,15 @@ describe('dashboard auth', () => {
 
     expect(updateUser).toHaveBeenCalledWith({ password: 'Segura1!' });
 
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
       writable: true,
     });
   });
 
   it('set-password muestra error si contraseñas no coinciden', async () => {
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
       writable: true,
     });
     getSession.mockResolvedValue({
@@ -229,15 +229,15 @@ describe('dashboard auth', () => {
     expect(document.getElementById('set-password-error')?.textContent).toContain('no coinciden');
     expect(updateUser).not.toHaveBeenCalled();
 
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
       writable: true,
     });
   });
 
   it('detecta flujo de recovery (type=recovery) y muestra pantalla set-password', async () => {
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '#type=recovery&access_token=tok' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=recovery&access_token=tok' },
       writable: true,
     });
     getSession.mockResolvedValue({
@@ -252,8 +252,8 @@ describe('dashboard auth', () => {
     expect(document.getElementById('set-password-screen')?.style.display).toBe('flex');
     expect(document.getElementById('set-password-submit')?.textContent).toContain('Restablecer');
 
-    Object.defineProperty(window, 'location', {
-      value: { ...window.location, hash: '' },
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
       writable: true,
     });
   });

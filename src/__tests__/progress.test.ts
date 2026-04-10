@@ -118,7 +118,7 @@ describe('progress.ts', () => {
       '2026-04-09': [{ name: '=cmd', weight: '+10', unit: 'kg', sets: '3', reps: '@calc', notes: '-boom', ts: 1 }],
     });
 
-    let exportedBlob: Blob | null = null;
+    let exportedBlob: unknown = null;
     const original = URL.createObjectURL;
     URL.createObjectURL = vi.fn((blob: Blob) => {
       exportedBlob = blob;
@@ -128,7 +128,10 @@ describe('progress.ts', () => {
 
     expCSV();
 
-    const text = await exportedBlob?.text();
+    if (!(exportedBlob instanceof Blob)) {
+      throw new TypeError('Expected CSV blob to be created');
+    }
+    const text = await exportedBlob.text();
     expect(text).toContain('"\'=cmd"');
     expect(text).toContain('"\'+10"');
     expect(text).toContain('"\'@calc"');

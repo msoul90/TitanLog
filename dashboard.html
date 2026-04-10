@@ -293,13 +293,13 @@
         <form id="invite-form" class="invite-form" autocomplete="off">
           <label class="auth-label" for="invite-email">Email</label>
           <input id="invite-email" class="search-input w-full" type="email" placeholder="nuevo@correo.com" required>
-          <label class="toggle-wrap mb-12 is-hidden" id="invite-grant-wrap">
-            <label class="toggle">
-              <input type="checkbox" id="invite-grant-dashboard">
+          <div class="toggle-wrap mb-12 is-hidden" id="invite-grant-wrap">
+            <label class="toggle" for="invite-grant-dashboard">
+              <input type="checkbox" id="invite-grant-dashboard" aria-label="Otorgar acceso al dashboard (Gym Admin)">
               <span class="toggle-slider"></span>
             </label>
-            <span class="text-sm text3">Otorgar acceso al dashboard (Gym Admin)</span>
-          </label>
+            <label class="text-sm text3" for="invite-grant-dashboard">Otorgar acceso al dashboard (Gym Admin)</label>
+          </div>
           <button class="auth-btn" id="invite-submit" type="submit">Enviar invitación</button>
         </form>
       </div>

@@ -71,6 +71,71 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
   };
 });
 
+type SingleResult = { data: unknown; error: { message: string } | null };
+
+function isInsertLikeOp(op: string): boolean {
+  return op === 'insert' || op === 'insert_select';
+}
+
+function resolveMutationError(table: string, op: string): string | null {
+  if (table === 'profiles' && op === 'update') {
+    if (mockState.updateProfileThrow) return 'THROW:profile update throw';
+    if (mockState.updateProfileError) return 'profile update error';
+  }
+  if (table === 'gym_sessions' && op === 'update' && mockState.gymUpdateError) return 'gym update error';
+  if (table === 'body_metrics' && op === 'update' && mockState.bwUpdateError) return 'bw update error';
+  if (table === 'hiit_sessions' && op === 'update' && mockState.hiitUpdateError) return 'hiit update error';
+  return null;
+}
+
+function resolveProfileSingleResult(op: string): SingleResult {
+  if (op === 'select') {
+    if (mockState.profileExists) {
+      return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
+    }
+    return { data: null, error: { message: 'not found' } };
+  }
+
+  if (!isInsertLikeOp(op)) {
+    return { data: null, error: null };
+  }
+
+  if (mockState.profileInsertError) {
+    return { data: null, error: { message: 'profile insert error' } };
+  }
+
+  return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
+}
+
+function resolveSingleResult(table: string, op: string): SingleResult {
+  if (table === 'profiles') {
+    return resolveProfileSingleResult(op);
+  }
+
+  if (!isInsertLikeOp(op)) {
+    return { data: null, error: null };
+  }
+
+  if (table === 'gym_sessions' && mockState.gymInsertError) {
+    return { data: null, error: { message: 'gym insert error' } };
+  }
+
+  if (table === 'body_metrics' && mockState.bwInsertError) {
+    return { data: null, error: { message: 'bw insert error' } };
+  }
+
+  if (table === 'hiit_sessions') {
+    if (mockState.hiitInsertError) {
+      return { data: null, error: { message: 'hiit insert error' } };
+    }
+    if (mockState.hiitInsertNoData) {
+      return { data: null, error: null };
+    }
+  }
+
+  return { data: { id: `id-${table}` }, error: null };
+}
+
 vi.mock('@supabase/supabase-js', () => {
   function createBuilder(table: string) {
     let lastOp: string = '';
@@ -88,26 +153,20 @@ vi.mock('@supabase/supabase-js', () => {
       }),
       eq: vi.fn((field: string, value: unknown) => {
         eqFilters.push({ field, value });
-        if (lastOp === 'update' || lastOp === 'delete') {
-          if (table === 'profiles' && lastOp === 'update' && mockState.updateProfileThrow) {
-            throw new Error('profile update throw');
-          }
-          if (table === 'profiles' && lastOp === 'update' && mockState.updateProfileError) {
-            return Promise.resolve({ error: { message: 'profile update error' } });
-          }
-          if (table === 'gym_sessions' && lastOp === 'update' && mockState.gymUpdateError) {
-            return Promise.resolve({ error: { message: 'gym update error' } });
-          }
-          if (table === 'body_metrics' && lastOp === 'update' && mockState.bwUpdateError) {
-            return Promise.resolve({ error: { message: 'bw update error' } });
-          }
-          if (table === 'hiit_sessions' && lastOp === 'update' && mockState.hiitUpdateError) {
-            return Promise.resolve({ error: { message: 'hiit update error' } });
-          }
-          fromCalls.push({ table, op: lastOp, payload, eq: eqFilters });
-          return Promise.resolve({ error: null });
+        if (lastOp !== 'update' && lastOp !== 'delete') {
+          return builder;
         }
-        return builder;
+
+        const mutationError = resolveMutationError(table, lastOp);
+        if (mutationError?.startsWith('THROW:')) {
+          throw new Error(mutationError.replace('THROW:', ''));
+        }
+        if (mutationError) {
+          return Promise.resolve({ error: { message: mutationError } });
+        }
+
+        fromCalls.push({ table, op: lastOp, payload, eq: eqFilters });
+        return Promise.resolve({ error: null });
       }),
       gte: vi.fn(() => builder),
       lte: vi.fn(async () => {
@@ -139,48 +198,7 @@ vi.mock('@supabase/supabase-js', () => {
         lastOp = 'delete';
         return builder;
       }),
-      single: vi.fn(async () => {
-        if (table === 'profiles' && lastOp === 'select') {
-          if (mockState.profileExists) {
-            return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
-          }
-          return { data: null, error: { message: 'not found' } };
-        }
-
-        if (table === 'profiles' && (lastOp === 'insert' || lastOp === 'insert_select')) {
-          if (mockState.profileInsertError) {
-            return { data: null, error: { message: 'profile insert error' } };
-          }
-          return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
-        }
-
-        if (table === 'gym_sessions' && (lastOp === 'insert' || lastOp === 'insert_select')) {
-          if (mockState.gymInsertError) {
-            return { data: null, error: { message: 'gym insert error' } };
-          }
-        }
-
-        if (table === 'body_metrics' && (lastOp === 'insert' || lastOp === 'insert_select')) {
-          if (mockState.bwInsertError) {
-            return { data: null, error: { message: 'bw insert error' } };
-          }
-        }
-
-        if (table === 'hiit_sessions' && (lastOp === 'insert' || lastOp === 'insert_select')) {
-          if (mockState.hiitInsertError) {
-            return { data: null, error: { message: 'hiit insert error' } };
-          }
-          if (mockState.hiitInsertNoData) {
-            return { data: null, error: null };
-          }
-        }
-
-        if (lastOp === 'insert' || lastOp === 'insert_select') {
-          return { data: { id: `id-${table}` }, error: null };
-        }
-
-        return { data: null, error: null };
-      }),
+      single: vi.fn(async () => resolveSingleResult(table, lastOp)),
     };
 
     return builder;

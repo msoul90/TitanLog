@@ -16,33 +16,33 @@ const initPages = vi.fn();
 const loadPage = vi.fn(async () => {});
 
 vi.mock('../../dashboard/theme', () => ({
-  applyTheme: (...args: unknown[]) => applyTheme(...args),
-  getTheme: (...args: unknown[]) => getTheme(...args),
-  toggleTheme: (...args: unknown[]) => toggleTheme(...args),
+  applyTheme,
+  getTheme,
+  toggleTheme,
 }));
 
 vi.mock('../../dashboard/data', () => ({
-  invalidateCache: (...args: unknown[]) => invalidateCache(...args),
+  invalidateCache,
 }));
 
 vi.mock('../../dashboard/helpers', () => ({
-  showToast: (...args: unknown[]) => showToast(...args),
+  showToast,
 }));
 
 vi.mock('../../dashboard/auth', () => ({
-  initAuth: (...args: unknown[]) => initAuth(...args),
-  getCurrentUser: (...args: unknown[]) => getCurrentUser(...args),
-  signOut: (...args: unknown[]) => signOut(...args),
+  initAuth,
+  getCurrentUser,
+  signOut,
 }));
 
 vi.mock('../../dashboard/navigation', () => ({
-  initNavigation: (...args: unknown[]) => initNavigation(...args),
-  applyNavigationState: (...args: unknown[]) => applyNavigationState(...args),
+  initNavigation,
+  applyNavigationState,
 }));
 
 vi.mock('../../dashboard/pages', () => ({
-  initPages: (...args: unknown[]) => initPages(...args),
-  loadPage: (...args: unknown[]) => loadPage(...args),
+  initPages,
+  loadPage,
 }));
 
 describe('dashboard main bootstrap', () => {

@@ -13,6 +13,41 @@ function toNumber(value: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
+function formatBodyMass(weightKg: number, percent: number | null): string {
+  if (percent == null || weightKg <= 0) return '—';
+  return `${(weightKg * percent / 100).toFixed(1)} kg`;
+}
+
+function renderProgressRow(metric: BodyMetric, profileMap: Record<string, Profile>): string {
+  const p: Profile = profileMap[metric.user_id] || { id: metric.user_id, name: 'Miembro', color: '#4ab8ff' };
+  const color = safeColor(p.color, '#4ab8ff');
+  const name = escapeHtml(p.name || '—');
+  const avatar = escapeHtml(initials(p.name));
+
+  const rawWeight = toNumber(metric.weight);
+  const weightKg = metric.weight_unit === 'lb' ? rawWeight * 0.453592 : rawWeight;
+  const fatVal = metric.fat_pct == null ? null : toNumber(metric.fat_pct);
+  const muscVal = metric.muscle_pct == null ? null : toNumber(metric.muscle_pct);
+  const fat = fatVal != null && fatVal > 0 ? fatVal : null;
+  const musc = muscVal != null && muscVal > 0 ? muscVal : null;
+
+  const fatMass = formatBodyMass(weightKg, fat);
+  const muscMass = formatBodyMass(weightKg, musc);
+
+  return `<tr>
+      <td><div class="avatar-cell">
+        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
+        <span class="avatar-name">${name}</span>
+      </div></td>
+      <td>${niceDate(metric.date)}</td>
+      <td class="text-mono">${weightKg > 0 ? weightKg.toFixed(1) + ' kg' : '—'}</td>
+      <td class="text-mono">${fat == null ? '—' : fat + '%'}</td>
+      <td class="text-mono">${musc == null ? '—' : musc + '%'}</td>
+      <td class="text-mono">${fatMass}</td>
+      <td class="text-mono">${muscMass}</td>
+    </tr>`;
+}
+
 export async function loadProgreso(): Promise<void> {
   const [metrics, profiles] = await Promise.all([fetchBodyMetrics(), fetchProfiles()]);
   const profileMap: Record<string, Profile> = Object.fromEntries(profiles.map((p) => [p.id, p]));
@@ -94,32 +129,7 @@ export async function loadProgreso(): Promise<void> {
 
   tbody.innerHTML = rows.length
     ? rows
-        .map((m) => {
-          const p: Profile = profileMap[m.user_id] || { id: m.user_id, name: 'Miembro', color: '#4ab8ff' };
-          const color = safeColor(p.color, '#4ab8ff');
-          const name = escapeHtml(p.name || '—');
-          const avatar = escapeHtml(initials(p.name));
-          const rawWeight = toNumber(m.weight);
-          const wKg = m.weight_unit === 'lb' ? rawWeight * 0.453592 : rawWeight;
-          const fatVal = m.fat_pct == null ? null : toNumber(m.fat_pct);
-          const muscVal = m.muscle_pct == null ? null : toNumber(m.muscle_pct);
-          const fat = fatVal != null && fatVal > 0 ? fatVal : null;
-          const musc = muscVal != null && muscVal > 0 ? muscVal : null;
-          const fatMass = fat != null && wKg ? (wKg * fat / 100).toFixed(1) : '—';
-          const muscMass = musc != null && wKg ? (wKg * musc / 100).toFixed(1) : '—';
-          return `<tr>
-      <td><div class="avatar-cell">
-        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
-        <span class="avatar-name">${name}</span>
-      </div></td>
-      <td>${niceDate(m.date)}</td>
-      <td class="text-mono">${wKg > 0 ? wKg.toFixed(1) + ' kg' : '—'}</td>
-      <td class="text-mono">${fat == null ? '—' : fat + '%'}</td>
-      <td class="text-mono">${musc == null ? '—' : musc + '%'}</td>
-      <td class="text-mono">${fatMass === '—' ? '—' : fatMass + ' kg'}</td>
-      <td class="text-mono">${muscMass === '—' ? '—' : muscMass + ' kg'}</td>
-    </tr>`;
-        })
+        .map((m) => renderProgressRow(m, profileMap))
         .join('')
     : '<tr><td colspan="7"><div class="empty-state"><div class="empty-state-icon">📊</div><div class="empty-state-text">Sin métricas</div></div></td></tr>';
 }
