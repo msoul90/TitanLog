@@ -22,10 +22,19 @@ function isPlaceholderValue(value: string): boolean {
 function isValidSupabaseUrl(value: string): boolean {
   try {
     const parsedUrl = new URL(value);
-    return parsedUrl.protocol === 'https:' && parsedUrl.hostname.endsWith('.supabase.co');
+    if (parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+
+    // Accept Supabase project hosts and regional/custom Supabase host patterns.
+    return /(^|\.)supabase\./i.test(parsedUrl.hostname);
   } catch {
     return false;
   }
+}
+
+function looksLikeDashboardUrl(value: string): boolean {
+  return /supabase\.com\/dashboard\/project\//i.test(value);
 }
 
 export function getSupabaseConfigError(): string | null {
@@ -34,7 +43,11 @@ export function getSupabaseConfigError(): string | null {
   }
 
   if (!isValidSupabaseUrl(SUPABASE_URL)) {
-    return 'VITE_SUPABASE_URL no es una URL valida de Supabase.';
+    if (looksLikeDashboardUrl(SUPABASE_URL)) {
+      return 'VITE_SUPABASE_URL debe ser la Project URL (API), no la URL del dashboard. Ejemplo: https://<project-ref>.supabase.co';
+    }
+
+    return 'VITE_SUPABASE_URL no es valida. Usa la Project URL de Supabase, por ejemplo: https://<project-ref>.supabase.co';
   }
 
   if (!SUPABASE_ANON || SUPABASE_ANON.length < 20) {
