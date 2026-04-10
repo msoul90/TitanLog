@@ -26,6 +26,14 @@ describe('dashboard miembros page', () => {
       <button id="detail-close"></button>
       <div id="detail-overlay"></div>
       <aside id="detail-panel"></aside>
+      <button class="detail-section-toggle" data-target="detail-activity-body" aria-expanded="true"></button>
+      <div id="detail-activity-body"></div>
+      <button class="detail-section-toggle" data-target="detail-weight-body" aria-expanded="true"></button>
+      <div id="detail-weight-body"></div>
+      <button class="detail-section-toggle" data-target="detail-exercise-progress-body" aria-expanded="true"></button>
+      <div id="detail-exercise-progress-body"></div>
+      <button class="detail-section-toggle" data-target="detail-prs-body" aria-expanded="true"></button>
+      <div id="detail-prs-body"></div>
       <table><tbody id="members-tbody"></tbody></table>
       <div id="detail-name"></div>
       <div id="detail-email"></div>
@@ -34,10 +42,14 @@ describe('dashboard miembros page', () => {
       <div id="detail-streak"></div>
       <div id="detail-prs"></div>
       <div id="detail-heatmap"></div>
+      <div id="detail-exercise-progress-title"></div>
       <canvas id="chart-member-weight"></canvas>
+      <canvas id="chart-member-exercise"></canvas>
       <div id="detail-prs-list"></div>
       <div id="toast-container"></div>
     `;
+
+    sessionStorage.clear();
 
     const ChartCtor = vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
       this.destroy = vi.fn();
@@ -120,5 +132,19 @@ describe('dashboard miembros page', () => {
 
     expect(csv).toContain('"<img src=x onerror=alert(1)>"');
     expect(csv).toContain('"\'=CMD() 100kg"');
+  });
+
+  it('restaura secciones colapsadas desde sessionStorage', async () => {
+    sessionStorage.setItem('dashboard:miembros:detail-sections:v1', JSON.stringify({
+      'detail-weight-body': false,
+    }));
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+
+    const toggle = document.querySelector('[data-target="detail-weight-body"]') as HTMLButtonElement;
+    const body = document.getElementById('detail-weight-body') as HTMLDivElement;
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(body.classList.contains('collapsed')).toBe(true);
   });
 });

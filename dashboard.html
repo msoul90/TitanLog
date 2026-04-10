@@ -27,6 +27,22 @@
   </div>
 </div>
 
+<!-- ─── SET PASSWORD (INVITE FLOW) ──────────────────────────── -->
+<div id="set-password-screen">
+  <div class="auth-card">
+    <div class="auth-logo">TitanLog</div>
+    <div class="auth-sub" id="set-password-sub">Bienvenido — crea tu contraseña para activar tu cuenta</div>
+    <label class="auth-label" for="set-password-new">Nueva contraseña</label>
+    <input class="auth-input" id="set-password-new" type="password" placeholder="••••••••" autocomplete="new-password">
+    <div class="pw-strength-bar"><div class="pw-strength-fill" id="pw-strength-fill"></div></div>
+    <div class="pw-strength-label" id="pw-strength-label"></div>
+    <label class="auth-label" for="set-password-confirm">Confirmar contraseña</label>
+    <input class="auth-input" id="set-password-confirm" type="password" placeholder="••••••••" autocomplete="new-password">
+    <button class="auth-btn" id="set-password-submit">Activar cuenta</button>
+    <div class="auth-error" id="set-password-error"></div>
+  </div>
+</div>
+
 <!-- ─── NO ACCESS ─────────────────────────────────────────────── -->
 <div id="noaccess-screen">
   <div class="noaccess-card">
@@ -269,6 +285,28 @@
 
     <!-- ── PAGE: ADMIN ───────────────────────────────────────── -->
     <div id="page-admin" class="page">
+      <div class="card mb-16 is-hidden" id="invite-card">
+        <div class="card-title mb-12">Invitar usuario por email</div>
+        <form id="invite-form" class="invite-form" autocomplete="off">
+          <label class="auth-label" for="invite-email">Email</label>
+          <input id="invite-email" class="search-input w-full" type="email" placeholder="nuevo@correo.com" required>
+          <label class="toggle-wrap mb-12 is-hidden" id="invite-grant-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="invite-grant-dashboard">
+              <span class="toggle-slider"></span>
+            </label>
+            <span class="text-sm text3">Otorgar acceso al dashboard (Gym Admin)</span>
+          </label>
+          <button class="auth-btn" id="invite-submit" type="submit">Enviar invitación</button>
+        </form>
+      </div>
+
+      <div class="card mb-16 is-hidden" id="invite-lock-message">
+        <div class="text-sm text3">
+          Tu rol actual no tiene permisos para enviar invitaciones.
+        </div>
+      </div>
+
       <div class="card">
         <div class="flex-ac justify-between mb-16">
           <div class="card-title mb-0">Gestión de acceso al dashboard</div>
@@ -323,16 +361,49 @@
       </div>
     </div>
 
-    <div class="card-title">Actividad 28 días</div>
-    <div class="heatmap mb-20" id="detail-heatmap" style="margin-bottom:16px"></div>
+    <section class="detail-section">
+      <button class="detail-section-toggle" data-target="detail-activity-body" aria-expanded="true" type="button">
+        <span>Actividad 28 días</span>
+        <span class="detail-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="detail-section-body" id="detail-activity-body">
+        <div class="heatmap mb-20" id="detail-heatmap" style="margin-bottom:16px"></div>
+      </div>
+    </section>
 
-    <div class="card-title">Peso corporal</div>
-    <div class="chart-wrap" style="margin-bottom:16px">
-      <canvas id="chart-member-weight"></canvas>
-    </div>
+    <section class="detail-section">
+      <button class="detail-section-toggle" data-target="detail-weight-body" aria-expanded="true" type="button">
+        <span>Peso corporal</span>
+        <span class="detail-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="detail-section-body" id="detail-weight-body">
+        <div class="chart-wrap" style="margin-bottom:16px">
+          <canvas id="chart-member-weight"></canvas>
+        </div>
+      </div>
+    </section>
 
-    <div class="card-title">Mejores cargas por ejercicio</div>
-    <div id="detail-prs-list"></div>
+    <section class="detail-section">
+      <button class="detail-section-toggle" data-target="detail-exercise-progress-body" aria-expanded="true" type="button">
+        <span id="detail-exercise-progress-title">Evolución por ejercicio</span>
+        <span class="detail-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="detail-section-body" id="detail-exercise-progress-body">
+        <div class="chart-wrap" style="margin-bottom:16px">
+          <canvas id="chart-member-exercise"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <button class="detail-section-toggle" data-target="detail-prs-body" aria-expanded="true" type="button">
+        <span>Mejores cargas por ejercicio</span>
+        <span class="detail-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="detail-section-body" id="detail-prs-body">
+        <div id="detail-prs-list"></div>
+      </div>
+    </section>
   </div>
 </aside>
 

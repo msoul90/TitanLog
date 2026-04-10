@@ -7,9 +7,16 @@ type DashboardSupabaseClient = {
     onAuthStateChange(callback: (event: string) => void): unknown;
     signInWithPassword(credentials: { email: string; password: string }): Promise<unknown>;
     signOut(): Promise<unknown>;
+    updateUser(attrs: { password: string }): Promise<unknown>;
   };
   from(table: string): any;
   rpc(functionName: string, args?: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }>;
+  functions: {
+    invoke(
+      functionName: string,
+      options?: { body?: unknown; headers?: Record<string, string> },
+    ): Promise<{ data: unknown; error: { message: string } | null }>;
+  };
 };
 
 type SupabaseGlobal = {
@@ -100,6 +107,16 @@ export async function fetchBodyMetrics(): Promise<BodyMetric[]> {
 export async function fetchAdmins(): Promise<string[]> {
   const { data, error } = await sb.rpc('list_gym_admins');
   if (error) throw error;
+  return ((data || []) as AdminRecord[]).map((r) => r.user_id);
+}
+
+export async function fetchSuperAdmins(): Promise<string[]> {
+  const { data, error } = await sb.rpc('list_super_admins');
+  if (error) {
+    const msg = (error.message || '').toLowerCase();
+    if (msg.includes('forbidden') || msg.includes('42501')) return [];
+    throw error;
+  }
   return ((data || []) as AdminRecord[]).map((r) => r.user_id);
 }
 

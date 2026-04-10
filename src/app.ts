@@ -362,7 +362,10 @@ function acIn(value: string): void {
     return;
   }
 
-  const results = EXERCISE_DATABASE
+  const dynamicCatalog = (globalThis as any).getExerciseCatalogForAutocomplete?.() as ExerciseDatabaseEntry[] | null;
+  const sourceCatalog = Array.isArray(dynamicCatalog) && dynamicCatalog.length ? dynamicCatalog : EXERCISE_DATABASE;
+
+  const results = sourceCatalog
     .filter(exercise => exercise.n.toLowerCase().includes(query))
     .slice(0, 8);
 

@@ -1274,6 +1274,25 @@ function findGuideKey(name: string): string | null {
   return match || null;
 }
 
+async function enrichGuideFromDB(requestedName: string): Promise<void> {
+  const resolver = (globalThis as any).getExerciseGuideFromDB;
+  if (typeof resolver !== 'function') return;
+
+  try {
+    const resolved = await resolver(requestedName) as { name?: string; guide?: ExerciseGuide } | null;
+    if (!resolved?.guide) return;
+
+    // Do not overwrite if user already navigated to a different exercise.
+    if (guideExName !== requestedName) return;
+
+    const canonicalName = (resolved.name || requestedName).trim() || requestedName;
+    guideExName = canonicalName;
+    renderGuideContent(canonicalName, resolved.guide);
+  } catch {
+    // Local guide fallback is already rendered.
+  }
+}
+
 function renderGuidesCatalog(filter: string = ''): void {
   const listElement = document.getElementById(CONFIG_GUIDE_IDS.LIST);
   if (!listElement) return;
@@ -1452,6 +1471,7 @@ function openGuide(name: string): void {
 
   renderGuideContent(guideExName, guide || null);
   openM('guideMod');
+  void enrichGuideFromDB(guideExName);
 }
 
 /**

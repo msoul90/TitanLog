@@ -69,6 +69,7 @@ export interface MemberData extends Profile {
 
 export interface AdminUserRow extends Profile {
   isAdmin: boolean;
+  isSuperAdmin?: boolean;
 }
 
 export interface ChartLike {

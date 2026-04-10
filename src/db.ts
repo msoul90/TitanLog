@@ -8,6 +8,8 @@ import {
   User,
   UserProfile,
   Exercise,
+  ExerciseGuide,
+  ExerciseDatabaseEntry,
   BodyWeightEntry,
   HIITSession,
   GymSessionData,
@@ -82,6 +84,9 @@ const dbState: DBState = {
 
 // For backward compatibility
 let { currentUser, currentProfile, gymCache, hiitCache, bwCache } = dbState;
+let exerciseCatalogLight: ExerciseDatabaseEntry[] = [];
+const exerciseSlugByNormalizedName = new Map<string, string>();
+const exerciseGuideCache = new Map<string, { name: string; guide: ExerciseGuide }>();
 
 // ── HELPERS DE FECHA ──
 
@@ -92,6 +97,118 @@ let { currentUser, currentProfile, gymCache, hiitCache, bwCache } = dbState;
  */
 function dk(d: Date): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function normalizeExerciseName(value: string): string {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize('NFD')
+    .replaceAll(/[\u0300-\u036f]/g, '');
+}
+
+function toStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value
+    .map(item => typeof item === 'string' ? item.trim() : '')
+    .filter(Boolean);
+}
+
+function applyExerciseCatalogRows(rows: Array<{ slug?: string; canonical_name?: string; muscle_group?: string; aliases?: string[] }>): void {
+  const seen = new Set<string>();
+  const normalizedMap = new Map<string, string>();
+  const nextCatalog: ExerciseDatabaseEntry[] = [];
+
+  rows.forEach((row) => {
+    const slug = (row.slug || '').trim();
+    const canonicalName = (row.canonical_name || '').trim();
+    const muscleGroup = (row.muscle_group || 'General').trim();
+    if (!slug || !canonicalName) return;
+
+    const normalizedCanonical = normalizeExerciseName(canonicalName);
+    if (!seen.has(normalizedCanonical)) {
+      nextCatalog.push({ n: canonicalName, m: muscleGroup });
+      seen.add(normalizedCanonical);
+    }
+
+    normalizedMap.set(normalizedCanonical, slug);
+    (row.aliases || []).forEach((alias) => {
+      const normalizedAlias = normalizeExerciseName(alias || '');
+      if (!normalizedAlias) return;
+      normalizedMap.set(normalizedAlias, slug);
+    });
+  });
+
+  if (nextCatalog.length > 0) {
+    exerciseCatalogLight = nextCatalog;
+    exerciseSlugByNormalizedName.clear();
+    normalizedMap.forEach((slug, key) => exerciseSlugByNormalizedName.set(key, slug));
+    (globalThis as any).EXERCISE_DATABASE = nextCatalog;
+  }
+}
+
+async function loadExerciseCatalogLightFromDB(): Promise<void> {
+  if (!currentUser) return;
+
+  try {
+    const { data, error } = await sb.rpc('list_exercise_catalog_light');
+    if (error) {
+      console.warn('No se pudo cargar catálogo de ejercicios desde BD:', error.message || error);
+      return;
+    }
+
+    const rows = Array.isArray(data) ? data as Array<{ slug?: string; canonical_name?: string; muscle_group?: string; aliases?: string[] }> : [];
+    applyExerciseCatalogRows(rows);
+  } catch (err) {
+    console.warn('Error cargando catálogo de ejercicios desde BD:', err);
+  }
+}
+
+function getExerciseCatalogForAutocomplete(): ExerciseDatabaseEntry[] | null {
+  return exerciseCatalogLight.length ? exerciseCatalogLight : null;
+}
+
+async function getExerciseGuideFromDB(name: string): Promise<{ name: string; guide: ExerciseGuide } | null> {
+  if (!currentUser || !name) return null;
+
+  const slug = exerciseSlugByNormalizedName.get(normalizeExerciseName(name));
+  if (!slug) return null;
+
+  const cached = exerciseGuideCache.get(slug);
+  if (cached) {
+    return cached;
+  }
+
+  try {
+    const { data, error } = await sb.rpc('get_exercise_guide', { p_slug: slug });
+    if (error || !data || typeof data !== 'object') return null;
+
+    const payload = data as {
+      name?: string;
+      muscle_group?: string;
+      steps?: unknown;
+      errors?: unknown;
+      tips?: unknown;
+    };
+
+    const canonicalName = (payload.name || name).trim() || name;
+    const primary = payload.muscle_group ? [String(payload.muscle_group)] : [];
+
+    const guide: ExerciseGuide = {
+      emoji: '📖',
+      primary,
+      secondary: [],
+      steps: toStringArray(payload.steps),
+      errors: toStringArray(payload.errors),
+      tips: toStringArray(payload.tips),
+    };
+
+    const result = { name: canonicalName, guide };
+    exerciseGuideCache.set(slug, result);
+    return result;
+  } catch {
+    return null;
+  }
 }
 
 export function getCurrentProfile(): UserProfile | null {
@@ -696,6 +813,7 @@ async function enterApp(user: User): Promise<void> {
       loadGymMonth(now.getFullYear(), now.getMonth()),
       loadBWAll(),
       loadHiitMonth(now.getFullYear(), now.getMonth()),
+      loadExerciseCatalogLightFromDB(),
     ]);
 
     showLoading(false);
@@ -740,6 +858,9 @@ function clearCache(): void {
   gymCache = {};
   hiitCache = {};
   bwCache = {};
+  exerciseCatalogLight = [];
+  exerciseSlugByNormalizedName.clear();
+  exerciseGuideCache.clear();
   currentUser = null;
   currentProfile = null;
 }
@@ -812,6 +933,8 @@ export {
   // Profile functions
   loadProfile,
   applyUser,
+  getExerciseCatalogForAutocomplete,
+  getExerciseGuideFromDB,
   openEditProfile,
   renderColorPicker,
   selectColor,
@@ -842,6 +965,8 @@ export {
 (globalThis as any).gHiit = gHiit;
 (globalThis as any).loadProfile = loadProfile;
 (globalThis as any).applyUser = applyUser;
+(globalThis as any).getExerciseCatalogForAutocomplete = getExerciseCatalogForAutocomplete;
+(globalThis as any).getExerciseGuideFromDB = getExerciseGuideFromDB;
 (globalThis as any).openEditProfile = openEditProfile;
 (globalThis as any).renderColorPicker = renderColorPicker;
 (globalThis as any).selectColor = selectColor;

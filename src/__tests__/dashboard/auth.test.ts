@@ -4,6 +4,7 @@ const signInWithPassword = vi.fn();
 const getSession = vi.fn();
 const onAuthStateChange = vi.fn();
 const signOutApi = vi.fn();
+const updateUser = vi.fn();
 const fromMock = vi.fn();
 const rpcMock = vi.fn();
 
@@ -17,6 +18,7 @@ vi.mock('../../dashboard/data', () => ({
       getSession: (...args: unknown[]) => getSession(...args),
       onAuthStateChange: (...args: unknown[]) => onAuthStateChange(...args),
       signOut: (...args: unknown[]) => signOutApi(...args),
+      updateUser: (...args: unknown[]) => updateUser(...args),
     },
   },
 }));
@@ -39,6 +41,14 @@ describe('dashboard auth', () => {
 
     document.body.innerHTML = `
       <div id="auth-screen"></div>
+      <div id="set-password-screen">
+        <input id="set-password-new" type="password" />
+        <input id="set-password-confirm" type="password" />
+        <button id="set-password-submit">Activar cuenta</button>
+        <div id="set-password-error"></div>
+        <div id="pw-strength-fill"></div>
+        <div id="pw-strength-label"></div>
+      </div>
       <div id="noaccess-screen"></div>
       <div id="app"></div>
       <input id="auth-email" />
@@ -59,6 +69,7 @@ describe('dashboard auth', () => {
 
     getSession.mockResolvedValue({ data: { session: null } });
     onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+    updateUser.mockResolvedValue({ error: null });
     signOutApi.mockResolvedValue({});
     signInWithPassword.mockResolvedValue({
       data: { user: { id: 'u1', email: 'ana@test.com' } },
@@ -135,5 +146,137 @@ describe('dashboard auth', () => {
 
     expect(document.getElementById('auth-error')?.textContent).toContain('VITE_SUPABASE_URL');
     expect((document.getElementById('auth-submit') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('validatePassword rechaza contraseñas débiles', async () => {
+    const mod = await import('../../dashboard/auth');
+    expect(mod.validatePassword('abc')).toContain('8');
+    expect(mod.validatePassword('abcdefgh')).toContain('mayúscula');
+    expect(mod.validatePassword('ABCDEFGH')).toContain('minúscula');
+    expect(mod.validatePassword('Abcdefgh')).toContain('número');
+    expect(mod.validatePassword('Abcdefg1')).toContain('símbolo');
+    expect(mod.validatePassword('Abcdef1!')).toBeNull();
+  });
+
+  it('detecta flujo de invitación y muestra pantalla set-password', async () => {
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u2', email: 'nuevo@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(document.getElementById('set-password-screen')?.style.display).toBe('flex');
+    expect(document.getElementById('auth-screen')?.style.display).toBe('none');
+
+    // Reset hash for other tests
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('activa cuenta exitosamente y avanza al app', async () => {
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u3', email: 'nuevo2@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-confirm') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(updateUser).toHaveBeenCalledWith({ password: 'Segura1!' });
+
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('set-password muestra error si contraseñas no coinciden', async () => {
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u4', email: 'nuevo3@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-confirm') as HTMLInputElement).value = 'Distinta1!';
+    (document.getElementById('set-password-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+
+    expect(document.getElementById('set-password-error')?.textContent).toContain('no coinciden');
+    expect(updateUser).not.toHaveBeenCalled();
+
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('detecta flujo de recovery (type=recovery) y muestra pantalla set-password', async () => {
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '#type=recovery&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u5', email: 'reset@test.com' } } },
+    });
+
+    document.body.innerHTML += '<div id="set-password-sub"></div>';
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(document.getElementById('set-password-screen')?.style.display).toBe('flex');
+    expect(document.getElementById('set-password-submit')?.textContent).toContain('Restablecer');
+
+    Object.defineProperty(window, 'location', {
+      value: { ...window.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('PASSWORD_RECOVERY event muestra pantalla set-password con modo recovery', async () => {
+    let capturedCallback: ((event: string) => Promise<void>) | null = null;
+    onAuthStateChange.mockImplementation((cb: (event: string) => Promise<void>) => {
+      capturedCallback = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+    getSession
+      .mockResolvedValueOnce({ data: { session: null } })
+      .mockResolvedValueOnce({ data: { session: { user: { id: 'u6', email: 'r2@test.com' } } } });
+
+    document.body.innerHTML += '<div id="set-password-sub"></div>';
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    await capturedCallback!('PASSWORD_RECOVERY');
+    await Promise.resolve();
+
+    expect(document.getElementById('set-password-screen')?.style.display).toBe('flex');
+    expect(document.getElementById('set-password-submit')?.textContent).toContain('Restablecer');
   });
 });

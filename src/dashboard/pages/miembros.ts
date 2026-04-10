@@ -7,6 +7,40 @@ declare const Chart: ChartCtor;
 
 let membersData: MemberData[] = [];
 let memberWeightChart: ChartLike | null = null;
+let memberExerciseChart: ChartLike | null = null;
+const DETAIL_SECTIONS_STATE_KEY = 'dashboard:miembros:detail-sections:v1';
+
+function loadDetailSectionsState(): Record<string, boolean> {
+  try {
+    const raw = sessionStorage.getItem(DETAIL_SECTIONS_STATE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return {};
+    const out: Record<string, boolean> = {};
+    Object.entries(parsed as Record<string, unknown>).forEach(([k, v]) => {
+      if (typeof v === 'boolean') out[k] = v;
+    });
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function saveDetailSectionsState(state: Record<string, boolean>): void {
+  try {
+    sessionStorage.setItem(DETAIL_SECTIONS_STATE_KEY, JSON.stringify(state));
+  } catch {
+    // Ignore storage errors (private mode, quota, disabled storage).
+  }
+}
+
+function applyDetailSectionState(trigger: HTMLButtonElement, expanded: boolean): void {
+  const targetId = trigger.dataset.target || '';
+  const body = targetId ? document.getElementById(targetId) : null;
+  if (!targetId || !body) return;
+  trigger.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+  body.classList.toggle('collapsed', !expanded);
+}
 
 function toNumber(value: string | number | null | undefined): number {
   const n = Number(value);
@@ -55,6 +89,24 @@ export function initMiembrosPage(): void {
 
   document.getElementById('detail-close')?.addEventListener('click', closePanel);
   document.getElementById('detail-overlay')?.addEventListener('click', closePanel);
+
+  const sectionsState = loadDetailSectionsState();
+  document.querySelectorAll('.detail-section-toggle').forEach((btn) => {
+    const trigger = btn as HTMLButtonElement;
+    const targetId = trigger.dataset.target || '';
+    if (targetId && Object.prototype.hasOwnProperty.call(sectionsState, targetId)) {
+      applyDetailSectionState(trigger, sectionsState[targetId]);
+    }
+
+    btn.addEventListener('click', () => {
+      const expanded = trigger.getAttribute('aria-expanded') !== 'false';
+      const nextExpanded = !expanded;
+      applyDetailSectionState(trigger, nextExpanded);
+      if (!targetId) return;
+      sectionsState[targetId] = nextExpanded;
+      saveDetailSectionsState(sectionsState);
+    });
+  });
 }
 
 export async function loadMiembros(): Promise<void> {
@@ -110,9 +162,10 @@ function renderMembersTable(data: MemberData[]): void {
       const avatar = escapeHtml(initials(m.name));
       const userId = escapeHtml(m.id);
       const heatCells = m.heatmap
-        .map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}" style="width:9px;height:9px"></div>`)
+        .map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}"></div>`)
         .join('');
       const pr = m.bestPR ? `${escapeHtml(m.bestPR.name)} ${m.bestPR.w}${escapeHtml(m.bestPR.unit)}` : '—';
+      const prTitle = m.bestPR ? `${escapeHtml(m.bestPR.name)} ${m.bestPR.w}${escapeHtml(m.bestPR.unit)}` : 'Sin PR';
       return `<tr data-uid="${userId}">
       <td><div class="avatar-cell">
         <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
@@ -120,8 +173,8 @@ function renderMembersTable(data: MemberData[]): void {
       </div></td>
       <td>${niceDate(m.lastDate)}</td>
       <td class="text-mono">${m.sesMonth}</td>
-      <td><div class="heatmap" style="grid-template-columns:repeat(28,1fr);gap:2px;width:140px">${heatCells}</div></td>
-      <td class="text-sm text2">${pr}</td>
+      <td class="members-activity-cell"><div class="heatmap heatmap-28d">${heatCells}</div></td>
+      <td class="text-sm text2 members-pr-cell"><span class="member-pr-text" title="${prTitle}">${pr}</span></td>
       <td>${statusBadge(m.lastDate)}</td>
     </tr>`;
     })
@@ -169,6 +222,66 @@ function renderMemberHeader(member: MemberData): void {
     detailAvatar.style.background = avatarColor + '33';
     detailAvatar.style.color = avatarColor;
   }
+}
+
+function buildExerciseTimeline(gymUser: GymSession[], exerciseName: string): {
+  labels: string[];
+  data: Array<number | null>;
+  unit: string;
+} {
+  const byDate: Record<string, number> = {};
+  let unit = 'kg';
+
+  gymUser.forEach((s) => {
+    (s.exercises || []).forEach((ex) => {
+      if (ex.name !== exerciseName) return;
+      const w = toNumber(ex.weight);
+      if (w <= 0) return;
+      const date = s.date;
+      if (!byDate[date] || w > byDate[date]) byDate[date] = w;
+      if (typeof ex.unit === 'string' && ex.unit.trim()) unit = ex.unit;
+    });
+  });
+
+  const dates = Object.keys(byDate).sort((a, b) => a.localeCompare(b));
+  return {
+    labels: dates.map((d) => niceDate(d)),
+    data: dates.map((d) => byDate[d]),
+    unit,
+  };
+}
+
+function renderExerciseTrend(gymUser: GymSession[], exerciseName: string): void {
+  const titleEl = document.getElementById('detail-exercise-progress-title');
+  if (titleEl) titleEl.textContent = `Evolucion: ${exerciseName}`;
+
+  const canvas = document.getElementById('chart-member-exercise');
+  if (!canvas) return;
+
+  const { labels, data, unit } = buildExerciseTimeline(gymUser, exerciseName);
+  const c = chartColors();
+
+  if (memberExerciseChart) memberExerciseChart.destroy();
+  memberExerciseChart = new Chart(canvas, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        {
+          label: `${exerciseName} (${unit})`,
+          data,
+          borderColor: c.accent,
+          backgroundColor: c.accent + '22',
+          tension: 0.32,
+          fill: true,
+          pointRadius: 3,
+          pointBackgroundColor: c.accent,
+          spanGaps: true,
+        },
+      ],
+    },
+    options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
+  });
 }
 
 async function openMemberPanel(uid: string): Promise<void> {
@@ -250,13 +363,39 @@ async function openMemberPanel(uid: string): Promise<void> {
       ? entries
           .map(
             ([name, d]) => `
-    <div class="pr-row">
+    <button class="pr-row is-button" type="button" data-exercise="${escapeHtml(name)}">
       <span class="pr-name">${escapeHtml(name)}</span>
       <span class="pr-value">${d.w} ${escapeHtml(d.unit)}${d.isPR ? '<span class="pr-badge">PR</span>' : ''}</span>
-    </div>`,
+    </button>`,
           )
           .join('')
       : '<div class="empty-state"><div class="empty-state-icon">🏋️</div><div class="empty-state-text">Sin ejercicios</div></div>';
+
+    prListEl.querySelectorAll<HTMLButtonElement>('button[data-exercise]').forEach((btn) => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const exerciseName = btn.dataset.exercise || '';
+        if (!exerciseName) return;
+        renderExerciseTrend(gymUser, exerciseName);
+        const body = document.getElementById('detail-exercise-progress-body');
+        const toggle = document.querySelector<HTMLButtonElement>('.detail-section-toggle[data-target="detail-exercise-progress-body"]');
+        if (body && toggle) {
+          body.classList.remove('collapsed');
+          toggle.setAttribute('aria-expanded', 'true');
+        }
+      });
+    });
+  }
+
+  if (entries.length) {
+    renderExerciseTrend(gymUser, entries[0][0]);
+  } else {
+    const titleEl = document.getElementById('detail-exercise-progress-title');
+    if (titleEl) titleEl.textContent = 'Evolucion por ejercicio';
+    if (memberExerciseChart) {
+      memberExerciseChart.destroy();
+      memberExerciseChart = null;
+    }
   }
 
   document.getElementById('detail-overlay')?.classList.add('open');

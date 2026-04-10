@@ -173,3 +173,33 @@ Tablas requeridas:
 - `hiit_sessions`
 
 Activa RLS y aplica políticas para aislar datos por usuario (`auth.uid() = user_id`).
+
+---
+
+## Invitaciones (Flujo Pro)
+
+El dashboard de admin soporta invitaciones por email via Edge Function segura.
+
+### Requisitos de backend
+
+1. Aplicar SQL de roles jerarquicos en `sql/supabase-roles-hierarchy.sql`.
+2. Desplegar la Edge Function `invite-user` en `supabase/functions/invite-user/index.ts`.
+3. Configurar variables de entorno de la function:
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY`
+
+### Deploy de la function
+
+```bash
+supabase functions deploy invite-user
+```
+
+### Permisos
+
+- `can_invite = true`: puede invitar miembros.
+- Solo `is_super_admin = true` puede invitar con acceso dashboard inicial (`gym_admin`).
+
+Runbook operativo completo:
+
+- `docs/runbook-operativo-invitaciones.md`
