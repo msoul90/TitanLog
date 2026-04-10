@@ -5,11 +5,13 @@ const getSession = vi.fn();
 const onAuthStateChange = vi.fn();
 const signOutApi = vi.fn();
 const fromMock = vi.fn();
+const rpcMock = vi.fn();
 
 vi.mock('../../dashboard/data', () => ({
   getDashboardSupabaseError: () => null,
   sb: {
     from: (...args: unknown[]) => fromMock(...args),
+    rpc: (...args: unknown[]) => rpcMock(...args),
     auth: {
       signInWithPassword: (...args: unknown[]) => signInWithPassword(...args),
       getSession: (...args: unknown[]) => getSession(...args),
@@ -24,6 +26,7 @@ function authChain(data: unknown) {
     select: () => ({
       eq: () => ({
         single: async () => ({ data }),
+        maybeSingle: async () => ({ data, error: null }),
       }),
     }),
   };
@@ -49,10 +52,10 @@ describe('dashboard auth', () => {
     `;
 
     fromMock.mockImplementation((table: string) => {
-      if (table === 'gym_admins') return authChain({ user_id: 'u1' });
       if (table === 'profiles') return authChain({ name: 'Ana', color: '#123456' });
       return authChain(null);
     });
+    rpcMock.mockResolvedValue({ data: true, error: null });
 
     getSession.mockResolvedValue({ data: { session: null } });
     onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
@@ -104,10 +107,10 @@ describe('dashboard auth', () => {
 
   it('initAuth muestra noaccess para usuario sin admin', async () => {
     fromMock.mockImplementation((table: string) => {
-      if (table === 'gym_admins') return authChain(null);
       if (table === 'profiles') return authChain({ name: 'Ana' });
       return authChain(null);
     });
+    rpcMock.mockResolvedValueOnce({ data: false, error: null });
 
     getSession.mockResolvedValue({ data: { session: { user: { id: 'u9', email: 'u9@test.com' } } } });
 

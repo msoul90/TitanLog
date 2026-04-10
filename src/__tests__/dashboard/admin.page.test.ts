@@ -3,20 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const fetchProfiles = vi.fn();
 const fetchAdmins = vi.fn();
 const showToast = vi.fn();
-const insert = vi.fn();
-const delEq = vi.fn();
+const rpc = vi.fn();
 
 vi.mock('../../dashboard/data', () => ({
   fetchProfiles: (...args: unknown[]) => fetchProfiles(...args),
   fetchAdmins: (...args: unknown[]) => fetchAdmins(...args),
   sb: {
-    from: (table: string) => {
-      if (table !== 'gym_admins') throw new Error('unexpected table');
-      return {
-        insert: (...args: unknown[]) => insert(...args),
-        delete: () => ({ eq: (...args: unknown[]) => delEq(...args) }),
-      };
-    },
+    rpc: (...args: unknown[]) => rpc(...args),
   },
 }));
 
@@ -41,8 +34,7 @@ describe('dashboard admin page', () => {
     vi.clearAllMocks();
 
     document.body.innerHTML = '<input id="admin-search" /><table><tbody id="admin-tbody"></tbody></table>';
-    insert.mockResolvedValue({ error: null });
-    delEq.mockResolvedValue({ error: null });
+    rpc.mockResolvedValue({ error: null });
 
     fetchProfiles.mockResolvedValue([
       { id: 'u1', name: 'Ana', color: '#111' },
@@ -83,12 +75,12 @@ describe('dashboard admin page', () => {
     target.checked = true;
     target.dispatchEvent(new Event('change'));
     await Promise.resolve();
-    expect(insert).toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith('set_gym_admin', { target_user_id: 'u2', grant_access: true });
 
     target.checked = false;
     target.dispatchEvent(new Event('change'));
     await Promise.resolve();
-    expect(delEq).toHaveBeenCalled();
+    expect(rpc).toHaveBeenCalledWith('set_gym_admin', { target_user_id: 'u2', grant_access: false });
     expect(showToast).toHaveBeenCalled();
   });
 

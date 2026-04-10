@@ -79,15 +79,9 @@ async function toggleAdmin(uid: string, grant: boolean, inputEl: HTMLInputElemen
   }
 
   try {
-    if (grant) {
-      const { error } = await sb.from('gym_admins').insert({ user_id: uid, added_by: currentUser?.id });
-      if (error) throw error;
-      showToast('Acceso concedido', 'success');
-    } else {
-      const { error } = await sb.from('gym_admins').delete().eq('user_id', uid);
-      if (error) throw error;
-      showToast('Acceso revocado');
-    }
+    const { error } = await sb.rpc('set_gym_admin', { target_user_id: uid, grant_access: grant });
+    if (error) throw error;
+    showToast(grant ? 'Acceso concedido' : 'Acceso revocado', grant ? 'success' : undefined);
 
     adminData = adminData.map((u) => (u.id === uid ? { ...u, isAdmin: grant } : u));
     renderAdminTable(adminData);

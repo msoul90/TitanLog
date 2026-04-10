@@ -39,8 +39,11 @@ function showScreen(screen: 'auth' | 'noaccess' | 'app'): void {
 }
 
 async function checkAdmin(userId: string): Promise<boolean> {
-  const { data } = await sb.from('gym_admins').select('user_id').eq('user_id', userId).single();
-  return !!data;
+  const { data, error } = await sb.rpc('is_gym_admin', { uid: userId });
+  if (error) {
+    throw error;
+  }
+  return Boolean(data);
 }
 
 async function loadProfile(userId: string): Promise<void> {
@@ -67,7 +70,15 @@ async function handleUser(user: AuthUser | null | undefined, onAuthorized: () =>
     return;
   }
   currentUser = user;
-  const isAdmin = await checkAdmin(user.id);
+  let isAdmin = false;
+  try {
+    isAdmin = await checkAdmin(user.id);
+  } catch (error) {
+    setAuthError('No se pudo validar el acceso admin. Revisa RLS/tabla gym_admins e intenta de nuevo.');
+    console.error('Error checking admin access:', getErrorMessage(error));
+    showScreen('auth');
+    return;
+  }
   if (!isAdmin) {
     showScreen('noaccess');
     return;

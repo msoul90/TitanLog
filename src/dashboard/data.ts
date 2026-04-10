@@ -9,6 +9,7 @@ type DashboardSupabaseClient = {
     signOut(): Promise<unknown>;
   };
   from(table: string): any;
+  rpc(functionName: string, args?: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }>;
 };
 
 type SupabaseGlobal = {
@@ -97,7 +98,8 @@ export async function fetchBodyMetrics(): Promise<BodyMetric[]> {
 }
 
 export async function fetchAdmins(): Promise<string[]> {
-  const { data } = await sb.from('gym_admins').select('user_id');
+  const { data, error } = await sb.rpc('list_gym_admins');
+  if (error) throw error;
   return ((data || []) as AdminRecord[]).map((r) => r.user_id);
 }
 

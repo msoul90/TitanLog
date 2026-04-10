@@ -36,6 +36,16 @@ function createFromMock() {
   });
 }
 
+function createRpcMock() {
+  return vi.fn((fnName: string) => {
+    if (fnName === 'list_gym_admins') {
+      return Promise.resolve({ data: [{ user_id: 'u1' }, { user_id: 'u2' }], error: null });
+    }
+
+    return Promise.resolve({ data: null, error: null });
+  });
+}
+
 function createGteSelect(data: unknown[]) {
   return () => ({
     gte: () => ({
@@ -52,13 +62,14 @@ function createOrderSelect(data: unknown[]) {
 
 async function loadDataModule() {
   const fromMock = createFromMock();
+  const rpcMock = createRpcMock();
 
   (globalThis as unknown as { supabase: unknown }).supabase = {
-    createClient: vi.fn(() => ({ from: fromMock })),
+    createClient: vi.fn(() => ({ from: fromMock, rpc: rpcMock })),
   };
 
   const mod = await import('../../dashboard/data');
-  return { mod, fromMock };
+  return { mod, fromMock, rpcMock };
 }
 
 describe('dashboard data module', () => {
@@ -102,10 +113,11 @@ describe('dashboard data module', () => {
   });
 
   it('fetchAdmins mapea user_id', async () => {
-    const { mod } = await loadDataModule();
+    const { mod, rpcMock } = await loadDataModule();
 
     const admins = await mod.fetchAdmins();
     expect(admins).toEqual(['u1', 'u2']);
+    expect(rpcMock).toHaveBeenCalledWith('list_gym_admins');
   });
 
   it('fetchAllUsers reutiliza perfiles cacheados', async () => {
@@ -118,16 +130,12 @@ describe('dashboard data module', () => {
     expect(fromMock.mock.calls.filter((c) => c[0] === 'profiles')).toHaveLength(1);
   });
 
-  it('expone error cuando falta configuracion valida', async () => {
+  it('expone error cuando falta runtime de supabase', async () => {
     vi.resetModules();
-    vi.unstubAllEnvs();
-
-    (globalThis as typeof globalThis & { supabase?: unknown }).supabase = {
-      createClient: vi.fn(() => ({ from: vi.fn() })),
-    };
+    delete (globalThis as typeof globalThis & { supabase?: unknown }).supabase;
 
     const mod = await import('../../dashboard/data');
-    expect(mod.getDashboardSupabaseError()).toContain('VITE_SUPABASE_URL');
-    expect(() => mod.sb.from('profiles')).toThrow(/VITE_SUPABASE_URL/);
+    expect(mod.getDashboardSupabaseError()).toContain('No se pudo cargar el cliente de Supabase');
+    expect(() => mod.sb.from('profiles')).toThrow(/No se pudo cargar el cliente de Supabase/);
   });
 });
