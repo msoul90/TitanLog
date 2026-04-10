@@ -1,7 +1,22 @@
-import { sb } from './data';
+import { getDashboardSupabaseError, sb } from './data';
 import type { AuthUser } from './types';
 
 let currentUser: AuthUser | null = null;
+
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return 'No se pudo completar la autenticacion.';
+}
+
+function setAuthError(message: string): void {
+  const errorNode = document.getElementById('auth-error');
+  if (errorNode) {
+    errorNode.textContent = message;
+  }
+}
 
 function showScreen(screen: 'auth' | 'noaccess' | 'app'): void {
   const auth = document.getElementById('auth-screen');
@@ -63,31 +78,41 @@ async function handleUser(user: AuthUser | null | undefined, onAuthorized: () =>
 async function signIn(onAuthorized: () => Promise<void> | void): Promise<void> {
   const emailEl = document.getElementById('auth-email') as HTMLInputElement | null;
   const passwordEl = document.getElementById('auth-password') as HTMLInputElement | null;
-  const errEl = document.getElementById('auth-error');
   const btn = document.getElementById('auth-submit') as HTMLButtonElement | null;
-  if (!emailEl || !passwordEl || !errEl || !btn) return;
+  if (!emailEl || !passwordEl || !btn) return;
 
   const email = emailEl.value.trim();
   const password = passwordEl.value;
-  errEl.textContent = '';
+  setAuthError('');
 
   if (!email || !password) {
-    errEl.textContent = 'Completa todos los campos.';
+    setAuthError('Completa todos los campos.');
     return;
   }
 
   btn.disabled = true;
   btn.textContent = 'Iniciando…';
 
-  const { data, error } = await sb.auth.signInWithPassword({ email, password });
-  if (error) {
-    errEl.textContent = error.message;
-    btn.disabled = false;
-    btn.textContent = 'Iniciar sesión';
-    return;
-  }
+  try {
+    const { data, error } = (await sb.auth.signInWithPassword({ email, password })) as {
+      data: { user?: AuthUser | null };
+      error: { message: string } | null;
+    };
 
-  await handleUser(data.user, onAuthorized);
+    if (error) {
+      setAuthError(error.message);
+      return;
+    }
+
+    await handleUser(data.user, onAuthorized);
+  } catch (error) {
+    setAuthError(getErrorMessage(error));
+  } finally {
+    if (document.getElementById('app')?.style.display !== 'block') {
+      btn.disabled = false;
+      btn.textContent = 'Iniciar sesión';
+    }
+  }
 }
 
 export function getCurrentUser(): AuthUser | null {
@@ -102,6 +127,10 @@ export async function signOut(): Promise<void> {
 
 export async function initAuth(onAuthorized: () => Promise<void> | void): Promise<void> {
   showScreen('auth');
+  const dashboardSupabaseError = getDashboardSupabaseError();
+  if (dashboardSupabaseError) {
+    setAuthError(dashboardSupabaseError);
+  }
 
   const submit = document.getElementById('auth-submit');
   const password = document.getElementById('auth-password');
@@ -115,16 +144,23 @@ export async function initAuth(onAuthorized: () => Promise<void> | void): Promis
   noAccessSignOut?.addEventListener('click', () => signOut());
   topbarSignOut?.addEventListener('click', () => signOut());
 
-  const {
-    data: { session },
-  } = await sb.auth.getSession();
-  if (session?.user) {
-    await handleUser(session.user as AuthUser, onAuthorized);
-  }
+  try {
+    const {
+      data: { session },
+    } = (await sb.auth.getSession()) as {
+      data: { session?: { user?: AuthUser | null } | null };
+    };
 
-  sb.auth.onAuthStateChange(async (event: string) => {
-    if (event === 'SIGNED_OUT') {
-      showScreen('auth');
+    if (session?.user) {
+      await handleUser(session.user, onAuthorized);
     }
-  });
+
+    sb.auth.onAuthStateChange(async (event: string) => {
+      if (event === 'SIGNED_OUT') {
+        showScreen('auth');
+      }
+    });
+  } catch (error) {
+    setAuthError(getErrorMessage(error));
+  }
 }

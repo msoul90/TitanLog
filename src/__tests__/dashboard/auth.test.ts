@@ -7,6 +7,7 @@ const signOutApi = vi.fn();
 const fromMock = vi.fn();
 
 vi.mock('../../dashboard/data', () => ({
+  getDashboardSupabaseError: () => null,
   sb: {
     from: (...args: unknown[]) => fromMock(...args),
     auth: {
@@ -114,5 +115,22 @@ describe('dashboard auth', () => {
     await mod.initAuth(async () => {});
 
     expect(document.getElementById('noaccess-screen')?.style.display).toBe('flex');
+  });
+
+  it('signIn muestra errores inesperados de configuracion', async () => {
+    signInWithPassword.mockRejectedValue(new Error('Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.'));
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('auth-email') as HTMLInputElement).value = 'ana@test.com';
+    (document.getElementById('auth-password') as HTMLInputElement).value = '123456';
+    (document.getElementById('auth-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('auth-error')?.textContent).toContain('VITE_SUPABASE_URL');
+    expect((document.getElementById('auth-submit') as HTMLButtonElement).disabled).toBe(false);
   });
 });

@@ -1,9 +1,39 @@
-import { SUPABASE_ANON, SUPABASE_URL } from './config';
+import { getSupabaseConfigError, SUPABASE_ANON, SUPABASE_URL } from './config';
 import type { AdminRecord, BodyMetric, GymSession, HiitSession, Profile } from './types';
 
-declare const supabase: any;
+type DashboardSupabaseClient = {
+  auth: {
+    getSession(): Promise<unknown>;
+    onAuthStateChange(callback: (event: string) => void): unknown;
+    signInWithPassword(credentials: { email: string; password: string }): Promise<unknown>;
+    signOut(): Promise<unknown>;
+  };
+  from(table: string): any;
+};
 
-export const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON);
+type SupabaseGlobal = {
+  createClient(url: string, key: string): DashboardSupabaseClient;
+};
+
+const supabaseRuntime = (globalThis as typeof globalThis & { supabase?: SupabaseGlobal }).supabase;
+const hasSupabaseRuntime = Boolean(supabaseRuntime?.createClient);
+const dashboardSupabaseError = getSupabaseConfigError() || (hasSupabaseRuntime ? null : 'No se pudo cargar el cliente de Supabase.');
+const rawClient = dashboardSupabaseError || !supabaseRuntime ? null : supabaseRuntime.createClient(SUPABASE_URL, SUPABASE_ANON);
+
+export const sb: DashboardSupabaseClient = new Proxy({} as DashboardSupabaseClient, {
+  get(_target, property, receiver) {
+    if (!rawClient || dashboardSupabaseError) {
+      throw new Error(dashboardSupabaseError || 'No se pudo inicializar Supabase.');
+    }
+
+    const value = Reflect.get(rawClient, property, receiver) as unknown;
+    return typeof value === 'function' ? value.bind(rawClient) : value;
+  },
+});
+
+export function getDashboardSupabaseError(): string | null {
+  return dashboardSupabaseError;
+}
 
 type CacheStore = {
   gymSessions?: { data: GymSession[]; _since: string };

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { createClient } from '@supabase/supabase-js';
+import { getSupabaseConfigError, SUPABASE_ANON, SUPABASE_URL } from './supabase-config';
 import {
   User,
   UserProfile,
@@ -15,15 +16,20 @@ import {
   AuthMode
 } from './types.js';
 
-// ══════════════════════════════════════════════════════
-// SUPABASE CONFIG — reemplaza con tus propios valores
-// Los encuentras en: supabase.com → tu proyecto → Settings → API
-// ══════════════════════════════════════════════════════
-const SUPABASE_URL: string = 'https://TU_PROJECT_ID.supabase.co';
-const SUPABASE_ANON: string = 'TU_ANON_PUBLIC_KEY';
 const PROFILE_COLORS: readonly string[] = ['#aaff45','#ff9f43','#45c8ff','#ff6bbd','#a78bfa','#fb923c','#34d399','#f472b6'];
 
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON);
+const supabaseConfigError = getSupabaseConfigError();
+const rawSb = supabaseConfigError ? null : (createClient(SUPABASE_URL, SUPABASE_ANON) as any);
+const sb = new Proxy({} as any, {
+  get(_target, property, receiver) {
+    if (!rawSb || supabaseConfigError) {
+      throw new Error(supabaseConfigError || 'No se pudo inicializar Supabase.');
+    }
+
+    const value = Reflect.get(rawSb, property, receiver) as unknown;
+    return typeof value === 'function' ? value.bind(rawSb) : value;
+  },
+});
 
 // Runtime-safe global wrappers for browser module execution
 const toast = (msg: string): void => (globalThis as any).toast?.(msg);
@@ -32,6 +38,19 @@ const closeM = (modalId: string): void => (globalThis as any).closeM?.(modalId);
 const initTheme = (): void => (globalThis as any).initTheme?.();
 const renderToday = (): void => (globalThis as any).renderToday?.();
 const renderHiitProgress = (): void => (globalThis as any).renderHiitProgress?.();
+
+function getRuntimeErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message.includes('VITE_SUPABASE_')) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function setAuthError(message: string): void {
+  const authErr = document.getElementById('authErr');
+  if (authErr) authErr.textContent = message;
+}
 
 function getPasswordResetRedirectUrl(): string | undefined {
   const locationObject = (globalThis as { location?: Location }).location;
@@ -616,9 +635,7 @@ async function doAuthAction(): Promise<void> { // NOSONAR
     }
   } catch (err) {
     console.error('Error in authentication:', err);
-
-    const authErr = document.getElementById('authErr');
-    if (authErr) authErr.textContent = 'Error de conexión. Intenta de nuevo.';
+    setAuthError(getRuntimeErrorMessage(err, 'Error de conexión. Intenta de nuevo.'));
 
     const authBtn = document.getElementById('authBtn') as HTMLButtonElement;
     if (authBtn) {
@@ -658,8 +675,7 @@ async function sendResetEmail(): Promise<void> {
     }
   } catch (err) {
     console.error('Exception sending reset email:', err);
-    const authErr = document.getElementById('authErr');
-    if (authErr) authErr.textContent = 'Error enviando email. Intenta de nuevo.';
+    setAuthError(getRuntimeErrorMessage(err, 'Error enviando email. Intenta de nuevo.'));
   }
 }
 
@@ -759,15 +775,15 @@ async function initLogin(): Promise<void> {
     console.error('Error initializing login:', err);
     const loginScreen = document.getElementById('loginScreen');
     if (loginScreen) loginScreen.style.display = 'flex';
+    setAuthError(getRuntimeErrorMessage(err, 'No se pudo inicializar el login.'));
   }
 }
 
 // ── EXPORTS ──
 
+export { SUPABASE_URL, SUPABASE_ANON } from './supabase-config';
+
 export {
-  // Constants
-  SUPABASE_URL,
-  SUPABASE_ANON,
   PROFILE_COLORS,
 
   // State

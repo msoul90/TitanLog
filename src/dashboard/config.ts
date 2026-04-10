@@ -1,5 +1,4 @@
-export const SUPABASE_URL = 'https://TU_PROJECT_ID.supabase.co';
-export const SUPABASE_ANON = 'TU_ANON_PUBLIC_KEY';
+export { SUPABASE_URL, SUPABASE_ANON, getSupabaseConfigError } from '../supabase-config';
 
 export const PAGE_TITLES = {
   resumen: 'Resumen',

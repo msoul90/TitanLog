@@ -225,6 +225,8 @@ vi.mock('@supabase/supabase-js', () => {
 describe('db.ts', () => {
   beforeEach(() => {
     vi.resetModules();
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://demo-project.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
 
     mockState.sessionUser = null;
     mockState.sessionError = false;
@@ -418,6 +420,17 @@ describe('db.ts', () => {
     await doAuthAction();
 
     expect(document.getElementById('authErr')?.textContent).toContain('Error de conexión');
+  });
+
+  it('initLogin muestra error de configuracion si faltan variables de entorno', async () => {
+    vi.resetModules();
+    vi.unstubAllEnvs();
+    const { initLogin } = await import('../db.js');
+
+    await initLogin();
+
+    expect(document.getElementById('loginScreen')?.style.display).toBe('flex');
+    expect(document.getElementById('authErr')?.textContent).toContain('VITE_SUPABASE_URL');
   });
 
   it('toggleAuthMode mantiene signin-only', async () => {

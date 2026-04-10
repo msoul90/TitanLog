@@ -35,6 +35,7 @@ Frontend en TypeScript con Vite, backend/auth en Supabase y despliegue automáti
 
 ```text
 .
+├── .env.local                # credenciales locales de Supabase (ignorado por git)
 ├── src/
 │   ├── app.ts
 │   ├── calendar.ts
@@ -44,6 +45,7 @@ Frontend en TypeScript con Vite, backend/auth en Supabase y despliegue automáti
 │   ├── hiit.ts
 │   ├── main.ts
 │   ├── progress.ts
+│   ├── supabase-config.ts
 │   ├── types.ts
 │   └── __tests__/
 │       ├── app.test.ts
@@ -83,14 +85,17 @@ npm install
 
 ### 2) Configurar Supabase
 
-En `src/db.ts` reemplaza estos placeholders:
+Crea `.env.local` con tus credenciales reales antes de arrancar Vite:
 
-```ts
-const SUPABASE_URL: string = 'https://TU_PROJECT_ID.supabase.co';
-const SUPABASE_ANON: string = 'TU_ANON_PUBLIC_KEY';
+```bash
+VITE_SUPABASE_URL=https://tu-project-id.supabase.co
+VITE_SUPABASE_ANON_KEY=tu_anon_public_key
 ```
 
 Valores en Supabase: `Settings -> API`.
+
+La app principal y el dashboard leen estas variables desde `src/supabase-config.ts`.
+`.env.local` ya está ignorado por git.
 
 ### 3) Levantar en modo desarrollo
 
@@ -150,7 +155,9 @@ Configura estos secrets en el repo:
 - `SUPABASE_URL`
 - `SUPABASE_ANON_KEY`
 
-El workflow inyecta esos valores en `src/db.ts`, ejecuta build y publica `_site/` en Pages.
+El workflow exporta `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` para toda la app, ejecuta build y publica `_site/` en Pages.
+
+Eso cubre tanto la app principal como el dashboard; ya no se reemplazan credenciales dentro de `src/db.ts` durante el deploy.
 
 > Nota: la base pública para Pages está en `vite.config.ts` (`base: '/TitanLog/'`).
 
