@@ -1704,7 +1704,24 @@ async function enrichGuideFromDB(requestedName: string): Promise<void> {
 
     const canonicalName = (resolved.name || requestedName).trim() || requestedName;
     guideExName = canonicalName;
-    renderGuideContent(canonicalName, resolved.guide);
+
+    // Merge DB guide with local guide: keep local data for fields that are
+    // empty in the DB response so that locally-stored tips/steps/errors are
+    // never wiped out by an incomplete database record.
+    const localKey = findGuideKey(requestedName);
+    const localGuide = localKey ? GUIDES[localKey] : null;
+    const dbGuide = resolved.guide;
+
+    const mergedGuide: ExerciseGuide = {
+      emoji: dbGuide.emoji && dbGuide.emoji !== '📖' ? dbGuide.emoji : (localGuide?.emoji ?? '📖'),
+      primary: dbGuide.primary?.length ? dbGuide.primary : (localGuide?.primary ?? []),
+      secondary: dbGuide.secondary?.length ? dbGuide.secondary : (localGuide?.secondary ?? []),
+      steps: dbGuide.steps?.length ? dbGuide.steps : (localGuide?.steps ?? []),
+      errors: dbGuide.errors?.length ? dbGuide.errors : (localGuide?.errors ?? []),
+      tips: dbGuide.tips?.length ? dbGuide.tips : (localGuide?.tips ?? []),
+    };
+
+    renderGuideContent(canonicalName, mergedGuide);
   } catch {
     // Local guide fallback is already rendered.
   }
