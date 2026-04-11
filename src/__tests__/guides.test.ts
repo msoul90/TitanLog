@@ -66,7 +66,7 @@ describe('guides.ts', () => {
 
   it('openGuide con nombre desconocido muestra estado sin guia', () => {
     openGuide('Ejercicio Inventado');
-    expect(document.getElementById('gMuscles')?.textContent).toContain('Sin guía');
+    expect(document.getElementById('gMuscles')?.textContent).toContain('Ejercicio personalizado');
     expect(document.getElementById('gErrSec')?.getAttribute('style')).toContain('none');
     expect((globalThis as any).openM).toHaveBeenCalledWith('guideMod');
   });
@@ -138,5 +138,45 @@ describe('guides.ts', () => {
     expect(document.getElementById('gTips')?.innerHTML).not.toContain('<script>');
 
     delete GUIDES['Ejercicio <img src=x onerror=alert(1)>'];
+  });
+
+  it('openGuide muestra placeholders cuando la guia viene vacia', () => {
+    GUIDES['Ejercicio Vacio'] = {
+      emoji: '📘',
+      primary: ['Core'],
+      secondary: [],
+      steps: [],
+      errors: [],
+      tips: []
+    } as any;
+
+    openGuide('Ejercicio Vacio');
+
+    expect(document.getElementById('gSteps')?.textContent).toContain('Sin pasos de ejecución documentados aún');
+    expect(document.getElementById('gErrors')?.textContent).toContain('Aún no hay errores comunes registrados');
+    expect(document.getElementById('gTips')?.textContent).toContain('Tips pro en preparación');
+    expect(document.getElementById('gErrSec')?.getAttribute('style') || '').not.toContain('none');
+    expect(document.getElementById('gTipSec')?.getAttribute('style') || '').not.toContain('none');
+
+    delete GUIDES['Ejercicio Vacio'];
+  });
+
+  it('openGuide renderiza contenido parcial y placeholders solo donde falta', () => {
+    GUIDES['Ejercicio Parcial'] = {
+      emoji: '📗',
+      primary: ['Pecho'],
+      secondary: [],
+      steps: ['Paso real'],
+      errors: [],
+      tips: ['Tip real']
+    } as any;
+
+    openGuide('Ejercicio Parcial');
+
+    expect(document.getElementById('gSteps')?.textContent).toContain('Paso real');
+    expect(document.getElementById('gErrors')?.textContent).toContain('Aún no hay errores comunes registrados');
+    expect(document.getElementById('gTips')?.textContent).toContain('Tip real');
+
+    delete GUIDES['Ejercicio Parcial'];
   });
 });

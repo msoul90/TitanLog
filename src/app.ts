@@ -45,8 +45,17 @@ const EXERCISE_DATABASE: ExerciseDatabaseEntry[] = [
   {n:'Jalón de tríceps en polea',m:'Tríceps'},{n:'Kick back',m:'Tríceps'},
   {n:'Plancha',m:'Core'},{n:'Crunch',m:'Abdomen'},{n:'Crunch en polea',m:'Abdomen'},
   {n:'Elevación de piernas',m:'Abdomen'},{n:'Russian twist',m:'Abdomen'},
-  {n:'Dead bug',m:'Core'},{n:'Caminadora',m:'Cardio'},{n:'Bicicleta estática',m:'Cardio'},
+  {n:'Dead bug',m:'Core'},
+  {n:'Hollow body hold',m:'Core'},{n:'Dragon flag',m:'Core'},
+  {n:'V-up',m:'Abdomen'},{n:'Bicicleta abdominal',m:'Abdomen'},
+  {n:'Chop en polea',m:'Core'},{n:'Pallof press',m:'Core'},{n:'Flutter kicks',m:'Abdomen'},{n:'Caminadora',m:'Cardio'},{n:'Bicicleta estática',m:'Cardio'},
   {n:'Elíptica',m:'Cardio'},{n:'Burpees',m:'Funcional'},{n:'Salto a la caja',m:'Funcional'},
+  // TRX / Suspensión
+  {n:'TRX Sentadilla',m:'Piernas'},{n:'TRX Zancada',m:'Piernas'},
+  {n:'TRX Remo',m:'Espalda'},{n:'TRX Flexiones',m:'Pecho'},
+  {n:'TRX Curl de bíceps',m:'Bíceps'},{n:'TRX Extensión de tríceps',m:'Tríceps'},
+  {n:'TRX Plancha',m:'Core'},{n:'TRX Pike',m:'Core'},
+  {n:'TRX Puente de glúteo',m:'Glúteos'},{n:'TRX Apertura de pecho',m:'Pecho'},
 ];
 
 // UI Constants
