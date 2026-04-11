@@ -381,7 +381,7 @@ function generateWeightHistory(entries: [string, BodyWeightEntry][]): string {
   const recentEntries = weightEntries.slice(-PROGRESS_CONSTANTS.MAX_HISTORY_DOTS);
   const dotsHtml = recentEntries.map(([key, entry]) => {
     const date = new Date(key);
-    return `<div class="bc-hdot"><span class="bhv">${entry.v}<span style="font-size:0.6rem;font-weight:400"> ${entry.u || 'lb'}</span></span>${date.getDate()}/${date.getMonth() + 1}</div>`;
+    return `<div class="bc-hdot"><span class="bhv">${entry.v}<span style="font-size:0.6rem;font-weight:400"> ${entry.u || 'lb'}</span></span>${date.getUTCDate()}/${date.getUTCMonth() + 1}</div>`;
   }).join('');
 
   return `<div class="bc-hist-card">
@@ -402,7 +402,7 @@ function generateFatHistory(entries: [string, BodyWeightEntry][]): string {
   const recentEntries = fatEntries.slice(-PROGRESS_CONSTANTS.MAX_HISTORY_DOTS);
   const dotsHtml = recentEntries.map(([key, entry]) => {
     const date = new Date(key);
-    return `<div class="bc-hdot"><span class="bhv">${entry.fat}%</span>${date.getDate()}/${date.getMonth() + 1}</div>`;
+    return `<div class="bc-hdot"><span class="bhv">${entry.fat}%</span>${date.getUTCDate()}/${date.getUTCMonth() + 1}</div>`;
   }).join('');
 
   return `<div class="bc-hist-card">
@@ -423,7 +423,7 @@ function generateMmcHistory(entries: [string, BodyWeightEntry][]): string {
   const recentEntries = mmcEntries.slice(-PROGRESS_CONSTANTS.MAX_HISTORY_DOTS);
   const dotsHtml = recentEntries.map(([key, entry]) => {
     const date = new Date(key);
-    return `<div class="bc-hdot"><span class="bhv">${entry.mmc}%</span>${date.getDate()}/${date.getMonth() + 1}</div>`;
+    return `<div class="bc-hdot"><span class="bhv">${entry.mmc}%</span>${date.getUTCDate()}/${date.getUTCMonth() + 1}</div>`;
   }).join('');
 
   return `<div class="bc-hist-card">
@@ -506,7 +506,7 @@ function generateExerciseProgressCard(exerciseName: string, progressData: Exerci
     const isPersonalRecord = entry.weight === maxWeight;
     const cssClass = `p-dot${isPersonalRecord ? ' pk' : ''}`;
 
-    return `<div class="${cssClass}"><span class="pv">${entry.weight}</span>${date.getDate()}/${date.getMonth() + 1}</div>`;
+    return `<div class="${cssClass}"><span class="pv">${entry.weight}</span>${date.getUTCDate()}/${date.getUTCMonth() + 1}</div>`;
   }).join('');
 
   const latestUnit = latestEntry.unit || 'lb';
