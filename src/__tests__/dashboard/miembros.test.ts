@@ -104,6 +104,9 @@ describe('dashboard miembros page', () => {
     const row = document.querySelector('#members-tbody tr') as HTMLTableRowElement;
     row.click();
     await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
 
     expect(document.getElementById('detail-panel')?.classList.contains('open')).toBe(true);
     expect(document.getElementById('detail-name')?.textContent).toContain('Ana');

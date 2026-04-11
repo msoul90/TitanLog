@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchGymSessions = vi.fn();
 const fetchHiitSessions = vi.fn();
@@ -21,6 +21,8 @@ vi.mock('../../dashboard/theme', async () => {
 
 describe('dashboard resumen page', () => {
   beforeEach(() => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-04-10T12:00:00Z'));
     vi.resetModules();
     vi.clearAllMocks();
 
@@ -43,6 +45,10 @@ describe('dashboard resumen page', () => {
       this.options = {};
     });
     (globalThis as unknown as { Chart: unknown }).Chart = ChartCtor;
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('calcula KPIs y renderiza listas', async () => {
