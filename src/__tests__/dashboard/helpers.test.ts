@@ -126,3 +126,35 @@ describe('dashboard helpers muscle map', () => {
     expect(colorForMuscle('Otro')).toBe('#9090b8');
   });
 });
+
+describe('dashboard helpers toText edge cases', () => {
+  it('escapeHtml maneja tipo symbol con descripcion', () => {
+    const sym = Symbol('mi-simbolo');
+    expect(escapeHtml(sym)).toBe('mi-simbolo');
+  });
+
+  it('escapeHtml maneja tipo symbol sin descripcion', () => {
+    const sym = Symbol();
+    expect(escapeHtml(sym)).toBe('');
+  });
+
+  it('sanitizeCsvCell maneja tipo symbol', () => {
+    const sym = Symbol('test');
+    expect(sanitizeCsvCell(sym)).toBe('"test"');
+  });
+
+  it('escapeHtml devuelve cadena vacia para objeto con referencia circular', () => {
+    const obj: Record<string, unknown> = {};
+    obj.self = obj;
+    expect(escapeHtml(obj)).toBe('');
+  });
+
+  it('escapeHtml maneja tipo bigint', () => {
+    expect(escapeHtml(BigInt(42))).toBe('42');
+  });
+
+  it('showToast no falla cuando no existe contenedor de toast', () => {
+    document.body.innerHTML = '';
+    expect(() => showToast('mensaje sin contenedor')).not.toThrow();
+  });
+});

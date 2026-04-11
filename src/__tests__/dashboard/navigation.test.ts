@@ -59,4 +59,22 @@ describe('dashboard navigation', () => {
     expect(document.getElementById('topbar-title')?.textContent).toContain('Configuracion');
     expect((document.getElementById('topbar-search') as HTMLInputElement).style.display).toBe('none');
   });
+
+  it('nav-item con pagina no registrada en PAGE_TITLES no llama onNavigate', () => {
+    mountDom();
+    const onNavigate = vi.fn();
+    initNavigation({ onNavigate, onRefresh: vi.fn(), onToggleTheme: vi.fn() });
+
+    // Add a nav-item with a page key that is not in PAGE_TITLES
+    const unknownBtn = document.createElement('button');
+    unknownBtn.className = 'nav-item';
+    unknownBtn.dataset.page = 'pagina-desconocida';
+    document.body.appendChild(unknownBtn);
+
+    // Re-init to register the new button
+    initNavigation({ onNavigate, onRefresh: vi.fn(), onToggleTheme: vi.fn() });
+    unknownBtn.click();
+
+    expect(onNavigate).not.toHaveBeenCalledWith('pagina-desconocida');
+  });
 });

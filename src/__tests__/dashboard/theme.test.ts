@@ -69,3 +69,63 @@ describe('dashboard theme', () => {
     expect(dark.accent).not.toBe(light.accent);
   });
 });
+
+describe('dashboard theme uncovered branches', () => {
+  it('getTheme devuelve light cuando matchMedia no coincide dark', () => {
+    localStorage.removeItem('tl-theme');
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: false })));
+    expect(getTheme()).toBe('light');
+  });
+
+  it('toggleTheme funciona sin chart activo', () => {
+    document.body.innerHTML = '<span id="theme-icon"></span><span id="theme-tooltip"></span>';
+    document.documentElement.dataset.theme = 'light';
+    setActiveChart(null);
+    toggleTheme();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+
+  it('toggleTheme aplica tema dark cuando tema actual es light', () => {
+    document.body.innerHTML = '<span id="theme-icon"></span><span id="theme-tooltip"></span>';
+    document.documentElement.dataset.theme = 'light';
+    const chart = {
+      options: { plugins: { tooltip: {} }, scales: { x: { ticks: {}, grid: {} }, y: { ticks: {}, grid: {} } } },
+      data: { datasets: [] },
+      update: vi.fn(),
+    };
+    setActiveChart(chart);
+    toggleTheme();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(chart.update).toHaveBeenCalled();
+    setActiveChart(null);
+  });
+
+  it('updateChartTheme no falla cuando options no tiene plugins ni scales', () => {
+    const chart = {
+      options: {},
+      data: {},
+      update: vi.fn(),
+    };
+    expect(() => updateChartTheme(chart)).not.toThrow();
+    expect(chart.update).toHaveBeenCalled();
+  });
+
+  it('updateChartTheme actualiza datasets sin _colorKey ni _borderColorKey', () => {
+    const chart = {
+      options: {
+        plugins: { tooltip: {} },
+        scales: { x: { ticks: {}, grid: {} }, y: { ticks: {}, grid: {} } },
+      },
+      data: { datasets: [{ label: 'sin keys de color' }] },
+      update: vi.fn(),
+    };
+    expect(() => updateChartTheme(chart)).not.toThrow();
+    expect(chart.update).toHaveBeenCalled();
+  });
+
+  it('applyTheme no falla cuando no existen elementos de icono', () => {
+    document.body.innerHTML = '';
+    expect(() => applyTheme('dark')).not.toThrow();
+    expect(document.documentElement.dataset.theme).toBe('dark');
+  });
+});

@@ -7,9 +7,10 @@ const signOutApi = vi.fn();
 const updateUser = vi.fn();
 const fromMock = vi.fn();
 const rpcMock = vi.fn();
+const getDashboardSupabaseErrorMock = vi.fn(() => null);
 
 vi.mock('../../dashboard/data', () => ({
-  getDashboardSupabaseError: () => null,
+  getDashboardSupabaseError: (...args: unknown[]) => getDashboardSupabaseErrorMock(...args),
   sb: {
     from: (...args: unknown[]) => fromMock(...args),
     rpc: (...args: unknown[]) => rpcMock(...args),
@@ -67,6 +68,7 @@ describe('dashboard auth', () => {
     });
     rpcMock.mockResolvedValue({ data: true, error: null });
 
+    getDashboardSupabaseErrorMock.mockReturnValue(null);
     getSession.mockResolvedValue({ data: { session: null } });
     onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
     updateUser.mockResolvedValue({ error: null });
@@ -278,5 +280,254 @@ describe('dashboard auth', () => {
 
     expect(document.getElementById('set-password-screen')?.style.display).toBe('flex');
     expect(document.getElementById('set-password-submit')?.textContent).toContain('Restablecer');
+  });
+
+  it('handleUser muestra auth-screen cuando usuario es nulo', async () => {
+    signInWithPassword.mockResolvedValue({ data: { user: null }, error: null });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('auth-email') as HTMLInputElement).value = 'test@test.com';
+    (document.getElementById('auth-password') as HTMLInputElement).value = 'Password1!';
+    (document.getElementById('auth-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('auth-screen')?.style.display).toBe('flex');
+    expect(mod.getCurrentUser()).toBeNull();
+  });
+
+  it('handleUser muestra error y pantalla auth cuando checkAdmin falla con error de BD', async () => {
+    getSession.mockResolvedValue({ data: { session: { user: { id: 'u99', email: 'x@test.com' } } } });
+    rpcMock.mockResolvedValue({ data: null, error: { message: 'rpc db error' } });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(document.getElementById('auth-error')?.textContent).toContain('No se pudo validar');
+    expect(document.getElementById('auth-screen')?.style.display).toBe('flex');
+  });
+
+  it('signIn muestra error cuando la API devuelve error de credenciales', async () => {
+    signInWithPassword.mockResolvedValue({ data: {}, error: { message: 'Email o contraseña incorrectos' } });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('auth-email') as HTMLInputElement).value = 'wrong@test.com';
+    (document.getElementById('auth-password') as HTMLInputElement).value = 'WrongPass1!';
+    (document.getElementById('auth-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('auth-error')?.textContent).toBe('Email o contraseña incorrectos');
+    expect((document.getElementById('auth-submit') as HTMLButtonElement).disabled).toBe(false);
+  });
+
+  it('signOut muestra error en UI cuando el servidor falla pero cierra sesion localmente', async () => {
+    signOutApi.mockRejectedValue(new Error('network timeout'));
+
+    const mod = await import('../../dashboard/auth');
+    await mod.signOut();
+
+    expect(mod.getCurrentUser()).toBeNull();
+    expect(document.getElementById('auth-screen')?.style.display).toBe('flex');
+    expect(document.getElementById('auth-error')?.textContent).toContain('saliste localmente');
+  });
+
+  it('initAuth muestra error de configuracion de supabase en pantalla de login', async () => {
+    getDashboardSupabaseErrorMock.mockReturnValue('Error de configuracion de Supabase');
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(document.getElementById('auth-error')?.textContent).toContain('Error de configuracion de Supabase');
+  });
+
+  it('tecla Enter en campo contraseña inicia sesion', async () => {
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('auth-email') as HTMLInputElement).value = 'ana@test.com';
+    (document.getElementById('auth-password') as HTMLInputElement).value = 'Segura1!';
+
+    const pwInput = document.getElementById('auth-password') as HTMLInputElement;
+    pwInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(signInWithPassword).toHaveBeenCalled();
+  });
+
+  it('evento SIGNED_OUT vuelve a mostrar pantalla de autenticacion', async () => {
+    let capturedSignedOutCb: ((event: string) => void) | null = null;
+    onAuthStateChange.mockImplementation((cb: (event: string) => void) => {
+      capturedSignedOutCb = cb;
+      return { data: { subscription: { unsubscribe: vi.fn() } } };
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    document.getElementById('app')!.style.display = 'block';
+    capturedSignedOutCb!('SIGNED_OUT');
+
+    expect(document.getElementById('auth-screen')?.style.display).toBe('flex');
+    expect(document.getElementById('app')?.style.display).toBe('none');
+  });
+
+  it('initAuth muestra error cuando getSession lanza excepcion', async () => {
+    getSession.mockRejectedValue(new Error('network failure during session check'));
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(document.getElementById('auth-error')?.textContent).toContain('network failure during session check');
+  });
+
+  it('set-password muestra error cuando la API de updateUser devuelve error', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u10', email: 'new10@test.com' } } },
+    });
+    updateUser.mockResolvedValue({ error: { message: 'La nueva contraseña es igual a la anterior' } });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-confirm') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('set-password-error')?.textContent).toContain('La nueva contraseña es igual');
+
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('set-password muestra error cuando updateUser lanza excepcion inesperada', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u11', email: 'new11@test.com' } } },
+    });
+    updateUser.mockRejectedValue(new Error('unexpected server error'));
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-confirm') as HTMLInputElement).value = 'Segura1!';
+    (document.getElementById('set-password-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(document.getElementById('set-password-error')?.textContent).toContain('unexpected server error');
+
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('set-password muestra error de validacion cuando contraseña no cumple requisitos', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u12', email: 'new12@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'debil';
+    (document.getElementById('set-password-confirm') as HTMLInputElement).value = 'debil';
+    (document.getElementById('set-password-submit') as HTMLButtonElement).click();
+
+    await Promise.resolve();
+
+    expect(document.getElementById('set-password-error')?.textContent).toBeTruthy();
+    expect(updateUser).not.toHaveBeenCalled();
+
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('set-password actualiza indicador de fortaleza al escribir', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u13', email: 'new13@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    const newPwEl = document.getElementById('set-password-new') as HTMLInputElement;
+    newPwEl.value = 'Segura1!';
+    newPwEl.dispatchEvent(new Event('input'));
+
+    const strengthFill = document.getElementById('pw-strength-fill');
+    expect(strengthFill?.style.width).not.toBe('0%');
+
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
+      writable: true,
+    });
+  });
+
+  it('confirmEl Enter en set-password activa envio del formulario', async () => {
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '#type=invite&access_token=tok' },
+      writable: true,
+    });
+    getSession.mockResolvedValue({
+      data: { session: { user: { id: 'u14', email: 'new14@test.com' } } },
+    });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    (document.getElementById('set-password-new') as HTMLInputElement).value = 'Segura1!';
+    const confirmEl = document.getElementById('set-password-confirm') as HTMLInputElement;
+    confirmEl.value = 'Segura1!';
+    confirmEl.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    await Promise.resolve();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(updateUser).toHaveBeenCalledWith({ password: 'Segura1!' });
+
+    Object.defineProperty(globalThis, 'location', {
+      value: { ...globalThis.location, hash: '' },
+      writable: true,
+    });
   });
 });
