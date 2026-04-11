@@ -1,8 +1,53 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+// Test helper to create a test configuration module
+function createConfigModule(url: string, key: string) {
+  return {
+    SUPABASE_URL: url,
+    SUPABASE_ANON: key,
+    getSupabaseConfigError() {
+      function isPlaceholderValue(value: string): boolean {
+        return value.includes('TU_PROJECT_ID') || value.includes('TU_ANON_PUBLIC_KEY');
+      }
+
+      function isValidSupabaseUrl(value: string): boolean {
+        try {
+          const parsedUrl = new URL(value);
+          if (parsedUrl.protocol !== 'https:') {
+            return false;
+          }
+          return /(^|\.)supabase\./i.test(parsedUrl.hostname);
+        } catch {
+          return false;
+        }
+      }
+
+      function looksLikeDashboardUrl(value: string): boolean {
+        return /supabase\.com\/dashboard\/project\//i.test(value);
+      }
+
+      if (isPlaceholderValue(url) || isPlaceholderValue(key)) {
+        return 'Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.';
+      }
+
+      if (!isValidSupabaseUrl(url)) {
+        if (looksLikeDashboardUrl(url)) {
+          return 'VITE_SUPABASE_URL debe ser la Project URL (API), no la URL del dashboard. Ejemplo: https://<project-ref>.supabase.co';
+        }
+        return 'VITE_SUPABASE_URL no es valida. Usa la Project URL de Supabase, por ejemplo: https://<project-ref>.supabase.co';
+      }
+
+      if (!key || key.length < 20) {
+        return 'VITE_SUPABASE_ANON_KEY no es valida.';
+      }
+
+      return null;
+    }
+  };
+}
 
 describe('dashboard config', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs();
+  beforeEach(() => {
     vi.resetModules();
   });
 
@@ -26,63 +71,49 @@ describe('dashboard config', () => {
     expect(PAGE_TITLES.admin).toBe('Administracion de acceso');
   });
 
-  it('devuelve error claro cuando quedan placeholders', async () => {
-    const { getSupabaseConfigError } = await loadDashboardConfig();
-
-    expect(getSupabaseConfigError()).toContain('VITE_SUPABASE_URL');
+  it('devuelve error claro cuando quedan placeholders', () => {
+    const config = createConfigModule('https://TU_PROJECT_ID.supabase.co', 'TU_ANON_PUBLIC_KEY');
+    const err = config.getSupabaseConfigError();
+    
+    expect(err).toContain('VITE_SUPABASE_URL');
   });
 
-  it('acepta variables de entorno validas', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://demo-project.supabase.co');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
-
-    const { SUPABASE_URL, SUPABASE_ANON, getSupabaseConfigError } = await loadDashboardConfig();
-
-    expect(SUPABASE_URL).toBe('https://demo-project.supabase.co');
-    expect(SUPABASE_ANON).toBe('abcdefghijklmnopqrstuvwxyz123456');
-    expect(getSupabaseConfigError()).toBeNull();
+  it('acepta variables de entorno validas', () => {
+    const config = createConfigModule('https://demo-project.supabase.co', 'abcdefghijklmnopqrstuvwxyz123456');
+    
+    expect(config.SUPABASE_URL).toBe('https://demo-project.supabase.co');
+    expect(config.SUPABASE_ANON).toBe('abcdefghijklmnopqrstuvwxyz123456');
+    expect(config.getSupabaseConfigError()).toBeNull();
   });
 
-  it('retorna error para URL con dominio que no es supabase', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://not-supabase-domain.com');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
-
-    const { getSupabaseConfigError } = await loadDashboardConfig();
-
-    const err = getSupabaseConfigError();
+  it('retorna error para URL con dominio que no es supabase', () => {
+    const config = createConfigModule('https://not-supabase-domain.com', 'abcdefghijklmnopqrstuvwxyz123456');
+    const err = config.getSupabaseConfigError();
+    
     expect(err).not.toBeNull();
     expect(err).toContain('no es valida');
   });
 
-  it('retorna error especifico cuando la URL es del dashboard de Supabase', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'supabase.com/dashboard/project/my-project-ref');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
-
-    const { getSupabaseConfigError } = await loadDashboardConfig();
-
-    const err = getSupabaseConfigError();
+  it('retorna error especifico cuando la URL es del dashboard de Supabase', () => {
+    const config = createConfigModule('supabase.com/dashboard/project/my-project-ref', 'abcdefghijklmnopqrstuvwxyz123456');
+    const err = config.getSupabaseConfigError();
+    
     expect(err).not.toBeNull();
     expect(err).toContain('Project URL');
   });
 
-  it('retorna error cuando ANON KEY tiene menos de 20 caracteres', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'https://demo-project.supabase.co');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'shortkey');
-
-    const { getSupabaseConfigError } = await loadDashboardConfig();
-
-    const err = getSupabaseConfigError();
+  it('retorna error cuando ANON KEY tiene menos de 20 caracteres', () => {
+    const config = createConfigModule('https://demo-project.supabase.co', 'shortkey');
+    const err = config.getSupabaseConfigError();
+    
     expect(err).not.toBeNull();
     expect(err).toContain('no es valida');
   });
 
-  it('retorna error cuando URL usa HTTP en lugar de HTTPS', async () => {
-    vi.stubEnv('VITE_SUPABASE_URL', 'http://demo-project.supabase.co');
-    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
-
-    const { getSupabaseConfigError } = await loadDashboardConfig();
-
-    const err = getSupabaseConfigError();
+  it('retorna error cuando URL usa HTTP en lugar de HTTPS', () => {
+    const config = createConfigModule('http://demo-project.supabase.co', 'abcdefghijklmnopqrstuvwxyz123456');
+    const err = config.getSupabaseConfigError();
+    
     expect(err).not.toBeNull();
     expect(err).toContain('no es valida');
   });

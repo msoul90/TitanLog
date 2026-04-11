@@ -461,14 +461,18 @@ describe('db.ts', () => {
   });
 
   it('initLogin muestra error de configuracion si faltan variables de entorno', async () => {
+    vi.doMock('../supabase-config.js', () => ({
+      getSupabaseConfigError: () => 'Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.'
+    }));
     vi.resetModules();
-    vi.unstubAllEnvs();
     const { initLogin } = await import('../db.js');
 
     await initLogin();
 
     expect(document.getElementById('loginScreen')?.style.display).toBe('flex');
     expect(document.getElementById('authErr')?.textContent).toContain('VITE_SUPABASE_URL');
+    
+    vi.doUnmock('../supabase-config.js');
   });
 
   it('toggleAuthMode mantiene signin-only', async () => {

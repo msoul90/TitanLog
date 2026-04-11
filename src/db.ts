@@ -1024,6 +1024,16 @@ async function initLogin(): Promise<void> {
   try {
     initTheme();
 
+    // Validate Supabase configuration early
+    const { getSupabaseConfigError } = await import('./supabase-config.js');
+    const configError = getSupabaseConfigError();
+    if (configError) {
+      const loginScreen = document.getElementById('loginScreen');
+      if (loginScreen) loginScreen.style.display = 'flex';
+      setAuthError(configError);
+      return;
+    }
+
     // Check existing session
     const { data: { session } } = await sb.auth.getSession();
 
