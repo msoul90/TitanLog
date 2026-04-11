@@ -42,6 +42,50 @@ describe('dashboard config', () => {
     expect(SUPABASE_ANON).toBe('abcdefghijklmnopqrstuvwxyz123456');
     expect(getSupabaseConfigError()).toBeNull();
   });
+
+  it('retorna error para URL con dominio que no es supabase', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://not-supabase-domain.com');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
+
+    const { getSupabaseConfigError } = await loadDashboardConfig();
+
+    const err = getSupabaseConfigError();
+    expect(err).not.toBeNull();
+    expect(err).toContain('no es valida');
+  });
+
+  it('retorna error especifico cuando la URL es del dashboard de Supabase', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'supabase.com/dashboard/project/my-project-ref');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
+
+    const { getSupabaseConfigError } = await loadDashboardConfig();
+
+    const err = getSupabaseConfigError();
+    expect(err).not.toBeNull();
+    expect(err).toContain('Project URL');
+  });
+
+  it('retorna error cuando ANON KEY tiene menos de 20 caracteres', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'https://demo-project.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'shortkey');
+
+    const { getSupabaseConfigError } = await loadDashboardConfig();
+
+    const err = getSupabaseConfigError();
+    expect(err).not.toBeNull();
+    expect(err).toContain('no es valida');
+  });
+
+  it('retorna error cuando URL usa HTTP en lugar de HTTPS', async () => {
+    vi.stubEnv('VITE_SUPABASE_URL', 'http://demo-project.supabase.co');
+    vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
+
+    const { getSupabaseConfigError } = await loadDashboardConfig();
+
+    const err = getSupabaseConfigError();
+    expect(err).not.toBeNull();
+    expect(err).toContain('no es valida');
+  });
 });
 
 async function loadDashboardConfig() {

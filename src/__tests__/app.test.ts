@@ -340,4 +340,120 @@ describe('app UI helpers', () => {
     expect((globalThis as any).renderGuidesCatalog).toHaveBeenCalled();
     expect((document.getElementById('fabBtn') as HTMLElement).style.display).toBe('flex');
   });
+
+  it('acKey ignora eventos cuando el dropdown esta oculto', () => {
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    drop.style.display = 'none';
+
+    expect(() => acKey(new KeyboardEvent('keydown', { key: 'ArrowDown' }))).not.toThrow();
+    expect(() => acKey(new KeyboardEvent('keydown', { key: 'Enter' }))).not.toThrow();
+  });
+
+  it('acKey navega hacia arriba con ArrowUp', () => {
+    acIn('sen');
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    expect(drop.style.display).toBe('block');
+
+    acKey(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    acKey(new KeyboardEvent('keydown', { key: 'ArrowDown' }));
+    acKey(new KeyboardEvent('keydown', { key: 'ArrowUp' }));
+
+    const items = drop.querySelectorAll('.ac-it');
+    const highlighted = Array.from(items).filter(i => i.classList.contains('hi'));
+    expect(highlighted).toHaveLength(1);
+  });
+
+  it('acKey cierra dropdown con Escape', () => {
+    acIn('sen');
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    expect(drop.style.display).toBe('block');
+
+    acKey(new KeyboardEvent('keydown', { key: 'Escape' }));
+
+    expect(drop.style.display).toBe('none');
+  });
+
+  it('acKey con Enter sin seleccion no selecciona nada', () => {
+    acIn('sen');
+    const fName = document.getElementById('fName') as HTMLInputElement;
+    fName.value = '';
+
+    acKey(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    expect(fName.value).toBe('');
+  });
+
+  it('acKey ignora teclas que no son de navegacion', () => {
+    acIn('sen');
+    const fName = document.getElementById('fName') as HTMLInputElement;
+    fName.value = 'sen';
+
+    acKey(new KeyboardEvent('keydown', { key: 'Tab' }));
+
+    expect(fName.value).toBe('sen');
+  });
+
+  it('acIn oculta dropdown cuando el query tiene menos de 2 caracteres', () => {
+    acIn('sen');
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    expect(drop.style.display).toBe('block');
+
+    acIn('s');
+    expect(drop.style.display).toBe('none');
+
+    acIn('');
+    expect(drop.style.display).toBe('none');
+  });
+
+  it('acIn no muestra sugerencias para consulta sin coincidencias', () => {
+    acIn('zzzzzzzzzz');
+    const drop = document.getElementById('acDrop') as HTMLElement;
+    expect(drop.style.display).toBe('none');
+  });
+
+  it('renderToday muestra PR y notas cuando corresponde', () => {
+    document.body.innerHTML += '<div id="dLabel"></div><div id="dSub"></div><div id="exList"></div>';
+    appState.viewDate = new Date(2026, 3, 9);
+    sessionStorage.clear();
+    clearPerformanceCache();
+
+    sessionStorage.setItem('ironlog_gym_', JSON.stringify({
+      '2026-04-01': [{ name: 'Press banca', weight: '80', reps: '5', ts: 0 }],
+      '2026-04-09': [{ name: 'Press banca', weight: '100', reps: '5', ts: 1, notes: 'Nuevo record', unit: 'kg', sets: '3' }],
+    }));
+
+    renderToday();
+
+    const html = document.getElementById('exList')?.innerHTML || '';
+    expect(html).toContain('Press banca');
+    expect(html).toContain('Nuevo record');
+    expect(html).toContain('Nuevo máximo');
+  });
+});
+
+describe('validateExerciseInput edge cases', () => {
+  it('retorna error cuando reps es menor que 1', () => {
+    const errs = validateExerciseInput('Sentadilla', 80, 3, '0');
+    expect(errs.some(e => /al menos 1/i.test(e))).toBe(true);
+  });
+
+  it('retorna error cuando reps supera 999', () => {
+    const errs = validateExerciseInput('Sentadilla', 80, 3, '1000');
+    expect(errs.some(e => e.includes('999'))).toBe(true);
+  });
+
+  it('retorna error cuando reps no es un número ni tiempo', () => {
+    const errs = validateExerciseInput('Sentadilla', 80, 3, 'abc');
+    expect(errs.some(e => /número válido|tiempo/i.test(e))).toBe(true);
+  });
+
+  it('retorna error cuando las series no son un número válido', () => {
+    const errs = validateExerciseInput('Sentadilla', 80, 'abc', '10');
+    expect(errs.some(e => /serie/i.test(e))).toBe(true);
+  });
+
+  it('retorna error para tiempo con valor 0s', () => {
+    const errs = validateExerciseInput('Plancha', 0, 3, '0s');
+    expect(errs.some(e => /al menos 1 segundo/i.test(e))).toBe(true);
+  });
 });
