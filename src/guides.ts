@@ -309,7 +309,7 @@ const GUIDES: Record<string, ExerciseGuide> = {
   'Chin-ups': {
     emoji: '🔝',
     primary: ['Dorsal ancho', 'Bíceps'],
-    secondary: ['Romboides', 'Bíceps braquial'],
+    secondary: ['Romboides', 'Braquial'],
     steps: [
       'Agarra la barra con palmas mirando hacia ti (supinación), ancho de hombros.',
       'Cuelga con brazos completamente extendidos.',
@@ -2072,7 +2072,7 @@ const GUIDES: Record<string, ExerciseGuide> = {
 
   'TRX Remo': {
     emoji: '🔧',
-    primary: ['Espalda media', 'Romboides', 'Bíceps'],
+    primary: ['Espalda media', 'Romboides'],
     secondary: ['Core', 'Bíceps'],
     steps: [
       'Sujeta las asas con ambas manos, palmas hacia adentro, y recuéstate hacia atrás inclinando el cuerpo.',
@@ -2949,7 +2949,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
       ? steps.map((step: string, index: number) =>
           `<div class="guide-step"><div class="step-num">${index + 1}</div><div class="step-text">${escHtml(step)}</div></div>`
         ).join('')
-      : '<div class="guide-tip ok"><span class="tip-icon">ℹ️</span><span>Sin pasos de ejecución documentados aún para este ejercicio.</span></div>';
+      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Sin pasos de ejecución documentados aún para este ejercicio.</span></div>';
   }
 
   // Update errors
@@ -2959,7 +2959,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
       ? errors.map((error: string) =>
           `<div class="guide-tip err"><span class="tip-icon">❌</span><span>${escHtml(error)}</span></div>`
         ).join('')
-      : '<div class="guide-tip ok"><span class="tip-icon">ℹ️</span><span>Aún no hay errores comunes registrados para este ejercicio.</span></div>';
+      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Aún no hay errores comunes registrados para este ejercicio.</span></div>';
   }
 
   // Update tips
@@ -2969,7 +2969,7 @@ function renderGuideDetails(guide: ExerciseGuide): void {
       ? tips.map((tip: string) =>
           `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${escHtml(tip)}</span></div>`
         ).join('')
-      : '<div class="guide-tip ok"><span class="tip-icon">ℹ️</span><span>Tips pro en preparación para este ejercicio.</span></div>';
+      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Tips pro en preparación para este ejercicio.</span></div>';
   }
 
   // Show error and tip sections

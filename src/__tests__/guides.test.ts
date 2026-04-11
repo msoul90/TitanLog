@@ -152,9 +152,9 @@ describe('guides.ts', () => {
 
     openGuide('Ejercicio Vacio');
 
-    expect(document.getElementById('gSteps')?.textContent).toContain('Sin pasos de ejecución documentados aún');
-    expect(document.getElementById('gErrors')?.textContent).toContain('Aún no hay errores comunes registrados');
-    expect(document.getElementById('gTips')?.textContent).toContain('Tips pro en preparación');
+    expect(document.getElementById('gSteps')?.innerHTML).toContain('guide-tip empty');
+    expect(document.getElementById('gErrors')?.innerHTML).toContain('guide-tip empty');
+    expect(document.getElementById('gTips')?.innerHTML).toContain('guide-tip empty');
     expect(document.getElementById('gErrSec')?.getAttribute('style') || '').not.toContain('none');
     expect(document.getElementById('gTipSec')?.getAttribute('style') || '').not.toContain('none');
 
@@ -173,9 +173,9 @@ describe('guides.ts', () => {
 
     openGuide('Ejercicio Parcial');
 
-    expect(document.getElementById('gSteps')?.textContent).toContain('Paso real');
-    expect(document.getElementById('gErrors')?.textContent).toContain('Aún no hay errores comunes registrados');
-    expect(document.getElementById('gTips')?.textContent).toContain('Tip real');
+    expect(document.getElementById('gSteps')?.innerHTML).not.toContain('guide-tip empty');
+    expect(document.getElementById('gErrors')?.innerHTML).toContain('guide-tip empty');
+    expect(document.getElementById('gTips')?.innerHTML).not.toContain('guide-tip empty');
 
     delete GUIDES['Ejercicio Parcial'];
   });

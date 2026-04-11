@@ -755,10 +755,12 @@ dialog.overlay.open .guide-modal { transform:translateY(0); }
   padding:9px 11px; border-radius:10px;
   font-size:0.83rem; line-height:1.45;
 }
-.guide-tip.err { background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.2); }
-.guide-tip.ok  { background:var(--accent-dim); border:1px solid rgba(170,255,69,0.2); }
-[data-theme="light"] .guide-tip.err { background:rgba(187,34,34,0.07); border-color:rgba(187,34,34,0.2); }
-[data-theme="light"] .guide-tip.ok  { background:rgba(61,158,0,0.07); border-color:rgba(61,158,0,0.2); }
+.guide-tip.err   { background:rgba(255,107,107,0.08); border:1px solid rgba(255,107,107,0.2); }
+.guide-tip.ok    { background:var(--accent-dim); border:1px solid rgba(170,255,69,0.2); }
+.guide-tip.empty { background:var(--surface); border:1px dashed var(--border); color:var(--text3); font-style:italic; opacity:0.78; }
+[data-theme="light"] .guide-tip.err   { background:rgba(187,34,34,0.07); border-color:rgba(187,34,34,0.2); }
+[data-theme="light"] .guide-tip.ok    { background:rgba(61,158,0,0.07); border-color:rgba(61,158,0,0.2); }
+[data-theme="light"] .guide-tip.empty { background:#f7f7f7; border-color:#ccc; color:#888; }
 .tip-icon { font-size:0.95rem; flex-shrink:0; margin-top:1px; }
 
 .guide-add-btn {
