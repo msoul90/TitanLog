@@ -448,7 +448,7 @@ describe('validateExerciseInput edge cases', () => {
   });
 
   it('retorna error cuando las series no son un número válido', () => {
-    const errs = validateExerciseInput('Sentadilla', 80, 'abc' as any, '10');
+    const errs = validateExerciseInput('Sentadilla', 80, 'abc', '10');
     expect(errs.some(e => /serie/i.test(e))).toBe(true);
   });
 
