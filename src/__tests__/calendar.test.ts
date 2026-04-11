@@ -1,20 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-const { gDMock, gHiitMock, isPRMock, loadGymMonthMock, loadHiitMonthMock } = vi.hoisted(() => ({
+const { gDMock, gHiitMock, isPRMock, loadGymMonthMock, loadHiitMonthMock, appStateMock } = vi.hoisted(() => ({
   gDMock: vi.fn(),
   gHiitMock: vi.fn(),
   isPRMock: vi.fn(),
   loadGymMonthMock: vi.fn(),
   loadHiitMonthMock: vi.fn(),
+  appStateMock: { calendarDate: new Date(2026, 3, 1) },
 }));
 
 vi.mock('../app.js', () => ({
   gD: gDMock,
   MONTHS: ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'],
   DAYS_OF_WEEK: ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'],
-  appState: {
-    calendarDate: new Date(2026, 3, 1),
-  },
+  appState: appStateMock,
   isPR: isPRMock,
   escHtml: (v: string) => v,
 }));
@@ -30,6 +29,7 @@ import { changeMonth, renderCal, showCalDet } from '../calendar.js';
 
 describe('calendar.ts', () => {
   beforeEach(() => {
+    appStateMock.calendarDate = new Date(2026, 3, 1);
     document.body.innerHTML = `
       <div id="calMo"></div>
       <div id="calGrid"></div>
@@ -79,5 +79,30 @@ describe('calendar.ts', () => {
     expect(loadGymMonthMock).toHaveBeenCalled();
     expect(loadHiitMonthMock).toHaveBeenCalled();
     expect(document.querySelectorAll('#calGrid .cl').length).toBe(7);
+  });
+
+  it('showCalDet oculta el detalle cuando no hay sesiones de gym ni HIIT', () => {
+    showCalDet('2026-04-10', undefined, []);
+    const det = document.getElementById('calDet');
+    expect(det?.style.display).toBe('none');
+  });
+
+  it('showCalDet oculta el detalle con arrays vacios explicitamente pasados', () => {
+    showCalDet('2026-04-10', [], []);
+    const det = document.getElementById('calDet');
+    expect(det?.style.display).toBe('none');
+  });
+
+  it('showCalDet selecciona celda correspondiente despues de renderCal', () => {
+    renderCal();
+    showCalDet('2026-04-03', [{ name: 'Sentadilla', reps: '10', ts: 1, weight: '80', unit: 'kg', sets: '3' }]);
+
+    const matchingCell = document.querySelector('.cd[data-key="2026-04-03"]');
+    expect(matchingCell?.classList.contains('sel')).toBe(true);
+
+    // Cells for other dates should not have 'sel'
+    const otherCells = Array.from(document.querySelectorAll('.cd:not([data-key="2026-04-03"])'));
+    const selectedOthers = otherCells.filter((el) => el.classList.contains('sel'));
+    expect(selectedOthers).toHaveLength(0);
   });
 });

@@ -138,4 +138,58 @@ describe('dashboard data module', () => {
     expect(mod.getDashboardSupabaseError()).toContain('No se pudo cargar el cliente de Supabase');
     expect(() => mod.sb.from('profiles')).toThrow(/No se pudo cargar el cliente de Supabase/);
   });
+
+  it('fetchSuperAdmins retorna lista de super admins', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'list_super_admins') return Promise.resolve({ data: [{ user_id: 'u1' }, { user_id: 'u2' }], error: null });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const admins = await mod.fetchSuperAdmins();
+    expect(admins).toEqual(['u1', 'u2']);
+    expect(rpcMock).toHaveBeenCalledWith('list_super_admins');
+  });
+
+  it('fetchSuperAdmins devuelve [] para error forbidden', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'list_super_admins') return Promise.resolve({ data: null, error: { message: 'forbidden' } });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const admins = await mod.fetchSuperAdmins();
+    expect(admins).toEqual([]);
+  });
+
+  it('fetchSuperAdmins devuelve [] para error 42501', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'list_super_admins') return Promise.resolve({ data: null, error: { message: 'permission denied: 42501' } });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const admins = await mod.fetchSuperAdmins();
+    expect(admins).toEqual([]);
+  });
+
+  it('fetchSuperAdmins lanza error para errores inesperados', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'list_super_admins') return Promise.resolve({ data: null, error: { message: 'unexpected db error' } });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    await expect(mod.fetchSuperAdmins()).rejects.toMatchObject({ message: 'unexpected db error' });
+  });
+
+  it('fetchAdmins lanza error cuando rpc falla', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'list_gym_admins') return Promise.resolve({ data: null, error: { message: 'admins rpc error' } });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    await expect(mod.fetchAdmins()).rejects.toMatchObject({ message: 'admins rpc error' });
+  });
 });
