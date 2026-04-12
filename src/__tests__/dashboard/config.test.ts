@@ -1,31 +1,31 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+function isPlaceholderValue(value: string): boolean {
+  return value.includes('TU_PROJECT_ID') || value.includes('TU_ANON_PUBLIC_KEY');
+}
+
+function isValidSupabaseUrl(value: string): boolean {
+  try {
+    const parsedUrl = new URL(value);
+    if (parsedUrl.protocol !== 'https:') {
+      return false;
+    }
+    return /(^|\.)supabase\./i.test(parsedUrl.hostname);
+  } catch {
+    return false;
+  }
+}
+
+function looksLikeDashboardUrl(value: string): boolean {
+  return /supabase\.com\/dashboard\/project\//i.test(value);
+}
+
 // Test helper to create a test configuration module
 function createConfigModule(url: string, key: string) {
   return {
     SUPABASE_URL: url,
     SUPABASE_ANON: key,
     getSupabaseConfigError() {
-      function isPlaceholderValue(value: string): boolean {
-        return value.includes('TU_PROJECT_ID') || value.includes('TU_ANON_PUBLIC_KEY');
-      }
-
-      function isValidSupabaseUrl(value: string): boolean {
-        try {
-          const parsedUrl = new URL(value);
-          if (parsedUrl.protocol !== 'https:') {
-            return false;
-          }
-          return /(^|\.)supabase\./i.test(parsedUrl.hostname);
-        } catch {
-          return false;
-        }
-      }
-
-      function looksLikeDashboardUrl(value: string): boolean {
-        return /supabase\.com\/dashboard\/project\//i.test(value);
-      }
-
       if (isPlaceholderValue(url) || isPlaceholderValue(key)) {
         return 'Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.';
       }

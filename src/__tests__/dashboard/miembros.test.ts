@@ -149,4 +149,130 @@ describe('dashboard miembros page', () => {
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(body.classList.contains('collapsed')).toBe(true);
   });
+
+  it('muestra error al exportar cuando no hay miembros', async () => {
+    fetchProfiles.mockResolvedValue([]);
+    fetchGymSessions.mockResolvedValue([]);
+    fetchHiitSessions.mockResolvedValue([]);
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+    await mod.loadMiembros();
+
+    expect(document.getElementById('members-tbody')?.innerHTML).toContain('Sin miembros');
+
+    (document.getElementById('export-csv-btn') as HTMLButtonElement).click();
+    expect(document.getElementById('toast-container')?.innerHTML).toContain('Sin datos para exportar');
+  });
+
+  it('tolera estado corrupto en sessionStorage y persiste toggles de secciones', async () => {
+    sessionStorage.setItem('dashboard:miembros:detail-sections:v1', '{invalid json');
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+
+    const toggle = document.querySelector('[data-target="detail-activity-body"]') as HTMLButtonElement;
+    const body = document.getElementById('detail-activity-body') as HTMLDivElement;
+    toggle.click();
+
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(body.classList.contains('collapsed')).toBe(true);
+
+    const saved = sessionStorage.getItem('dashboard:miembros:detail-sections:v1') || '{}';
+    expect(saved).toContain('detail-activity-body');
+  });
+
+  it('detalle sin ejercicios muestra estado vacio y permite cerrar con overlay', async () => {
+    fetchProfiles.mockResolvedValue([{ id: 'u1', name: 'Ana', color: '#4ab8ff' }]);
+    fetchGymSessions.mockResolvedValue([]);
+    fetchHiitSessions.mockResolvedValue([{ id: 'h1', user_id: 'u1', date: '2026-04-09', name: 'AMRAP', rounds: 5, rpe: 8 }]);
+    fetchBodyMetrics.mockResolvedValue([]);
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+    await mod.loadMiembros();
+
+    const row = document.querySelector('#members-tbody tr') as HTMLTableRowElement;
+    row.click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('detail-panel')?.classList.contains('open')).toBe(true);
+    });
+
+    expect(document.getElementById('detail-prs-list')?.innerHTML).toContain('Sin ejercicios');
+    expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion por ejercicio');
+
+    (document.getElementById('detail-overlay') as HTMLDivElement).click();
+    expect(document.getElementById('detail-panel')?.classList.contains('open')).toBe(false);
+  });
+
+  it('al hacer click en PR abre evolucion y expande seccion colapsada', async () => {
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+    await mod.loadMiembros();
+
+    const toggle = document.querySelector('[data-target="detail-exercise-progress-body"]') as HTMLButtonElement;
+    const body = document.getElementById('detail-exercise-progress-body') as HTMLDivElement;
+    toggle.setAttribute('aria-expanded', 'false');
+    body.classList.add('collapsed');
+
+    const row = document.querySelector('#members-tbody tr') as HTMLTableRowElement;
+    row.click();
+    await vi.waitFor(() => {
+      expect(document.querySelector('#detail-prs-list button[data-exercise]')).not.toBeNull();
+    });
+
+    (document.querySelector('#detail-prs-list button[data-exercise]') as HTMLButtonElement).click();
+
+    expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion: Sentadilla');
+    expect(body.classList.contains('collapsed')).toBe(false);
+    expect(toggle.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('si cambia a miembro sin ejercicios destruye grafica previa y deja titulo por defecto', async () => {
+    fetchProfiles.mockResolvedValue([
+      { id: 'u1', name: 'Ana', color: '#4ab8ff' },
+      { id: 'u2', name: 'Luis', color: '#2ecc71' },
+    ]);
+    fetchGymSessions.mockResolvedValue([
+      { id: 'g1', user_id: 'u1', date: '2026-04-10', exercises: [{ name: 'Sentadilla', weight: 100, unit: 'kg' }] },
+    ]);
+    fetchHiitSessions.mockResolvedValue([{ id: 'h1', user_id: 'u2', date: '2026-04-09', name: 'AMRAP', rounds: 5, rpe: 8 }]);
+    fetchBodyMetrics.mockResolvedValue([
+      { id: 'b1', user_id: 'u1', date: '2026-04-01', weight: 71 },
+      { id: 'b2', user_id: 'u2', date: '2026-04-08', weight: 70 },
+    ]);
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+    await mod.loadMiembros();
+
+    const rows = document.querySelectorAll('#members-tbody tr');
+    (rows[0] as HTMLTableRowElement).click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion: Sentadilla');
+    });
+
+    (rows[1] as HTMLTableRowElement).click();
+    await vi.waitFor(() => {
+      expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion por ejercicio');
+    });
+
+    const chartMock = globalThis.Chart as unknown as { mock: { instances: Array<{ destroy: ReturnType<typeof vi.fn> }> } };
+    expect(chartMock.mock.instances.length).toBeGreaterThan(0);
+    expect(chartMock.mock.instances.some((instance) => instance.destroy.mock.calls.length > 0)).toBe(true);
+  });
+
+  it('tolera error al guardar estado de secciones en sessionStorage', async () => {
+    const setItemSpy = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => {
+      throw new Error('quota');
+    });
+
+    const mod = await import('../../dashboard/pages/miembros');
+    mod.initMiembrosPage();
+
+    const toggle = document.querySelector('[data-target="detail-activity-body"]') as HTMLButtonElement;
+    expect(() => toggle.click()).not.toThrow();
+
+    setItemSpy.mockRestore();
+  });
 });

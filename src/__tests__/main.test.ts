@@ -157,6 +157,67 @@ describe('main.ts', () => {
     expect((globalThis as any).closeM).toHaveBeenCalledWith('exMod');
   });
 
+  it('DOMContentLoaded no llama showS cuando no hay nav button o showS no es funcion', async () => {
+    const originalAddEventListener = document.addEventListener.bind(document);
+    let domReadyHandler: EventListener | null = null;
+
+    vi.spyOn(document, 'addEventListener').mockImplementation((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'DOMContentLoaded') {
+        domReadyHandler = listener as EventListener;
+        return;
+      }
+      originalAddEventListener(type, listener as EventListener);
+    });
+
+    document.body.innerHTML = `
+      <div id="toast"></div>
+      <dialog id="exMod" class="overlay"></dialog>
+    `;
+    (globalThis as any).showS = 'not-a-function';
+    (globalThis as any).location.hash = '#pantalla-inexistente';
+
+    await import('../main.js');
+    expect(domReadyHandler).toBeTruthy();
+
+    if (domReadyHandler) {
+      await (domReadyHandler as (event: Event) => Promise<void> | void)(new Event('DOMContentLoaded'));
+    }
+
+    expect((globalThis as any).initLogin).toHaveBeenCalled();
+  });
+
+  it('click dentro del contenido del overlay no cierra modal', async () => {
+    const originalAddEventListener = document.addEventListener.bind(document);
+    let domReadyHandler: EventListener | null = null;
+
+    vi.spyOn(document, 'addEventListener').mockImplementation((type: string, listener: EventListenerOrEventListenerObject) => {
+      if (type === 'DOMContentLoaded') {
+        domReadyHandler = listener as EventListener;
+        return;
+      }
+      originalAddEventListener(type, listener as EventListener);
+    });
+
+    document.body.innerHTML = `
+      <div id="toast"></div>
+      <button class="nav-btn" onclick="showS('today', this)"></button>
+      <dialog id="exMod" class="overlay"><div id="inside"></div></dialog>
+    `;
+
+    await import('../main.js');
+    if (domReadyHandler) {
+      await (domReadyHandler as (event: Event) => Promise<void> | void)(new Event('DOMContentLoaded'));
+    }
+
+    const overlay = document.getElementById('exMod') as HTMLDialogElement;
+    const inside = document.getElementById('inside') as HTMLElement;
+    overlay.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    const callsAfterBackdrop = (globalThis as any).closeM.mock.calls.length;
+
+    inside.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    expect((globalThis as any).closeM.mock.calls.length).toBe(callsAfterBackdrop);
+  });
+
   it('editEx muestra toast cuando no existe el ejercicio', async () => {
     await import('../main.js');
     (globalThis as any).gD = vi.fn(() => ({ '2026-04-09': [] }));
@@ -257,5 +318,35 @@ describe('main.ts', () => {
 
     const payload = (globalThis as any).saveGymDay.mock.calls[0]?.[1] || [];
     expect(payload.length).toBe(2);
+  });
+
+  it('saveEx normaliza appState cuando falta editExerciseId', async () => {
+    await import('../main.js');
+    (globalThis as any).appState = { viewDate: new Date(2026, 3, 9) };
+
+    await (globalThis as any).saveEx();
+
+    expect((globalThis as any).appState.editExerciseId).toBeNull();
+    expect((globalThis as any).saveGymDay).toHaveBeenCalled();
+  });
+
+  it('saveEx usa fallback legacy viewDate cuando appState no conserva Date', async () => {
+    await import('../main.js');
+
+    const state: Record<string, unknown> = { editExerciseId: null };
+    Object.defineProperty(state, 'viewDate', {
+      get: () => 'invalid-view-date',
+      set: () => {
+        // Intentionally ignore assignments to force getCurrentViewDate legacy branch.
+      },
+      configurable: true,
+    });
+
+    (globalThis as any).appState = state;
+    (globalThis as any).viewDate = new Date(2026, 3, 9);
+
+    await (globalThis as any).saveEx();
+
+    expect((globalThis as any).saveGymDay).toHaveBeenCalledWith('2026-04-09', expect.any(Array));
   });
 });

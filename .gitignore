@@ -50,3 +50,7 @@ js_backup/
 # ── Supabase ──
 supabase/.temp/
 supabase/templates/
+
+.docs/
+.sql/
+.scripts/

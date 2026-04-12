@@ -77,4 +77,21 @@ describe('dashboard navigation', () => {
 
     expect(onNavigate).not.toHaveBeenCalledWith('pagina-desconocida');
   });
+
+  it('applyNavigationState usa fallback de titulo cuando page no existe en PAGE_TITLES', () => {
+    mountDom();
+
+    applyNavigationState('pagina-desconocida' as PageKey);
+
+    expect(document.getElementById('topbar-title')?.textContent).toBe('pagina-desconocida');
+  });
+
+  it('applyNavigationState no falla sin elementos opcionales de topbar', () => {
+    mountDom();
+    document.getElementById('topbar-title')?.remove();
+    document.getElementById('topbar-search')?.remove();
+
+    expect(() => applyNavigationState('resumen')).not.toThrow();
+    expect(document.getElementById('page-resumen')?.classList.contains('active')).toBe(true);
+  });
 });

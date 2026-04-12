@@ -82,3 +82,20 @@ export interface ChartLike {
 }
 
 export type ChartCtor = new (target: Element | null, config: unknown) => ChartLike;
+
+export interface ExerciseCatalogEntry {
+  id: string;
+  slug: string;
+  canonical_name: string;
+  muscle_group: string;
+  is_active: boolean;
+  rec_count: number;
+}
+
+export interface ExerciseRecommendation {
+  id: number;
+  exercise_id: string;
+  section: 'step' | 'error' | 'tip';
+  order_index: number;
+  content: string;
+}

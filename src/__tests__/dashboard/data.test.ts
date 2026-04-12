@@ -42,6 +42,36 @@ function createRpcMock() {
       return Promise.resolve({ data: [{ user_id: 'u1' }, { user_id: 'u2' }], error: null });
     }
 
+    if (fnName === 'admin_list_exercise_catalog') {
+      return Promise.resolve({
+        data: [{ id: 'e1', canonical_name: 'Sentadilla', muscle_group: 'Piernas', slug: 'sentadilla' }],
+        error: null,
+      });
+    }
+
+    if (fnName === 'admin_list_exercise_recommendations') {
+      return Promise.resolve({
+        data: [{ id: 1, exercise_id: 'e1', section: 'tips', order_index: 1, content: 'Controla la tecnica' }],
+        error: null,
+      });
+    }
+
+    if (fnName === 'admin_save_exercise') {
+      return Promise.resolve({ data: 'exercise-id-1', error: null });
+    }
+
+    if (fnName === 'admin_toggle_exercise') {
+      return Promise.resolve({ data: null, error: null });
+    }
+
+    if (fnName === 'admin_save_recommendation') {
+      return Promise.resolve({ data: 99, error: null });
+    }
+
+    if (fnName === 'admin_delete_recommendation') {
+      return Promise.resolve({ data: null, error: null });
+    }
+
     return Promise.resolve({ data: null, error: null });
   });
 }
@@ -191,5 +221,105 @@ describe('dashboard data module', () => {
     });
 
     await expect(mod.fetchAdmins()).rejects.toMatchObject({ message: 'admins rpc error' });
+  });
+
+  it('fetchAdminCatalog y fetchExerciseRecommendations retornan datos del catalogo', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+
+    const catalog = await mod.fetchAdminCatalog();
+    const recommendations = await mod.fetchExerciseRecommendations('e1');
+
+    expect(catalog[0]?.slug).toBe('sentadilla');
+    expect(recommendations[0]?.content).toContain('tecnica');
+    expect(rpcMock).toHaveBeenCalledWith('admin_list_exercise_recommendations', { p_exercise_id: 'e1' });
+  });
+
+  it('saveExercise usa null cuando no recibe exerciseId y devuelve el id guardado', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+
+    const exerciseId = await mod.saveExercise('Press banca', 'Pecho', 'press-banca');
+
+    expect(exerciseId).toBe('exercise-id-1');
+    expect(rpcMock).toHaveBeenCalledWith('admin_save_exercise', {
+      p_canonical_name: 'Press banca',
+      p_muscle_group: 'Pecho',
+      p_slug: 'press-banca',
+      p_exercise_id: null,
+    });
+  });
+
+  it('saveExercise reusa exerciseId cuando se envia en modo edicion', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+
+    await mod.saveExercise('Press banca', 'Pecho', 'press-banca', 'existing-id');
+
+    expect(rpcMock).toHaveBeenCalledWith('admin_save_exercise', {
+      p_canonical_name: 'Press banca',
+      p_muscle_group: 'Pecho',
+      p_slug: 'press-banca',
+      p_exercise_id: 'existing-id',
+    });
+  });
+
+  it('toggleExercise, saveRecommendation y deleteRecommendation ejecutan RPC esperado', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+
+    await mod.toggleExercise('e1', true);
+    const recId = await mod.saveRecommendation('e1', 'tips', 2, 'Respira y bloquea core');
+    await mod.deleteRecommendation(recId);
+
+    expect(recId).toBe(99);
+    expect(rpcMock).toHaveBeenCalledWith('admin_toggle_exercise', {
+      p_exercise_id: 'e1',
+      p_is_active: true,
+    });
+    expect(rpcMock).toHaveBeenCalledWith('admin_save_recommendation', {
+      p_exercise_id: 'e1',
+      p_section: 'tips',
+      p_order_index: 2,
+      p_content: 'Respira y bloquea core',
+      p_rec_id: null,
+    });
+    expect(rpcMock).toHaveBeenCalledWith('admin_delete_recommendation', { p_rec_id: 99 });
+  });
+
+  it('lanza errores de RPC para catalogo, recomendaciones y mutaciones admin', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'admin_list_exercise_catalog') return Promise.resolve({ data: null, error: { message: 'catalog error' } });
+      if (fn === 'admin_list_exercise_recommendations') return Promise.resolve({ data: null, error: { message: 'recommendations error' } });
+      if (fn === 'admin_save_exercise') return Promise.resolve({ data: null, error: { message: 'save exercise error' } });
+      if (fn === 'admin_toggle_exercise') return Promise.resolve({ data: null, error: { message: 'toggle error' } });
+      if (fn === 'admin_save_recommendation') return Promise.resolve({ data: null, error: { message: 'save recommendation error' } });
+      if (fn === 'admin_delete_recommendation') return Promise.resolve({ data: null, error: { message: 'delete recommendation error' } });
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    await expect(mod.fetchAdminCatalog()).rejects.toMatchObject({ message: 'catalog error' });
+    await expect(mod.fetchExerciseRecommendations('e1')).rejects.toMatchObject({ message: 'recommendations error' });
+    await expect(mod.saveExercise('Press banca', 'Pecho', 'press-banca')).rejects.toMatchObject({ message: 'save exercise error' });
+    await expect(mod.toggleExercise('e1', false)).rejects.toMatchObject({ message: 'toggle error' });
+    await expect(mod.saveRecommendation('e1', 'tips', 1, 'test')).rejects.toMatchObject({ message: 'save recommendation error' });
+    await expect(mod.deleteRecommendation(10)).rejects.toMatchObject({ message: 'delete recommendation error' });
+  });
+
+  it('prioriza error de configuracion de Supabase cuando hay placeholders', async () => {
+    vi.resetModules();
+    vi.doMock('../../dashboard/config', async () => {
+      const actual = await vi.importActual<typeof import('../../dashboard/config')>('../../dashboard/config');
+      return {
+        ...actual,
+        getSupabaseConfigError: () => 'Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.',
+      };
+    });
+
+    (globalThis as unknown as { supabase: unknown }).supabase = {
+      createClient: vi.fn(() => ({ from: vi.fn(), rpc: vi.fn() })),
+    };
+
+    const mod = await import('../../dashboard/data');
+    expect(mod.getDashboardSupabaseError()).toContain('Configura VITE_SUPABASE_URL');
+    expect(() => mod.sb.from('profiles')).toThrow(/Configura VITE_SUPABASE_URL/);
+    vi.doUnmock('../../dashboard/config');
   });
 });

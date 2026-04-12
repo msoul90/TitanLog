@@ -1,5 +1,5 @@
 import { getSupabaseConfigError, SUPABASE_ANON, SUPABASE_URL } from './config';
-import type { AdminRecord, BodyMetric, GymSession, HiitSession, Profile } from './types';
+import type { AdminRecord, BodyMetric, ExerciseCatalogEntry, ExerciseRecommendation, GymSession, HiitSession, Profile } from './types';
 
 type DashboardSupabaseClient = {
   auth: {
@@ -125,4 +125,63 @@ export async function fetchAllUsers(): Promise<Profile[]> {
   const profiles = await fetchProfiles();
   cache.allUsers = profiles;
   return cache.allUsers;
+}
+
+export async function fetchAdminCatalog(): Promise<ExerciseCatalogEntry[]> {
+  const { data, error } = await sb.rpc('admin_list_exercise_catalog');
+  if (error) throw error;
+  return (data || []) as ExerciseCatalogEntry[];
+}
+
+export async function fetchExerciseRecommendations(exerciseId: string): Promise<ExerciseRecommendation[]> {
+  const { data, error } = await sb.rpc('admin_list_exercise_recommendations', { p_exercise_id: exerciseId });
+  if (error) throw error;
+  return (data || []) as ExerciseRecommendation[];
+}
+
+export async function saveExercise(
+  canonicalName: string,
+  muscleGroup: string,
+  slug: string,
+  exerciseId?: string,
+): Promise<string> {
+  const { data, error } = await sb.rpc('admin_save_exercise', {
+    p_canonical_name: canonicalName,
+    p_muscle_group: muscleGroup,
+    p_slug: slug,
+    p_exercise_id: exerciseId ?? null,
+  });
+  if (error) throw error;
+  return data as string;
+}
+
+export async function toggleExercise(exerciseId: string, isActive: boolean): Promise<void> {
+  const { error } = await sb.rpc('admin_toggle_exercise', {
+    p_exercise_id: exerciseId,
+    p_is_active: isActive,
+  });
+  if (error) throw error;
+}
+
+export async function saveRecommendation(
+  exerciseId: string,
+  section: string,
+  orderIndex: number,
+  content: string,
+  recId?: number,
+): Promise<number> {
+  const { data, error } = await sb.rpc('admin_save_recommendation', {
+    p_exercise_id: exerciseId,
+    p_section: section,
+    p_order_index: orderIndex,
+    p_content: content,
+    p_rec_id: recId ?? null,
+  });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function deleteRecommendation(recId: number): Promise<void> {
+  const { error } = await sb.rpc('admin_delete_recommendation', { p_rec_id: recId });
+  if (error) throw error;
 }

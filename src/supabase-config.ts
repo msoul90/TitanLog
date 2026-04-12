@@ -37,22 +37,26 @@ function looksLikeDashboardUrl(value: string): boolean {
   return /supabase\.com\/dashboard\/project\//i.test(value);
 }
 
-export function getSupabaseConfigError(): string | null {
-  if (isPlaceholderValue(SUPABASE_URL) || isPlaceholderValue(SUPABASE_ANON)) {
+export function validateSupabaseConfig(url: string, anonKey: string): string | null {
+  if (isPlaceholderValue(url) || isPlaceholderValue(anonKey)) {
     return 'Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.';
   }
 
-  if (!isValidSupabaseUrl(SUPABASE_URL)) {
-    if (looksLikeDashboardUrl(SUPABASE_URL)) {
+  if (!isValidSupabaseUrl(url)) {
+    if (looksLikeDashboardUrl(url)) {
       return 'VITE_SUPABASE_URL debe ser la Project URL (API), no la URL del dashboard. Ejemplo: https://<project-ref>.supabase.co';
     }
 
     return 'VITE_SUPABASE_URL no es valida. Usa la Project URL de Supabase, por ejemplo: https://<project-ref>.supabase.co';
   }
 
-  if (!SUPABASE_ANON || SUPABASE_ANON.length < 20) {
+  if (!anonKey || anonKey.length < 20) {
     return 'VITE_SUPABASE_ANON_KEY no es valida.';
   }
 
   return null;
+}
+
+export function getSupabaseConfigError(): string | null {
+  return validateSupabaseConfig(SUPABASE_URL, SUPABASE_ANON);
 }

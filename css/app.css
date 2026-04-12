@@ -760,7 +760,7 @@ dialog.overlay.open .guide-modal { transform:translateY(0); }
 .guide-tip.empty { background:var(--surface); border:1px dashed var(--border); color:var(--text3); font-style:italic; opacity:0.78; }
 [data-theme="light"] .guide-tip.err   { background:rgba(187,34,34,0.07); border-color:rgba(187,34,34,0.2); }
 [data-theme="light"] .guide-tip.ok    { background:rgba(61,158,0,0.07); border-color:rgba(61,158,0,0.2); }
-[data-theme="light"] .guide-tip.empty { background:#f7f7f7; border-color:#ccc; color:#888; }
+[data-theme="light"] .guide-tip.empty { background:#f3f3f3; border-color:#b8b8b8; color:#4a4a4a; }
 .tip-icon { font-size:0.95rem; flex-shrink:0; margin-top:1px; }
 
 .guide-add-btn {
