@@ -1,4 +1,4 @@
-import { fetchAdmins, fetchProfiles, fetchSuperAdmins, sb } from '../data';
+import { fetchAdmins, fetchProfiles, fetchSuperAdmins, manageUser, sb } from '../data';
 import { escapeHtml, initials, safeColor, showToast } from '../helpers';
 import { AdminUserRow, AuthUser } from '../types';
 
@@ -69,7 +69,7 @@ export async function loadAdmin(): Promise<void> {
   adminData = profiles.map((p) => {
     const isSuper = superSet.has(p.id) || Boolean(isSuperAdmin && currentUser?.id === p.id);
     const isGym = isSuper || adminSet.has(p.id);
-    return { ...p, isAdmin: isGym, isSuperAdmin: isSuper };
+    return { ...p, isAdmin: isGym, isSuperAdmin: isSuper, isDisabled: Boolean(p.is_disabled) };
   });
 
   renderAdminTable(adminData);
@@ -135,6 +135,7 @@ async function submitInvite(): Promise<void> {
 function renderAdminTable(data: AdminUserRow[]): void {
   const tbody = document.getElementById('admin-tbody');
   if (!tbody) return;
+  const currentUser = getCurrentUserRef();
 
   tbody.innerHTML = data.length
     ? data
@@ -153,13 +154,33 @@ function renderAdminTable(data: AdminUserRow[]): void {
             roleColBadge = '<span class="badge badge-gym-admin">Gym Admin</span>';
           }
 
-          return `<tr data-uid="${userId}">
+          const disabledBadge = u.isDisabled
+            ? '<span class="badge badge-inactive badge-side" style="margin-left:6px">Deshabilitado</span>'
+            : '';
+
+          // Action buttons: only super admins can act on non-super-admin users (not themselves)
+          let actionCell = '<td></td>';
+          if (isSuperAdmin && !u.isSuperAdmin && currentUser?.id !== u.id) {
+            const toggleLabel = u.isDisabled ? 'Habilitar' : 'Deshabilitar';
+            const toggleClass = u.isDisabled ? 'action-btn action-btn-success' : 'action-btn action-btn-warn';
+            actionCell = `<td>
+      <div class="admin-actions">
+        <button class="${toggleClass} action-user-toggle" data-uid="${userId}" data-disabled="${u.isDisabled ? '1' : '0'}">${toggleLabel}</button>
+        <button class="action-btn action-btn-danger action-user-delete" data-uid="${userId}" data-name="${name}">Eliminar</button>
+      </div>
+    </td>`;
+          }
+
+          const rowClass = u.isDisabled ? ' class="row-disabled"' : '';
+
+          return `<tr data-uid="${userId}"${rowClass}>
     <td><div class="avatar-cell">
       <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
       <div>
         <div class="avatar-name-row">
           <div class="avatar-name">${name}</div>
           ${roleSideBadge}
+          ${disabledBadge}
         </div>
       </div>
     </div></td>
@@ -174,10 +195,11 @@ function renderAdminTable(data: AdminUserRow[]): void {
         <span class="text-sm text3">${u.isAdmin ? 'Activo' : 'Sin acceso'}</span>
       </label>
     </td>
+    ${actionCell}
   </tr>`;
         })
         .join('')
-    : '<tr><td colspan="4"><div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">Sin usuarios</div></div></td></tr>';
+    : '<tr><td colspan="5"><div class="empty-state"><div class="empty-state-icon">👤</div><div class="empty-state-text">Sin usuarios</div></div></td></tr>';
 
   tbody.querySelectorAll('.admin-toggle').forEach((input) => {
     input.addEventListener('change', (e: Event) => {
@@ -186,6 +208,45 @@ function renderAdminTable(data: AdminUserRow[]): void {
       void toggleAdmin(target.dataset.uid, target.checked, target);
     });
   });
+
+  tbody.querySelectorAll('.action-user-toggle').forEach((btn) => {
+    btn.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLButtonElement;
+      const uid = target.dataset.uid;
+      if (!uid) return;
+      const isCurrentlyDisabled = target.dataset.disabled === '1';
+      void handleUserAction(uid, isCurrentlyDisabled ? 'enable' : 'disable');
+    });
+  });
+
+  tbody.querySelectorAll('.action-user-delete').forEach((btn) => {
+    btn.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLButtonElement;
+      const uid = target.dataset.uid;
+      const userName = target.dataset.name || 'este usuario';
+      if (!uid) return;
+      const confirmed = globalThis.confirm(
+        `¿Eliminar permanentemente a "${userName}"?\n\nEsta acción no se puede deshacer y borrará todos sus datos.`,
+      );
+      if (confirmed) void handleUserAction(uid, 'delete');
+    });
+  });
+}
+
+async function handleUserAction(uid: string, action: 'disable' | 'enable' | 'delete'): Promise<void> {
+  const messages: Record<string, string> = {
+    disable: 'Usuario deshabilitado',
+    enable: 'Usuario habilitado',
+    delete: 'Usuario eliminado',
+  };
+  try {
+    await manageUser(uid, action);
+    showToast(messages[action], action === 'delete' ? 'error' : 'success');
+    await loadAdmin();
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Error desconocido';
+    showToast('Error: ' + message, 'error');
+  }
 }
 
 async function toggleAdmin(uid: string, grant: boolean, inputEl: HTMLInputElement): Promise<void> {

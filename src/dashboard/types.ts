@@ -5,6 +5,7 @@ export interface Profile {
   id: string;
   name: string;
   color?: NullableTextInput;
+  is_disabled?: boolean;
 }
 
 export interface ExerciseEntry {
@@ -70,6 +71,7 @@ export interface MemberData extends Profile {
 export interface AdminUserRow extends Profile {
   isAdmin: boolean;
   isSuperAdmin?: boolean;
+  isDisabled?: boolean;
 }
 
 export interface ChartLike {

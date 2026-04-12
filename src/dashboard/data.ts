@@ -89,7 +89,7 @@ export async function fetchHiitSessions(since: string): Promise<HiitSession[]> {
 
 export async function fetchProfiles(): Promise<Profile[]> {
   if (cache.profiles) return cache.profiles;
-  const { data } = await sb.from('profiles').select('id,name,color');
+  const { data } = await sb.from('profiles').select('id,name,color,is_disabled');
   cache.profiles = (data || []) as Profile[];
   return cache.profiles;
 }
@@ -184,4 +184,28 @@ export async function saveRecommendation(
 export async function deleteRecommendation(recId: number): Promise<void> {
   const { error } = await sb.rpc('admin_delete_recommendation', { p_rec_id: recId });
   if (error) throw error;
+}
+
+export async function manageUser(targetUserId: string, action: 'disable' | 'enable' | 'delete'): Promise<void> {
+  const sessionRes = (await sb.auth.getSession()) as {
+    data?: { session?: { access_token?: string | null } | null };
+    error?: { message: string } | null;
+  };
+  if (sessionRes.error) throw sessionRes.error;
+
+  const accessToken = sessionRes.data?.session?.access_token;
+  if (!accessToken) {
+    throw new Error('Sesion expirada. Cierra y vuelve a iniciar sesion.');
+  }
+
+  const { data, error } = await sb.functions.invoke('manage-user', {
+    body: { target_user_id: targetUserId, action },
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (error) throw error;
+
+  const result = (data as { ok?: boolean; error?: string } | null) || null;
+  if (!result?.ok) {
+    throw new Error(result?.error || 'Error desconocido');
+  }
 }

@@ -576,6 +576,36 @@ input, button { outline: none; }
   vertical-align: middle;
 }
 
+/* ─── ACTION BUTTONS (admin table) ─────────────────────────── */
+.action-btn {
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  font-weight: 500;
+  border: 1px solid var(--border2);
+  background: var(--surface2);
+  color: var(--text2);
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.action-btn:hover { background: var(--surface3); color: var(--text); }
+.action-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.action-btn-warn  { border-color: rgba(180,100,0,0.4); color: #8a5000; }
+.action-btn-warn:hover  { background: rgba(180,100,0,0.08); border-color: #8a5000; }
+.action-btn-success { border-color: rgba(40,100,0,0.4); color: #2d5200; }
+.action-btn-success:hover { background: rgba(40,100,0,0.08); border-color: #2d5200; }
+.action-btn-danger { border-color: rgba(180,30,30,0.4); color: #7a1f1f; }
+.action-btn-danger:hover { background: rgba(180,30,30,0.08); border-color: #7a1f1f; }
+[data-theme="dark"] .action-btn-warn  { border-color: rgba(255,179,71,0.45); color: #ffb347; }
+[data-theme="dark"] .action-btn-warn:hover  { background: rgba(255,179,71,0.12); border-color: #ffb347; }
+[data-theme="dark"] .action-btn-success { border-color: rgba(184,255,74,0.45); color: #b8ff4a; }
+[data-theme="dark"] .action-btn-success:hover { background: rgba(184,255,74,0.12); border-color: #b8ff4a; }
+[data-theme="dark"] .action-btn-danger { border-color: rgba(255,107,107,0.45); color: #ff8c8c; }
+[data-theme="dark"] .action-btn-danger:hover { background: rgba(255,107,107,0.12); border-color: #ff8c8c; }
+.admin-actions { display: flex; gap: 6px; align-items: center; }
+tr.row-disabled td { opacity: 0.55; }
+
 /* ─── AVATAR ─────────────────────────────────────────────────── */
 .avatar {
   width: 34px; height: 34px;
