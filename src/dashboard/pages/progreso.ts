@@ -73,48 +73,54 @@ export async function loadProgreso(): Promise<void> {
 
   const labels = dates.map(niceDate);
   const c = chartColors();
+  const weightCanvas = document.querySelector<HTMLCanvasElement>('#chart-weight-avg');
+  const fatCanvas = document.querySelector<HTMLCanvasElement>('#chart-fat-avg');
 
   if (chartWeightAvg) chartWeightAvg.destroy();
-  chartWeightAvg = new Chart(document.getElementById('chart-weight-avg'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          data: avgWeight,
-          borderColor: c.accent,
-          backgroundColor: c.accent + '22',
-          tension: 0.4,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: c.accent,
-          spanGaps: true,
-        },
-      ],
-    },
-    options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
-  });
+  if (weightCanvas) {
+    chartWeightAvg = new Chart(weightCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            data: avgWeight,
+            borderColor: c.accent,
+            backgroundColor: c.accent + '22',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
+            pointBackgroundColor: c.accent,
+            spanGaps: true,
+          },
+        ],
+      },
+      options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
+    });
+  }
 
   if (chartFatAvg) chartFatAvg.destroy();
-  chartFatAvg = new Chart(document.getElementById('chart-fat-avg'), {
-    type: 'line',
-    data: {
-      labels,
-      datasets: [
-        {
-          data: avgFat,
-          borderColor: c.accent3,
-          backgroundColor: c.accent3 + '22',
-          tension: 0.4,
-          fill: true,
-          pointRadius: 3,
-          pointBackgroundColor: c.accent3,
-          spanGaps: true,
-        },
-      ],
-    },
-    options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
-  });
+  if (fatCanvas) {
+    chartFatAvg = new Chart(fatCanvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            data: avgFat,
+            borderColor: c.accent3,
+            backgroundColor: c.accent3 + '22',
+            tension: 0.4,
+            fill: true,
+            pointRadius: 3,
+            pointBackgroundColor: c.accent3,
+            spanGaps: true,
+          },
+        ],
+      },
+      options: { ...baseChartOptions(), plugins: { legend: { display: false } } },
+    });
+  }
 
   const latest: Record<string, BodyMetric> = {};
   metrics.forEach((m) => {

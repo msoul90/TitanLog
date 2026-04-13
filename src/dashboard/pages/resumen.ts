@@ -89,26 +89,29 @@ export async function loadResumen(): Promise<void> {
   });
   const values = Object.values(sessionsByDay);
   const c = chartColors();
+  const sessionsCanvas = document.querySelector<HTMLCanvasElement>('#chart-sessions');
 
   if (chartSessions) chartSessions.destroy();
-  chartSessions = new Chart(document.getElementById('chart-sessions'), {
-    type: 'bar',
-    data: {
-      labels,
-      datasets: [
-        {
-          data: values,
-          backgroundColor: c.accent + 'bb',
-          borderColor: c.accent,
-          borderWidth: 1,
-          borderRadius: 4,
-          _colorKey: 'accent',
-        },
-      ],
-    },
-    options: baseChartOptions(),
-  });
-  setActiveChart(chartSessions);
+  if (sessionsCanvas) {
+    chartSessions = new Chart(sessionsCanvas, {
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [
+          {
+            data: values,
+            backgroundColor: c.accent + 'bb',
+            borderColor: c.accent,
+            borderWidth: 1,
+            borderRadius: 4,
+            _colorKey: 'accent',
+          } as any,
+        ],
+      },
+      options: baseChartOptions(),
+    });
+    setActiveChart(chartSessions);
+  }
 
   const exCounts: Record<string, number> = {};
   gymSessions.forEach((s: GymSession) => {

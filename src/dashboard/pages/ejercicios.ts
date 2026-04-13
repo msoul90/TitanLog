@@ -245,30 +245,33 @@ async function loadStats(): Promise<void> {
   const sorted = Object.entries(exStats).sort((a, b) => b[1].count - a[1].count);
   const top12 = sorted.slice(0, 12);
   const c = chartColors();
+  const topExercisesCanvas = document.querySelector<HTMLCanvasElement>('#chart-top-exercises');
 
   if (chartTopEx) chartTopEx.destroy();
-  chartTopEx = new Chart(document.getElementById('chart-top-exercises'), {
-    type: 'bar',
-    data: {
-      labels: top12.map(([n]) => n),
-      datasets: [
-        {
-          data: top12.map(([, d]) => d.count),
-          backgroundColor: c.accent + 'bb',
-          borderColor: c.accent,
-          borderWidth: 1,
-          borderRadius: 4,
-          _colorKey: 'accent',
-        },
-      ],
-    },
-    options: {
-      indexAxis: 'y',
-      ...baseChartOptions(),
-      maintainAspectRatio: false,
-      responsive: true,
-    },
-  });
+  if (topExercisesCanvas) {
+    chartTopEx = new Chart(topExercisesCanvas, {
+      type: 'bar',
+      data: {
+        labels: top12.map(([n]) => n),
+        datasets: [
+          {
+            data: top12.map(([, d]) => d.count),
+            backgroundColor: c.accent + 'bb',
+            borderColor: c.accent,
+            borderWidth: 1,
+            borderRadius: 4,
+            _colorKey: 'accent',
+          } as any,
+        ],
+      },
+      options: {
+        indexAxis: 'y',
+        ...baseChartOptions(),
+        maintainAspectRatio: false,
+        responsive: true,
+      },
+    });
+  }
 
   const groupCounts: Record<string, number> = {};
   Object.entries(exStats).forEach(([name, d]) => {
@@ -276,41 +279,44 @@ async function loadStats(): Promise<void> {
     groupCounts[g] = (groupCounts[g] || 0) + d.count;
   });
   const groupEntries = Object.entries(groupCounts).sort((a, b) => b[1] - a[1]);
+  const muscleGroupCanvas = document.querySelector<HTMLCanvasElement>('#chart-muscle-group');
 
   if (chartMuscle) chartMuscle.destroy();
-  chartMuscle = new Chart(document.getElementById('chart-muscle-group'), {
-    type: 'doughnut',
-    data: {
-      labels: groupEntries.map(([g]) => g),
-      datasets: [
-        {
-          data: groupEntries.map(([, n]) => n),
-          backgroundColor: groupEntries.map(([g]) => colorForMuscle(g) + 'cc'),
-          borderColor: groupEntries.map(([g]) => colorForMuscle(g)),
-          borderWidth: 2,
-        },
-      ],
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          display: true,
-          position: 'right',
-          labels: { color: c.text2, font: { family: "'DM Sans'", size: 11 }, boxWidth: 12, padding: 10 },
-        },
-        tooltip: {
-          backgroundColor: c.surface2,
-          borderColor: c.border,
-          borderWidth: 1,
-          titleColor: c.text2,
-          bodyColor: c.text2,
-          padding: 10,
+  if (muscleGroupCanvas) {
+    chartMuscle = new Chart(muscleGroupCanvas, {
+      type: 'doughnut',
+      data: {
+        labels: groupEntries.map(([g]) => g),
+        datasets: [
+          {
+            data: groupEntries.map(([, n]) => n),
+            backgroundColor: groupEntries.map(([g]) => colorForMuscle(g) + 'cc'),
+            borderColor: groupEntries.map(([g]) => colorForMuscle(g)),
+            borderWidth: 2,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: {
+            display: true,
+            position: 'right',
+            labels: { color: c.text2, font: { family: "'DM Sans'", size: 11 }, boxWidth: 12, padding: 10 },
+          },
+          tooltip: {
+            backgroundColor: c.surface2,
+            borderColor: c.border,
+            borderWidth: 1,
+            titleColor: c.text2,
+            bodyColor: c.text2,
+            padding: 10,
+          },
         },
       },
-    },
-  });
+    });
+  }
 
   const tbody = document.getElementById('exercises-tbody');
   if (!tbody) return;

@@ -34,11 +34,11 @@ vi.mock('../../dashboard/theme', () => ({
 
 vi.mock('../../dashboard/helpers', () => ({
   colorForMuscle: () => '#0aa',
-  confirmAction: (...args: unknown[]) => confirmAction(...args),
+  confirmAction: (...args: unknown[]) => (confirmAction as (...innerArgs: unknown[]) => unknown)(...args),
   daysAgo: () => '2025-01-01',
   escapeHtml: (text: string) => text,
   muscleGroup: (name: string) => (name.toLowerCase().includes('sentadilla') ? 'Piernas' : 'General'),
-  showToast: (...args: unknown[]) => showToast(...args),
+  showToast: (...args: unknown[]) => (showToast as (...innerArgs: unknown[]) => unknown)(...args),
 }));
 
 vi.mock('chart.js/auto', () => ({
