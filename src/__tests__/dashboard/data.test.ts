@@ -105,9 +105,22 @@ async function loadDataModule() {
   const fromMock = createFromMock();
   const rpcMock = createRpcMock();
 
-  (globalThis as unknown as { supabase: unknown }).supabase = {
-    createClient: vi.fn(() => ({ from: fromMock, rpc: rpcMock })),
-  };
+  vi.doMock('@supabase/supabase-js', () => ({
+    createClient: vi.fn(() => ({
+      from: fromMock,
+      rpc: rpcMock,
+      auth: {
+        getSession: vi.fn(async () => ({ data: { session: { access_token: 'test-token' } }, error: null })),
+        onAuthStateChange: vi.fn(() => ({ data: { subscription: { unsubscribe: vi.fn() } } })),
+        signInWithPassword: vi.fn(async () => ({ data: null, error: null })),
+        signOut: vi.fn(async () => ({ error: null })),
+        updateUser: vi.fn(async () => ({ data: null, error: null })),
+      },
+      functions: {
+        invoke: vi.fn(async () => ({ data: null, error: null })),
+      },
+    })),
+  }));
 
   const mod = await import('../../dashboard/data');
   return { mod, fromMock, rpcMock };
@@ -174,11 +187,18 @@ describe('dashboard data module', () => {
 
   it('expone error cuando falta runtime de supabase', async () => {
     vi.resetModules();
-    delete (globalThis as typeof globalThis & { supabase?: unknown }).supabase;
+    vi.doMock('../../dashboard/config', async () => {
+      const actual = await vi.importActual<typeof import('../../dashboard/config')>('../../dashboard/config');
+      return {
+        ...actual,
+        getSupabaseConfigError: () => 'No se pudo cargar el cliente de Supabase',
+      };
+    });
 
     const mod = await import('../../dashboard/data');
     expect(mod.getDashboardSupabaseError()).toContain('No se pudo cargar el cliente de Supabase');
     expect(() => mod.sb.from('profiles')).toThrow(/No se pudo cargar el cliente de Supabase/);
+    vi.doUnmock('../../dashboard/config');
   });
 
   it('fetchSuperAdmins retorna lista de super admins', async () => {
