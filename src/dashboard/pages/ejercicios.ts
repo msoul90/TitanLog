@@ -3,6 +3,7 @@ import {
   fetchAdminCatalog,
   fetchExerciseRecommendations,
   fetchGymSessions,
+  getCatalogRpcHealthMode,
   saveExercise,
   saveRecommendation,
   toggleExercise,
@@ -21,6 +22,99 @@ let activeTab: 'stats' | 'catalog' = 'stats';
 let selectedExercise: ExerciseCatalogEntry | null = null;
 let recommendations: ExerciseRecommendation[] = [];
 let catalogSearchQuery = '';
+type CatalogSortField = 'name' | 'muscle' | 'recommendations' | 'status';
+type CatalogSortDirection = 'asc' | 'desc';
+type CatalogDensityMode = 'comfortable' | 'compact';
+
+const CATALOG_FILTER_KEY = 'dashboard.catalog.onlyWithoutRecommendations.v1';
+const CATALOG_SORT_FIELD_KEY = 'dashboard.catalog.sort.field.v1';
+const CATALOG_SORT_DIR_KEY = 'dashboard.catalog.sort.direction.v1';
+const CATALOG_DENSITY_KEY = 'dashboard.catalog.density.v1';
+const DEFAULT_CATALOG_SORT_FIELD: CatalogSortField = 'name';
+const DEFAULT_CATALOG_SORT_DIRECTION: CatalogSortDirection = 'asc';
+const DEFAULT_CATALOG_DENSITY: CatalogDensityMode = 'comfortable';
+
+let catalogOnlyWithoutRecommendations = readCatalogOnlyWithoutRecommendations();
+let catalogSortField: CatalogSortField = readCatalogSortField();
+let catalogSortDirection: CatalogSortDirection = readCatalogSortDirection();
+let catalogDensityMode: CatalogDensityMode = readCatalogDensityMode();
+
+function readCatalogOnlyWithoutRecommendations(): boolean {
+  try {
+    return globalThis.localStorage?.getItem(CATALOG_FILTER_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+function persistCatalogOnlyWithoutRecommendations(value: boolean): void {
+  try {
+    globalThis.localStorage?.setItem(CATALOG_FILTER_KEY, String(value));
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function readCatalogSortField(): CatalogSortField {
+  try {
+    const value = globalThis.localStorage?.getItem(CATALOG_SORT_FIELD_KEY);
+    if (value === 'name' || value === 'muscle' || value === 'recommendations' || value === 'status') return value;
+  } catch {
+    // Ignore localStorage errors
+  }
+  return DEFAULT_CATALOG_SORT_FIELD;
+}
+
+function readCatalogSortDirection(): CatalogSortDirection {
+  try {
+    return globalThis.localStorage?.getItem(CATALOG_SORT_DIR_KEY) === 'desc' ? 'desc' : DEFAULT_CATALOG_SORT_DIRECTION;
+  } catch {
+    return DEFAULT_CATALOG_SORT_DIRECTION;
+  }
+}
+
+function persistCatalogSortState(): void {
+  try {
+    globalThis.localStorage?.setItem(CATALOG_SORT_FIELD_KEY, catalogSortField);
+    globalThis.localStorage?.setItem(CATALOG_SORT_DIR_KEY, catalogSortDirection);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function readCatalogDensityMode(): CatalogDensityMode {
+  try {
+    return globalThis.localStorage?.getItem(CATALOG_DENSITY_KEY) === 'compact' ? 'compact' : DEFAULT_CATALOG_DENSITY;
+  } catch {
+    return DEFAULT_CATALOG_DENSITY;
+  }
+}
+
+function persistCatalogDensityMode(): void {
+  try {
+    globalThis.localStorage?.setItem(CATALOG_DENSITY_KEY, catalogDensityMode);
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+function applyCatalogDensityMode(): void {
+  const page = document.getElementById('page-ejercicios');
+  if (page) {
+    page.classList.toggle('density-compact', catalogDensityMode === 'compact');
+    page.classList.toggle('density-comfortable', catalogDensityMode !== 'compact');
+  }
+
+  const densityButton = document.getElementById('catalog-density-toggle');
+  if (densityButton) {
+    densityButton.textContent = catalogDensityMode === 'compact' ? 'Densidad: Compacto' : 'Densidad: Cómodo';
+  }
+}
+
+function setModalVisibility(modalId: string, backdropId: string, visible: boolean): void {
+  document.getElementById(modalId)?.classList.toggle('is-hidden', !visible);
+  document.getElementById(backdropId)?.classList.toggle('is-hidden', !visible);
+}
 
 // ── helpers ────────────────────────────────────────────────
 function toSlug(name: string): string {
@@ -35,6 +129,9 @@ function toSlug(name: string): string {
 
 // ── init ───────────────────────────────────────────────────
 export function initEjerciciosPage(): void {
+  switchTab('stats');
+  applyCatalogDensityMode();
+
   // Tab switching
   document.getElementById('tab-stats')?.addEventListener('click', () => switchTab('stats'));
   document.getElementById('tab-catalog')?.addEventListener('click', () => switchTab('catalog'));
@@ -42,8 +139,25 @@ export function initEjerciciosPage(): void {
   // Catalog search
   document.getElementById('catalog-search')?.addEventListener('input', (e: Event) => {
     catalogSearchQuery = ((e.target as HTMLInputElement | null)?.value || '').toLowerCase();
-    renderCatalogTable(filterCatalog());
+    renderCatalogView();
   });
+
+  const withoutRecsInput = document.getElementById('catalog-only-without-recs') as HTMLInputElement | null;
+  if (withoutRecsInput) withoutRecsInput.checked = catalogOnlyWithoutRecommendations;
+  document.getElementById('catalog-only-without-recs')?.addEventListener('change', (e: Event) => {
+    catalogOnlyWithoutRecommendations = Boolean((e.target as HTMLInputElement | null)?.checked);
+    persistCatalogOnlyWithoutRecommendations(catalogOnlyWithoutRecommendations);
+    renderCatalogView();
+  });
+
+  document.getElementById('catalog-reset-filters')?.addEventListener('click', resetCatalogFiltersAndSort);
+  document.getElementById('catalog-density-toggle')?.addEventListener('click', () => {
+    catalogDensityMode = catalogDensityMode === 'compact' ? 'comfortable' : 'compact';
+    persistCatalogDensityMode();
+    applyCatalogDensityMode();
+  });
+
+  bindCatalogSortControls();
 
   // Add exercise button
   document.getElementById('btn-add-exercise')?.addEventListener('click', () => openExerciseModal());
@@ -71,10 +185,30 @@ export function initEjerciciosPage(): void {
 
   // Back to catalog
   document.getElementById('btn-back-catalog')?.addEventListener('click', () => {
-    showPanel('catalog-panel');
+    showPanel('ex-catalog-panel');
     selectedExercise = null;
     recommendations = [];
   });
+}
+
+function resetCatalogFiltersAndSort(): void {
+  catalogSearchQuery = '';
+  catalogOnlyWithoutRecommendations = false;
+  catalogSortField = DEFAULT_CATALOG_SORT_FIELD;
+  catalogSortDirection = DEFAULT_CATALOG_SORT_DIRECTION;
+  catalogDensityMode = DEFAULT_CATALOG_DENSITY;
+
+  const searchInput = document.getElementById('catalog-search') as HTMLInputElement | null;
+  if (searchInput) searchInput.value = '';
+
+  const withoutRecsInput = document.getElementById('catalog-only-without-recs') as HTMLInputElement | null;
+  if (withoutRecsInput) withoutRecsInput.checked = false;
+
+  persistCatalogOnlyWithoutRecommendations(catalogOnlyWithoutRecommendations);
+  persistCatalogSortState();
+  persistCatalogDensityMode();
+  applyCatalogDensityMode();
+  renderCatalogView();
 }
 
 // ── tab switch ─────────────────────────────────────────────
@@ -86,9 +220,9 @@ function switchTab(tab: 'stats' | 'catalog'): void {
   document.getElementById('panel-catalog')?.classList.toggle('is-hidden', tab !== 'catalog');
 }
 
-function showPanel(panel: 'catalog-panel' | 'detail-panel'): void {
-  document.getElementById('catalog-panel')?.classList.toggle('is-hidden', panel !== 'catalog-panel');
-  document.getElementById('detail-panel')?.classList.toggle('is-hidden', panel !== 'detail-panel');
+function showPanel(panel: 'ex-catalog-panel' | 'ex-detail-panel'): void {
+  document.getElementById('ex-catalog-panel')?.classList.toggle('is-hidden', panel !== 'ex-catalog-panel');
+  document.getElementById('ex-detail-panel')?.classList.toggle('is-hidden', panel !== 'ex-detail-panel');
 }
 
 // ── load ───────────────────────────────────────────────────
@@ -200,21 +334,112 @@ async function loadStats(): Promise<void> {
 async function loadCatalog(): Promise<void> {
   try {
     catalogData = await fetchAdminCatalog();
-    renderCatalogTable(filterCatalog());
+    renderCatalogHealth();
+    renderCatalogView();
   } catch (err) {
+    renderCatalogHealth();
     const msg = err instanceof Error ? err.message : 'Error desconocido';
     showToast('Error al cargar catálogo: ' + msg, 'error');
   }
 }
 
+function renderCatalogHealth(): void {
+  const health = document.getElementById('catalog-rpc-health');
+  if (!health) return;
+
+  const mode = getCatalogRpcHealthMode();
+  health.textContent = mode === 'admin' ? 'RPC: admin' : 'RPC: fallback';
+  health.classList.remove('badge-active', 'badge-warn');
+  health.classList.add(mode === 'admin' ? 'badge-active' : 'badge-warn');
+}
+
 // ── catalog table ──────────────────────────────────────────
 function filterCatalog(): ExerciseCatalogEntry[] {
-  if (!catalogSearchQuery) return catalogData;
-  return catalogData.filter(
-    (e) =>
+  return catalogData.filter((e) => {
+    const matchesSearch =
+      !catalogSearchQuery ||
       e.canonical_name.toLowerCase().includes(catalogSearchQuery) ||
-      e.muscle_group.toLowerCase().includes(catalogSearchQuery),
-  );
+      e.muscle_group.toLowerCase().includes(catalogSearchQuery);
+
+    const matchesWithoutRecsFilter = !catalogOnlyWithoutRecommendations || e.rec_count === 0;
+    return matchesSearch && matchesWithoutRecsFilter;
+  });
+}
+
+function compareText(a: string, b: string): number {
+  return a.localeCompare(b, 'es', { sensitivity: 'base' });
+}
+
+function sortCatalog(entries: ExerciseCatalogEntry[]): ExerciseCatalogEntry[] {
+  const sorted = [...entries].sort((a, b) => {
+    let result = 0;
+    if (catalogSortField === 'name') {
+      result = compareText(a.canonical_name, b.canonical_name);
+    } else if (catalogSortField === 'muscle') {
+      result = compareText(a.muscle_group, b.muscle_group);
+    } else if (catalogSortField === 'recommendations') {
+      result = a.rec_count - b.rec_count;
+    } else {
+      result = Number(a.is_active) - Number(b.is_active);
+    }
+
+    if (result === 0) {
+      result = compareText(a.canonical_name, b.canonical_name);
+    }
+
+    return catalogSortDirection === 'asc' ? result : -result;
+  });
+
+  return sorted;
+}
+
+function renderCatalogSortIndicators(): void {
+  const sortConfig: Array<{ field: CatalogSortField; buttonId: string }> = [
+    { field: 'name', buttonId: 'catalog-sort-name' },
+    { field: 'muscle', buttonId: 'catalog-sort-muscle' },
+    { field: 'recommendations', buttonId: 'catalog-sort-recommendations' },
+    { field: 'status', buttonId: 'catalog-sort-status' },
+  ];
+
+  sortConfig.forEach(({ field, buttonId }) => {
+    const button = document.getElementById(buttonId);
+    if (!button) return;
+    const isActive = catalogSortField === field;
+    button.classList.toggle('active-sort', isActive);
+    let arrow = '';
+    if (isActive) {
+      arrow = catalogSortDirection === 'asc' ? ' ↑' : ' ↓';
+    }
+    const baseLabel = button.dataset.label || button.textContent || '';
+    button.textContent = baseLabel + arrow;
+  });
+}
+
+function bindCatalogSortControls(): void {
+  const sortConfig: Array<{ field: CatalogSortField; buttonId: string }> = [
+    { field: 'name', buttonId: 'catalog-sort-name' },
+    { field: 'muscle', buttonId: 'catalog-sort-muscle' },
+    { field: 'recommendations', buttonId: 'catalog-sort-recommendations' },
+    { field: 'status', buttonId: 'catalog-sort-status' },
+  ];
+
+  sortConfig.forEach(({ field, buttonId }) => {
+    document.getElementById(buttonId)?.addEventListener('click', () => {
+      if (catalogSortField === field) {
+        catalogSortDirection = catalogSortDirection === 'asc' ? 'desc' : 'asc';
+      } else {
+        catalogSortField = field;
+        catalogSortDirection = 'asc';
+      }
+      persistCatalogSortState();
+      renderCatalogView();
+    });
+  });
+}
+
+function renderCatalogView(): void {
+  renderCatalogSortIndicators();
+  renderCatalogTable(sortCatalog(filterCatalog()));
 }
 
 function renderCatalogTable(entries: ExerciseCatalogEntry[]): void {
@@ -231,10 +456,15 @@ function renderCatalogTable(entries: ExerciseCatalogEntry[]): void {
           const activeBadge = e.is_active
             ? '<span class="badge badge-active">Activo</span>'
             : '<span class="badge badge-inactive">Inactivo</span>';
+          const recommendationsLabel = e.rec_count === 1 ? 'recomendación' : 'recomendaciones';
+          const recommendationsBadge =
+            e.rec_count > 0
+              ? `<span class="badge badge-active">${e.rec_count} ${recommendationsLabel}</span>`
+              : '<span class="badge badge-warn">Sin recomendaciones</span>';
           return `<tr>
   <td>${name}</td>
   <td><span class="badge badge-member">${group}</span></td>
-  <td class="text-mono">${e.rec_count}</td>
+  <td>${recommendationsBadge}</td>
   <td>${activeBadge}</td>
   <td>
     <div class="flex-ac gap-8">
@@ -282,7 +512,7 @@ async function handleToggleActive(id: string, active: boolean, inputEl: HTMLInpu
     const entry = catalogData.find((e) => e.id === id);
     if (entry) entry.is_active = active;
     showToast(active ? 'Ejercicio activado' : 'Ejercicio desactivado', active ? 'success' : undefined);
-    renderCatalogTable(filterCatalog());
+    renderCatalogView();
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error desconocido';
     showToast('Error: ' + msg, 'error');
@@ -317,10 +547,11 @@ function openExerciseModal(entry?: ExerciseCatalogEntry): void {
   }
 
   modal.classList.remove('is-hidden');
+  setModalVisibility('exercise-modal', 'exercise-modal-backdrop', true);
 }
 
 function closeExerciseModal(): void {
-  document.getElementById('exercise-modal')?.classList.add('is-hidden');
+  setModalVisibility('exercise-modal', 'exercise-modal-backdrop', false);
   const nameInput = document.getElementById('ex-name') as HTMLInputElement | null;
   if (nameInput) nameInput.oninput = null;
 }
@@ -349,7 +580,7 @@ async function submitExerciseForm(): Promise<void> {
     showToast(id ? 'Ejercicio actualizado' : 'Ejercicio agregado', 'success');
     // Refresh catalog
     catalogData = await fetchAdminCatalog();
-    renderCatalogTable(filterCatalog());
+    renderCatalogView();
     // If we were in detail panel, update selected exercise
     if (selectedExercise && id && selectedExercise.id === id) {
       selectedExercise = catalogData.find((e) => e.id === id) ?? null;
@@ -372,20 +603,27 @@ async function submitExerciseForm(): Promise<void> {
 async function openDetailPanel(entry: ExerciseCatalogEntry): Promise<void> {
   selectedExercise = entry;
   updateDetailPanelHeader(entry);
-  showPanel('detail-panel');
+  showPanel('ex-detail-panel');
   recommendations = [];
   renderRecsTable([]);
   const loading = document.getElementById('recs-loading');
   if (loading) loading.classList.remove('is-hidden');
   try {
-    recommendations = await fetchExerciseRecommendations(entry.id);
-    renderRecsTable(recommendations);
+    await reloadRecommendations(entry.id);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error desconocido';
     showToast('Error al cargar recomendaciones: ' + msg, 'error');
   } finally {
     if (loading) loading.classList.add('is-hidden');
   }
+}
+
+async function reloadRecommendations(exerciseId: string): Promise<void> {
+  recommendations = await fetchExerciseRecommendations(exerciseId);
+  renderRecsTable(recommendations);
+
+  const entry = catalogData.find((e) => e.id === exerciseId);
+  if (entry) entry.rec_count = recommendations.length;
 }
 
 function updateDetailPanelHeader(entry: ExerciseCatalogEntry): void {
@@ -404,6 +642,7 @@ function renderRecsTable(recs: ExerciseRecommendation[]): void {
     { key: 'step', label: 'Pasos', emoji: '📋' },
     { key: 'error', label: 'Errores comunes', emoji: '⚠️' },
     { key: 'tip', label: 'Consejos', emoji: '💡' },
+    { key: 'link', label: 'Links externos', emoji: '🔗' },
   ];
 
   if (!recs.length) {
@@ -421,7 +660,7 @@ function renderRecsTable(recs: ExerciseRecommendation[]): void {
     .map(
       (r) => `<div class="rec-item flex-ac justify-between gap-8">
     <span class="rec-index text-mono">${r.order_index}</span>
-    <span class="rec-content">${escapeHtml(r.content)}</span>
+    ${renderRecommendationContent(r)}
     <div class="flex-ac gap-8 rec-actions">
       <button class="topbar-btn btn-edit-rec" data-id="${r.id}" title="Editar">Editar</button>
       <button class="topbar-btn btn-delete-rec" data-id="${r.id}" title="Eliminar">✕</button>
@@ -449,18 +688,29 @@ function renderRecsTable(recs: ExerciseRecommendation[]): void {
   });
 }
 
+function renderRecommendationContent(rec: ExerciseRecommendation): string {
+  const text = rec.content.trim();
+  if (rec.section !== 'link') {
+    return `<span class="rec-content">${escapeHtml(text)}</span>`;
+  }
+
+  const maybeUrl = /^https?:\/\//i.test(text) ? text : `https://${text}`;
+  const isHttpUrl = /^https?:\/\/[^\s]+$/i.test(maybeUrl);
+  if (!isHttpUrl) {
+    return `<span class="rec-content">${escapeHtml(text)}</span>`;
+  }
+
+  return `<a class="rec-content rec-link" href="${escapeHtml(maybeUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(text)}</a>`;
+}
+
 async function handleDeleteRec(recId: number): Promise<void> {
   if (!globalThis.confirm('¿Eliminar esta recomendación?')) return;
+  if (!selectedExercise) return;
+
   try {
     await deleteRecommendation(recId);
-    recommendations = recommendations.filter((r) => r.id !== recId);
-    renderRecsTable(recommendations);
+    await reloadRecommendations(selectedExercise.id);
     showToast('Recomendación eliminada');
-    // Update rec_count in catalog
-    if (selectedExercise) {
-      const entry = catalogData.find((e) => e.id === selectedExercise!.id);
-      if (entry) entry.rec_count = Math.max(0, entry.rec_count - 1);
-    }
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error desconocido';
     showToast('Error: ' + msg, 'error');
@@ -509,11 +759,11 @@ function openRecModal(rec?: ExerciseRecommendation): void {
     contentInput: document.getElementById('rec-content') as HTMLTextAreaElement | null,
   });
 
-  modal.classList.remove('is-hidden');
+  setModalVisibility('rec-modal', 'rec-modal-backdrop', true);
 }
 
 function closeRecModal(): void {
-  document.getElementById('rec-modal')?.classList.add('is-hidden');
+  setModalVisibility('rec-modal', 'rec-modal-backdrop', false);
   const sectionInput = document.getElementById('rec-section') as HTMLSelectElement | null;
   if (sectionInput) sectionInput.onchange = null;
 }
@@ -527,8 +777,8 @@ async function submitRecForm(): Promise<void> {
   const contentInput = document.getElementById('rec-content') as HTMLTextAreaElement | null;
   const submitBtn = document.getElementById('rec-submit') as HTMLButtonElement | null;
 
-  const section = sectionInput?.value ?? 'step';
-  const orderIndex = parseInt(orderInput?.value ?? '1', 10);
+  const section = (sectionInput?.value ?? 'step') as ExerciseRecommendation['section'];
+  const orderIndex = Number.parseInt(orderInput?.value ?? '1', 10);
   const content = contentInput?.value.trim() ?? '';
   const idRaw = idInput?.value.trim();
   const recId = idRaw ? Number(idRaw) : undefined;
@@ -540,28 +790,12 @@ async function submitRecForm(): Promise<void> {
 
   if (submitBtn) submitBtn.disabled = true;
   try {
-    const newId = await saveRecommendation(selectedExercise.id, section, orderIndex, content, recId);
+    await saveRecommendation(selectedExercise.id, section, orderIndex, content, recId);
     closeRecModal();
     showToast(recId ? 'Recomendación actualizada' : 'Recomendación agregada', 'success');
 
-    if (recId) {
-      const idx = recommendations.findIndex((r) => r.id === recId);
-      if (idx >= 0) {
-        recommendations[idx] = { id: recId, exercise_id: selectedExercise.id, section: section as 'step' | 'error' | 'tip', order_index: orderIndex, content };
-      }
-    } else {
-      recommendations.push({
-        id: newId,
-        exercise_id: selectedExercise.id,
-        section: section as 'step' | 'error' | 'tip',
-        order_index: orderIndex,
-        content,
-      });
-      // Update rec_count
-      const entry = catalogData.find((e) => e.id === selectedExercise!.id);
-      if (entry) entry.rec_count += 1;
-    }
-    renderRecsTable(recommendations);
+    // Keep UI in sync with DB (handles upserts/order collisions safely)
+    await reloadRecommendations(selectedExercise.id);
   } catch (err) {
     const msg = err instanceof Error ? err.message : 'Error desconocido';
     showToast('Error: ' + msg, 'error');

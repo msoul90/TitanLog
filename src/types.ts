@@ -117,6 +117,7 @@ export interface ExerciseGuide {
   steps: string[];
   errors?: string[];
   tips?: string[];
+  links?: string[];
 }
 
 // Stretching guide structure

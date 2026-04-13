@@ -10,7 +10,10 @@ type DashboardSupabaseClient = {
     updateUser(attrs: { password: string }): Promise<unknown>;
   };
   from(table: string): any;
-  rpc(functionName: string, args?: Record<string, unknown>): Promise<{ data: unknown; error: { message: string } | null }>;
+  rpc(functionName: string, args?: Record<string, unknown>): Promise<{
+    data: unknown;
+    error: { message: string; code?: string; hint?: string; details?: string } | null;
+  }>;
   functions: {
     invoke(
       functionName: string,
@@ -43,6 +46,21 @@ export function getDashboardSupabaseError(): string | null {
   return dashboardSupabaseError;
 }
 
+function isMissingRpcFunctionError(error: { message: string; code?: string; hint?: string; details?: string } | null): boolean {
+  if (!error) return false;
+  const code = (error.code || '').toUpperCase();
+  const msg = (error.message || '').toLowerCase();
+  const hint = (error.hint || '').toLowerCase();
+  const details = (error.details || '').toLowerCase();
+
+  return (
+    code === 'PGRST202' ||
+    msg.includes('could not find the function') ||
+    hint.includes('perhaps you meant to call') ||
+    details.includes('searched for the function')
+  );
+}
+
 type CacheStore = {
   gymSessions?: { data: GymSession[]; _since: string };
   hiitSessions?: { data: HiitSession[]; _since: string };
@@ -50,6 +68,31 @@ type CacheStore = {
   bodyMetrics?: BodyMetric[];
   allUsers?: Profile[];
 };
+
+type CatalogRpcPreference = 'admin' | 'light';
+type CatalogRpcSource = 'admin' | 'light';
+
+const CATALOG_RPC_PREF_KEY = 'dashboard.catalog.rpc.preference.v2';
+
+function readCatalogRpcPreference(): CatalogRpcPreference {
+  try {
+    const value = globalThis.localStorage?.getItem(CATALOG_RPC_PREF_KEY);
+    return value === 'light' ? 'light' : 'admin';
+  } catch {
+    return 'admin';
+  }
+}
+
+function persistCatalogRpcPreference(pref: CatalogRpcPreference): void {
+  try {
+    globalThis.localStorage?.setItem(CATALOG_RPC_PREF_KEY, pref);
+  } catch {
+    // Ignore localStorage errors (private mode / restricted envs)
+  }
+}
+
+let catalogRpcPreference: CatalogRpcPreference = readCatalogRpcPreference();
+let catalogRpcSource: CatalogRpcSource = catalogRpcPreference;
 
 const cache: CacheStore = {};
 
@@ -59,6 +102,26 @@ export function invalidateCache(): void {
   delete cache.profiles;
   delete cache.bodyMetrics;
   delete cache.allUsers;
+}
+
+function normalizeLightCatalogRows(rows: unknown): ExerciseCatalogEntry[] {
+  const list = (rows || []) as Array<{ id: string; slug: string; canonical_name: string; muscle_group: string }>;
+  return list.map((row) => ({
+    id: row.id,
+    slug: row.slug,
+    canonical_name: row.canonical_name,
+    muscle_group: row.muscle_group,
+    is_active: true,
+    rec_count: 0,
+  }));
+}
+
+export function getCatalogRpcHealthMode(): 'admin' | 'fallback' {
+  return catalogRpcSource === 'admin' ? 'admin' : 'fallback';
+}
+
+function asAdminCatalogRows(rows: unknown): ExerciseCatalogEntry[] {
+  return (rows || []) as ExerciseCatalogEntry[];
 }
 
 export async function fetchGymSessions(since: string): Promise<GymSession[]> {
@@ -128,9 +191,35 @@ export async function fetchAllUsers(): Promise<Profile[]> {
 }
 
 export async function fetchAdminCatalog(): Promise<ExerciseCatalogEntry[]> {
+  if (catalogRpcPreference === 'light') {
+    const adminAttempt = await sb.rpc('admin_list_exercise_catalog');
+    if (!adminAttempt.error) {
+      catalogRpcPreference = 'admin';
+      catalogRpcSource = 'admin';
+      persistCatalogRpcPreference(catalogRpcPreference);
+      return asAdminCatalogRows(adminAttempt.data);
+    }
+
+    const fallback = await sb.rpc('list_exercise_catalog_light');
+    if (fallback.error) throw fallback.error;
+    catalogRpcSource = 'light';
+    return normalizeLightCatalogRows(fallback.data);
+  }
+
   const { data, error } = await sb.rpc('admin_list_exercise_catalog');
-  if (error) throw error;
-  return (data || []) as ExerciseCatalogEntry[];
+  if (!error) {
+    catalogRpcSource = 'admin';
+    return asAdminCatalogRows(data);
+  }
+  if (!isMissingRpcFunctionError(error)) throw error;
+
+  catalogRpcPreference = 'light';
+  catalogRpcSource = 'light';
+  persistCatalogRpcPreference(catalogRpcPreference);
+
+  const fallback = await sb.rpc('list_exercise_catalog_light');
+  if (fallback.error) throw fallback.error;
+  return normalizeLightCatalogRows(fallback.data);
 }
 
 export async function fetchExerciseRecommendations(exerciseId: string): Promise<ExerciseRecommendation[]> {

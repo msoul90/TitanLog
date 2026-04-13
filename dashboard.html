@@ -232,34 +232,95 @@
 
     <!-- ── PAGE: EJERCICIOS ──────────────────────────────────── -->
     <div id="page-ejercicios" class="page">
-      <div class="grid-2 mb-20">
-        <div class="card">
-          <div class="card-title">Top 12 ejercicios</div>
-          <div class="chart-wrap tall">
-            <canvas id="chart-top-exercises"></canvas>
+      <div class="flex-ac gap-8 mb-16">
+        <button class="topbar-btn" id="tab-stats" type="button">Estadísticas</button>
+        <button class="topbar-btn" id="tab-catalog" type="button">Catálogo</button>
+      </div>
+
+      <div id="panel-stats">
+        <div class="grid-2 mb-20">
+          <div class="card">
+            <div class="card-title">Top 12 ejercicios</div>
+            <div class="chart-wrap tall">
+              <canvas id="chart-top-exercises"></canvas>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Distribución por grupo muscular</div>
+            <div class="chart-wrap">
+              <canvas id="chart-muscle-group"></canvas>
+            </div>
           </div>
         </div>
         <div class="card">
-          <div class="card-title">Distribución por grupo muscular</div>
-          <div class="chart-wrap">
-            <canvas id="chart-muscle-group"></canvas>
+          <div class="card-title mb-16">Todos los ejercicios</div>
+          <div class="table-scroll">
+            <table class="data-table" id="exercises-table">
+              <thead>
+                <tr>
+                  <th>Ejercicio</th>
+                  <th>Frecuencia total</th>
+                  <th>Miembros únicos</th>
+                  <th>Grupo muscular</th>
+                </tr>
+              </thead>
+              <tbody id="exercises-tbody"></tbody>
+            </table>
           </div>
         </div>
       </div>
-      <div class="card">
-        <div class="card-title mb-16">Todos los ejercicios</div>
-        <div class="table-scroll">
-          <table class="data-table" id="exercises-table">
-            <thead>
-              <tr>
-                <th>Ejercicio</th>
-                <th>Frecuencia total</th>
-                <th>Miembros únicos</th>
-                <th>Grupo muscular</th>
-              </tr>
-            </thead>
-            <tbody id="exercises-tbody"></tbody>
-          </table>
+
+      <div id="panel-catalog" class="is-hidden">
+        <div id="ex-catalog-panel">
+          <div class="card mb-16">
+            <div class="flex-ac justify-between mb-16" style="gap:10px;flex-wrap:wrap">
+              <div class="flex-ac gap-8" style="flex-wrap:wrap">
+                <div class="card-title mb-0">Catálogo de ejercicios</div>
+                <span class="badge badge-member" id="catalog-rpc-health">RPC: admin</span>
+              </div>
+              <div class="flex-ac gap-8" style="margin-left:auto;flex-wrap:wrap">
+                <input class="search-input" id="catalog-search" type="text" placeholder="Buscar por nombre o grupo...">
+                <label class="toggle-wrap text-sm text3" for="catalog-only-without-recs" style="margin:0 4px">
+                  <input id="catalog-only-without-recs" type="checkbox" aria-label="Mostrar solo ejercicios sin recomendaciones">
+                  Solo sin recomendaciones
+                </label>
+                <button class="topbar-btn" id="catalog-density-toggle" type="button">Densidad: Cómodo</button>
+                <button class="topbar-btn" id="catalog-reset-filters" type="button">Restablecer</button>
+                <button class="topbar-btn" id="btn-add-exercise" type="button">+ Agregar ejercicio</button>
+              </div>
+            </div>
+            <div class="table-scroll">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th><button class="section-action" id="catalog-sort-name" data-label="Nombre" type="button">Nombre</button></th>
+                    <th><button class="section-action" id="catalog-sort-muscle" data-label="Grupo muscular" type="button">Grupo muscular</button></th>
+                    <th><button class="section-action" id="catalog-sort-recommendations" data-label="Recomendaciones" type="button">Recomendaciones</button></th>
+                    <th><button class="section-action" id="catalog-sort-status" data-label="Estado" type="button">Estado</button></th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody id="catalog-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div id="ex-detail-panel" class="is-hidden">
+          <div class="card mb-16">
+            <div class="flex-ac justify-between mb-16" style="gap:10px;flex-wrap:wrap">
+              <div>
+                <div class="card-title mb-0" id="detail-exercise-name">—</div>
+                <div class="text-sm text3" id="detail-exercise-group">—</div>
+              </div>
+              <div class="flex-ac gap-8">
+                <button class="topbar-btn" id="btn-back-catalog" type="button">← Volver</button>
+                <button class="topbar-btn" id="btn-add-rec" type="button">+ Nueva recomendación</button>
+              </div>
+            </div>
+            <div id="recs-loading" class="text-sm text3 is-hidden mb-12">Cargando recomendaciones...</div>
+            <div id="recs-list"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -447,6 +508,49 @@
     </section>
   </div>
 </aside>
+
+<!-- ── EXERCISE MODAL ─────────────────────────────────────── -->
+<div id="exercise-modal-backdrop" class="overlay is-hidden"></div>
+<div id="exercise-modal" class="card is-hidden" style="position:fixed;z-index:520;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,92vw)">
+  <div class="flex-ac justify-between mb-16">
+    <div class="card-title mb-0" id="exercise-modal-title">Agregar ejercicio</div>
+    <button class="topbar-btn" id="exercise-modal-close" type="button">✕</button>
+  </div>
+  <form id="exercise-form" autocomplete="off">
+    <input id="ex-id" type="hidden">
+    <label class="auth-label" for="ex-name">Nombre canónico</label>
+    <input id="ex-name" class="auth-input" type="text" placeholder="Ej. Sentadilla frontal">
+    <label class="auth-label" for="ex-muscle-group">Grupo muscular</label>
+    <input id="ex-muscle-group" class="auth-input" type="text" placeholder="Ej. Piernas">
+    <label class="auth-label" for="ex-slug">Slug</label>
+    <input id="ex-slug" class="auth-input" type="text" placeholder="ej-sentadilla-frontal">
+    <button class="auth-btn" id="ex-submit" type="submit">Guardar ejercicio</button>
+  </form>
+</div>
+
+<!-- ── RECOMMENDATION MODAL ────────────────────────────────── -->
+<div id="rec-modal-backdrop" class="overlay is-hidden"></div>
+<div id="rec-modal" class="card is-hidden" style="position:fixed;z-index:520;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,92vw)">
+  <div class="flex-ac justify-between mb-16">
+    <div class="card-title mb-0" id="rec-modal-title">Nueva recomendación</div>
+    <button class="topbar-btn" id="rec-modal-close" type="button">✕</button>
+  </div>
+  <form id="rec-form" autocomplete="off">
+    <input id="rec-id" type="hidden">
+    <label class="auth-label" for="rec-section">Sección</label>
+    <select id="rec-section" class="auth-input">
+      <option value="step">Paso</option>
+      <option value="error">Error común</option>
+      <option value="tip">Consejo</option>
+      <option value="link">Link externo</option>
+    </select>
+    <label class="auth-label" for="rec-order">Orden</label>
+    <input id="rec-order" class="auth-input" type="number" min="1" step="1" value="1">
+    <label class="auth-label" for="rec-content">Contenido</label>
+    <textarea id="rec-content" class="auth-input" rows="4" placeholder="Describe la recomendación..."></textarea>
+    <button class="auth-btn" id="rec-submit" type="submit">Guardar recomendación</button>
+  </form>
+</div>
 
 <!-- ── TOAST CONTAINER ─────────────────────────────────────── -->
 <div id="toast-container"></div>

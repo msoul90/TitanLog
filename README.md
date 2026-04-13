@@ -68,6 +68,19 @@ Frontend en TypeScript con Vite, backend/auth en Supabase y despliegue automáti
 └── .github/workflows/deploy.yml
 ```
 
+## Arquitectura de entradas
+
+El proyecto usa 2 entradas HTML (MPA) y 2 SPA por area:
+
+- App usuario: `index.html` -> `src/main.ts`
+- Dashboard admin: `dashboard.html` -> `src/dashboard/main.ts`
+
+Esta separacion mantiene aislados permisos, UI y flujos de negocio sin multiplicar HTMLs por pantalla.
+
+Guia operativa:
+
+- `docs/arquitectura-rutas-y-entradas.md`
+
 ---
 
 ## Desarrollo local
@@ -132,6 +145,8 @@ La suite actual cubre módulos de Gym, HIIT, calendario, progreso, guías, db, t
 | Comando | Descripción |
 | --- | --- |
 | `npm run dev` | Inicia Vite en modo desarrollo |
+| `npm run dev:app` | Inicia Vite y abre la app de usuario |
+| `npm run dev:dashboard` | Inicia Vite y abre directamente el dashboard |
 | `npm run build` | Build de producción a `_site/` |
 | `npm run clean` | Elimina `_site/` |
 | `npm run type-check` | Verifica tipos TypeScript |
@@ -160,6 +175,18 @@ El workflow exporta `VITE_SUPABASE_URL` y `VITE_SUPABASE_ANON_KEY` para toda la 
 Eso cubre tanto la app principal como el dashboard; ya no se reemplazan credenciales dentro de `src/db.ts` durante el deploy.
 
 > Nota: la base pública para Pages está en `vite.config.ts` (`base: '/TitanLog/'`).
+
+---
+
+## CI en Pull Requests
+
+Se agrego un workflow de CI en `.github/workflows/ci.yml` con validaciones separadas por area:
+
+- `checks`: type-check + lint.
+- `app`: tests de app usuario (`src/__tests__/*.test.ts`) + build + verificacion de `_site/index.html`.
+- `dashboard`: tests de dashboard (`src/__tests__/dashboard/*.test.ts`) + build + verificacion de `_site/dashboard.html`.
+
+Esto asegura que App y Dashboard se validen de manera independiente en cada PR.
 
 ---
 

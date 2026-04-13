@@ -198,6 +198,7 @@ async function getExerciseGuideFromDB(name: string): Promise<{ name: string; gui
       steps?: unknown;
       errors?: unknown;
       tips?: unknown;
+      links?: unknown;
     };
 
     const canonicalName = (payload.name || name).trim() || name;
@@ -210,6 +211,7 @@ async function getExerciseGuideFromDB(name: string): Promise<{ name: string; gui
       steps: toStringArray(payload.steps),
       errors: toStringArray(payload.errors),
       tips: toStringArray(payload.tips),
+      links: toStringArray(payload.links),
     };
 
     const result = { name: canonicalName, guide };

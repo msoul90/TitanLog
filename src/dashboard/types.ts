@@ -97,7 +97,7 @@ export interface ExerciseCatalogEntry {
 export interface ExerciseRecommendation {
   id: number;
   exercise_id: string;
-  section: 'step' | 'error' | 'tip';
+  section: 'step' | 'error' | 'tip' | 'link';
   order_index: number;
   content: string;
 }

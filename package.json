@@ -6,6 +6,8 @@
   "scripts": {
     "build": "vite build",
     "dev": "vite",
+    "dev:app": "vite --open /TitanLog/",
+    "dev:dashboard": "vite --open /TitanLog/dashboard.html",
     "clean": "rm -rf _site",
     "type-check": "npx tsc --noEmit",
     "lint": "NODE_NO_WARNINGS=1 eslint src/**/*.ts --ext .ts",

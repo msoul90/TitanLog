@@ -22,7 +22,8 @@ describe('guides.ts', () => {
     document.body.innerHTML = `
       <div id="gTitle"></div><div id="gEmoji"></div><div id="gMuscles"></div>
       <div id="gSteps"></div><div id="gErrors"></div><div id="gTips"></div>
-      <div id="gErrSec"></div><div id="gTipSec"></div><div id="gAddTxt"></div>
+      <div id="gLinks"></div>
+      <div id="gErrSec"></div><div id="gTipSec"></div><div id="gLinkSec"></div><div id="gAddTxt"></div>
       <div id="exModTtl"></div><input id="fName" /><input id="fW" /><input id="fS" /><input id="fR" /><input id="fN" />
       <select id="fU"><option value="lb">lb</option><option value="kg">kg</option></select>
       <div id="cfgGuideList"></div><input id="cfgGuideSearch" />
@@ -178,5 +179,28 @@ describe('guides.ts', () => {
     expect(document.getElementById('gTips')?.innerHTML).not.toContain('guide-tip empty');
 
     delete GUIDES['Ejercicio Parcial'];
+  });
+
+  it('openGuide renderiza links externos de forma segura', () => {
+    GUIDES['Ejercicio Links'] = {
+      emoji: '🔗',
+      primary: ['Espalda'],
+      secondary: [],
+      steps: ['Paso base'],
+      errors: ['Error base'],
+      tips: ['Tip base'],
+      links: ['example.com/video', 'nota no valida']
+    } as any;
+
+    openGuide('Ejercicio Links');
+
+    const link = document.querySelector('#gLinks a.guide-link-item') as HTMLAnchorElement | null;
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute('href')).toContain('https://example.com/video');
+    expect(link?.getAttribute('target')).toBe('_blank');
+    expect(link?.getAttribute('rel')).toContain('noopener');
+    expect(document.getElementById('gLinkSec')?.getAttribute('style') || '').not.toContain('none');
+
+    delete GUIDES['Ejercicio Links'];
   });
 });

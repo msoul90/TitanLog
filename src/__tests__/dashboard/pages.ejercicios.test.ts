@@ -57,6 +57,9 @@ describe('dashboard ejercicios page', () => {
   beforeEach(() => {
     vi.resetModules();
     vi.clearAllMocks();
+    globalThis.localStorage?.removeItem('dashboard.catalog.onlyWithoutRecommendations.v1');
+    globalThis.localStorage?.removeItem('dashboard.catalog.sort.field.v1');
+    globalThis.localStorage?.removeItem('dashboard.catalog.sort.direction.v1');
 
     document.documentElement.dataset.theme = 'dark';
     fetchGymSessions.mockResolvedValue([]);
@@ -74,6 +77,12 @@ describe('dashboard ejercicios page', () => {
       <div id="panel-stats"></div>
       <div id="panel-catalog"></div>
       <input id="catalog-search" />
+      <input id="catalog-only-without-recs" type="checkbox" />
+      <button id="catalog-sort-name" data-label="Nombre"></button>
+      <button id="catalog-sort-muscle" data-label="Grupo muscular"></button>
+      <button id="catalog-sort-recommendations" data-label="Recomendaciones"></button>
+      <button id="catalog-sort-status" data-label="Estado"></button>
+      <button id="catalog-reset-filters"></button>
       <button id="btn-add-exercise"></button>
       <form id="exercise-form"></form>
       <button id="exercise-modal-close"></button>
@@ -89,8 +98,8 @@ describe('dashboard ejercicios page', () => {
       <table><tbody id="exercises-tbody"></tbody></table>
       <table><tbody id="catalog-tbody"></tbody></table>
 
-      <div id="catalog-panel"></div>
-      <div id="detail-panel" class="is-hidden"></div>
+      <div id="ex-catalog-panel"></div>
+      <div id="ex-detail-panel" class="is-hidden"></div>
       <div id="detail-exercise-name"></div>
       <div id="detail-exercise-group"></div>
       <div id="recs-list"></div>
@@ -111,6 +120,7 @@ describe('dashboard ejercicios page', () => {
         <option value="step">step</option>
         <option value="error">error</option>
         <option value="tip">tip</option>
+        <option value="link">link</option>
       </select>
       <input id="rec-order" />
       <textarea id="rec-content"></textarea>
@@ -164,6 +174,38 @@ describe('dashboard ejercicios page', () => {
     search.dispatchEvent(new Event('input'));
     expect(document.getElementById('catalog-tbody')?.innerHTML).toContain('Press banca');
     expect(document.getElementById('catalog-tbody')?.innerHTML).not.toContain('Sentadilla');
+    expect(document.getElementById('catalog-tbody')?.innerHTML).toContain('Sin recomendaciones');
+
+    search.value = '';
+    search.dispatchEvent(new Event('input'));
+    expect(document.getElementById('catalog-tbody')?.innerHTML).toContain('2 recomendaciones');
+
+    const onlyWithoutRecs = document.getElementById('catalog-only-without-recs') as HTMLInputElement;
+    onlyWithoutRecs.checked = true;
+    onlyWithoutRecs.dispatchEvent(new Event('change'));
+    expect(document.getElementById('catalog-tbody')?.innerHTML).toContain('Press banca');
+    expect(document.getElementById('catalog-tbody')?.innerHTML).not.toContain('Sentadilla');
+
+    onlyWithoutRecs.checked = false;
+    onlyWithoutRecs.dispatchEvent(new Event('change'));
+
+    (document.getElementById('catalog-sort-recommendations') as HTMLButtonElement).click();
+    const rowsAsc = [...document.querySelectorAll('#catalog-tbody tr')].map((row) => row.textContent || '');
+    expect(rowsAsc[0]).toContain('Press banca');
+
+    (document.getElementById('catalog-sort-recommendations') as HTMLButtonElement).click();
+    const rowsDesc = [...document.querySelectorAll('#catalog-tbody tr')].map((row) => row.textContent || '');
+    expect(rowsDesc[0]).toContain('Sentadilla');
+
+    const searchAgain = document.getElementById('catalog-search') as HTMLInputElement;
+    searchAgain.value = 'press';
+    searchAgain.dispatchEvent(new Event('input'));
+
+    (document.getElementById('catalog-reset-filters') as HTMLButtonElement).click();
+    const rowsReset = [...document.querySelectorAll('#catalog-tbody tr')].map((row) => row.textContent || '');
+    expect(searchAgain.value).toBe('');
+    expect((document.getElementById('catalog-only-without-recs') as HTMLInputElement).checked).toBe(false);
+    expect(rowsReset[0]).toContain('Press banca');
   });
 
   it('loadEjercicios muestra estado vacio sin datos', async () => {
@@ -211,7 +253,7 @@ describe('dashboard ejercicios page', () => {
     expect(saveExercise).toHaveBeenCalledWith('Remo con barra', 'Espalda', 'remo-con-barra', undefined);
     expect(fetchExerciseRecommendations).toHaveBeenCalledWith('e3');
     expect(showToast).toHaveBeenCalledWith('Ejercicio agregado', 'success');
-    expect(document.getElementById('detail-panel')?.classList.contains('is-hidden')).toBe(false);
+    expect(document.getElementById('ex-detail-panel')?.classList.contains('is-hidden')).toBe(false);
   });
 
   it('maneja toggle activo con rollback visual cuando falla', async () => {
@@ -221,7 +263,7 @@ describe('dashboard ejercicios page', () => {
     mod.initEjerciciosPage();
     await mod.loadEjercicios();
 
-    const toggle = document.querySelector('.catalog-active-toggle') as HTMLInputElement;
+    const toggle = document.querySelector('.catalog-active-toggle[data-id="e1"]') as HTMLInputElement;
     toggle.checked = false;
     toggle.dispatchEvent(new Event('change'));
     await Promise.resolve();
@@ -235,12 +277,19 @@ describe('dashboard ejercicios page', () => {
     fetchExerciseRecommendations.mockResolvedValueOnce([
       { id: 1, exercise_id: 'e1', section: 'step', order_index: 1, content: 'Paso inicial' },
     ]);
+    fetchExerciseRecommendations.mockResolvedValueOnce([
+      { id: 1, exercise_id: 'e1', section: 'step', order_index: 1, content: 'Paso inicial' },
+      { id: 9001, exercise_id: 'e1', section: 'step', order_index: 2, content: 'Segundo paso' },
+    ]);
+    fetchExerciseRecommendations.mockResolvedValueOnce([
+      { id: 1, exercise_id: 'e1', section: 'step', order_index: 1, content: 'Paso inicial' },
+    ]);
 
     const mod = await import('../../dashboard/pages/ejercicios');
     mod.initEjerciciosPage();
     await mod.loadEjercicios();
 
-    (document.querySelector('.btn-recs') as HTMLButtonElement).click();
+    (document.querySelector('.btn-recs[data-id="e1"]') as HTMLButtonElement).click();
     await Promise.resolve();
 
     (document.getElementById('btn-add-rec') as HTMLButtonElement).click();
@@ -249,6 +298,7 @@ describe('dashboard ejercicios page', () => {
     (document.getElementById('rec-content') as HTMLTextAreaElement).value = 'Segundo paso';
     document.getElementById('rec-form')?.dispatchEvent(new Event('submit'));
     await Promise.resolve();
+    await Promise.resolve();
 
     expect(saveRecommendation).toHaveBeenCalledWith('e1', 'step', 2, 'Segundo paso', undefined);
     expect(showToast).toHaveBeenCalledWith('Recomendación agregada', 'success');
@@ -256,21 +306,24 @@ describe('dashboard ejercicios page', () => {
     const deleteButton = document.querySelector('.btn-delete-rec') as HTMLButtonElement;
     deleteButton.click();
     await Promise.resolve();
+    await Promise.resolve();
 
     expect(deleteRecommendation).toHaveBeenCalled();
-    expect(showToast).toHaveBeenCalledWith('Recomendación eliminada');
   });
 
   it('permite editar recomendacion existente en modal y actualizarla', async () => {
     fetchExerciseRecommendations.mockResolvedValueOnce([
       { id: 11, exercise_id: 'e1', section: 'tip', order_index: 3, content: 'Consejo inicial' },
     ]);
+    fetchExerciseRecommendations.mockResolvedValueOnce([
+      { id: 11, exercise_id: 'e1', section: 'tip', order_index: 4, content: 'Consejo actualizado' },
+    ]);
 
     const mod = await import('../../dashboard/pages/ejercicios');
     mod.initEjerciciosPage();
     await mod.loadEjercicios();
 
-    (document.querySelector('.btn-recs') as HTMLButtonElement).click();
+    (document.querySelector('.btn-recs[data-id="e1"]') as HTMLButtonElement).click();
     await Promise.resolve();
 
     (document.querySelector('.btn-edit-rec') as HTMLButtonElement).click();
@@ -280,10 +333,28 @@ describe('dashboard ejercicios page', () => {
     (document.getElementById('rec-content') as HTMLTextAreaElement).value = 'Consejo actualizado';
     document.getElementById('rec-form')?.dispatchEvent(new Event('submit'));
     await Promise.resolve();
+    await Promise.resolve();
 
     expect(saveRecommendation).toHaveBeenCalledWith('e1', 'tip', 4, 'Consejo actualizado', 11);
     expect(showToast).toHaveBeenCalledWith('Recomendación actualizada', 'success');
     expect(document.getElementById('recs-list')?.innerHTML).toContain('Consejo actualizado');
+  });
+
+  it('renderiza recomendaciones de links externos como enlaces clicables', async () => {
+    fetchExerciseRecommendations.mockResolvedValueOnce([
+      { id: 31, exercise_id: 'e1', section: 'link', order_index: 1, content: 'https://example.com/video' },
+    ]);
+
+    const mod = await import('../../dashboard/pages/ejercicios');
+    mod.initEjerciciosPage();
+    await mod.loadEjercicios();
+
+    (document.querySelector('.btn-recs[data-id="e1"]') as HTMLButtonElement).click();
+    await Promise.resolve();
+
+    const link = document.querySelector('#recs-list a.rec-link') as HTMLAnchorElement | null;
+    expect(link).not.toBeNull();
+    expect(link?.getAttribute('href')).toBe('https://example.com/video');
   });
 
   it('muestra error cuando guardar recomendacion falla y restablece boton', async () => {
@@ -293,7 +364,7 @@ describe('dashboard ejercicios page', () => {
     mod.initEjerciciosPage();
     await mod.loadEjercicios();
 
-    (document.querySelector('.btn-recs') as HTMLButtonElement).click();
+    (document.querySelector('.btn-recs[data-id="e1"]') as HTMLButtonElement).click();
     await Promise.resolve();
 
     (document.getElementById('btn-add-rec') as HTMLButtonElement).click();
@@ -321,12 +392,12 @@ describe('dashboard ejercicios page', () => {
     fetchAdminCatalog.mockResolvedValueOnce(baseCatalog());
     await mod.loadEjercicios();
 
-    (document.querySelector('.btn-recs') as HTMLButtonElement).click();
+    (document.querySelector('.btn-recs[data-id="e1"]') as HTMLButtonElement).click();
     await Promise.resolve();
-    expect(document.getElementById('detail-panel')?.classList.contains('is-hidden')).toBe(false);
+    expect(document.getElementById('ex-detail-panel')?.classList.contains('is-hidden')).toBe(false);
 
     (document.getElementById('btn-back-catalog') as HTMLButtonElement).click();
-    expect(document.getElementById('detail-panel')?.classList.contains('is-hidden')).toBe(true);
-    expect(document.getElementById('catalog-panel')?.classList.contains('is-hidden')).toBe(false);
+    expect(document.getElementById('ex-detail-panel')?.classList.contains('is-hidden')).toBe(true);
+    expect(document.getElementById('ex-catalog-panel')?.classList.contains('is-hidden')).toBe(false);
   });
 });

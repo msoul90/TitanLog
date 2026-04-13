@@ -37,12 +37,22 @@ function createFromMock() {
 }
 
 function createRpcMock() {
-  return vi.fn((fnName: string) => {
+  return vi.fn(
+    (
+      fnName: string,
+    ): Promise<{ data: unknown; error: { message?: string; code?: string; hint?: string } | null }> => {
     if (fnName === 'list_gym_admins') {
       return Promise.resolve({ data: [{ user_id: 'u1' }, { user_id: 'u2' }], error: null });
     }
 
     if (fnName === 'admin_list_exercise_catalog') {
+      return Promise.resolve({
+        data: [{ id: 'e1', canonical_name: 'Sentadilla', muscle_group: 'Piernas', slug: 'sentadilla' }],
+        error: null,
+      });
+    }
+
+    if (fnName === 'list_exercise_catalog_light') {
       return Promise.resolve({
         data: [{ id: 'e1', canonical_name: 'Sentadilla', muscle_group: 'Piernas', slug: 'sentadilla' }],
         error: null,
@@ -73,7 +83,8 @@ function createRpcMock() {
     }
 
     return Promise.resolve({ data: null, error: null });
-  });
+    },
+  );
 }
 
 function createGteSelect(data: unknown[]) {
@@ -105,6 +116,7 @@ async function loadDataModule() {
 describe('dashboard data module', () => {
   beforeEach(() => {
     vi.resetModules();
+    globalThis.localStorage?.removeItem('dashboard.catalog.rpc.preference.v2');
     vi.stubEnv('VITE_SUPABASE_URL', 'https://demo-project.supabase.co');
     vi.stubEnv('VITE_SUPABASE_ANON_KEY', 'abcdefghijklmnopqrstuvwxyz123456');
   });
@@ -234,6 +246,50 @@ describe('dashboard data module', () => {
     expect(rpcMock).toHaveBeenCalledWith('admin_list_exercise_recommendations', { p_exercise_id: 'e1' });
   });
 
+  it('fetchAdminCatalog usa fallback cuando admin_list_exercise_catalog no existe en schema cache', async () => {
+    const { mod, rpcMock } = await loadDataModule();
+    rpcMock.mockImplementation((fn: string) => {
+      if (fn === 'admin_list_exercise_catalog') {
+        return Promise.resolve({
+          data: null,
+          error: {
+            code: 'PGRST202',
+            message: 'Could not find the function public.admin_list_exercise_catalog without parameters',
+            hint: 'Perhaps you meant to call the function public.list_exercise_catalog_light',
+          },
+        });
+      }
+      if (fn === 'list_exercise_catalog_light') {
+        return Promise.resolve({
+          data: [{ id: 'e2', canonical_name: 'Press militar', muscle_group: 'Hombros', slug: 'press-militar' }],
+          error: null,
+        });
+      }
+      return Promise.resolve({ data: [], error: null });
+    });
+
+    const catalog = await mod.fetchAdminCatalog();
+    expect(catalog[0]?.slug).toBe('press-militar');
+    expect(catalog[0]?.is_active).toBe(true);
+    expect(catalog[0]?.rec_count).toBe(0);
+    expect(rpcMock).toHaveBeenCalledWith('admin_list_exercise_catalog');
+    expect(rpcMock).toHaveBeenCalledWith('list_exercise_catalog_light');
+    expect(globalThis.localStorage?.getItem('dashboard.catalog.rpc.preference.v2')).toBe('light');
+    expect(mod.getCatalogRpcHealthMode()).toBe('fallback');
+  });
+
+  it('fetchAdminCatalog intenta recuperar RPC admin cuando existe preferencia light', async () => {
+    globalThis.localStorage?.setItem('dashboard.catalog.rpc.preference.v2', 'light');
+    const { mod, rpcMock } = await loadDataModule();
+
+    const catalog = await mod.fetchAdminCatalog();
+    expect(catalog[0]?.slug).toBe('sentadilla');
+    expect(rpcMock).toHaveBeenCalledWith('admin_list_exercise_catalog');
+    expect(rpcMock).not.toHaveBeenCalledWith('list_exercise_catalog_light');
+    expect(globalThis.localStorage?.getItem('dashboard.catalog.rpc.preference.v2')).toBe('admin');
+    expect(mod.getCatalogRpcHealthMode()).toBe('admin');
+  });
+
   it('saveExercise usa null cuando no recibe exerciseId y devuelve el id guardado', async () => {
     const { mod, rpcMock } = await loadDataModule();
 
@@ -287,6 +343,7 @@ describe('dashboard data module', () => {
     const { mod, rpcMock } = await loadDataModule();
     rpcMock.mockImplementation((fn: string) => {
       if (fn === 'admin_list_exercise_catalog') return Promise.resolve({ data: null, error: { message: 'catalog error' } });
+      if (fn === 'list_exercise_catalog_light') return Promise.resolve({ data: [], error: null });
       if (fn === 'admin_list_exercise_recommendations') return Promise.resolve({ data: null, error: { message: 'recommendations error' } });
       if (fn === 'admin_save_exercise') return Promise.resolve({ data: null, error: { message: 'save exercise error' } });
       if (fn === 'admin_toggle_exercise') return Promise.resolve({ data: null, error: { message: 'toggle error' } });

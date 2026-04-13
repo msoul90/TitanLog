@@ -31,8 +31,10 @@ const GUIDE_DOM_IDS = {
   STEPS: 'gSteps',
   ERRORS: 'gErrors',
   TIPS: 'gTips',
+  LINKS: 'gLinks',
   ERR_SEC: 'gErrSec',
   TIP_SEC: 'gTipSec',
+  LINK_SEC: 'gLinkSec',
   ADD_TXT: 'gAddTxt'
 } as const;
 
@@ -2651,6 +2653,7 @@ async function enrichGuideFromDB(requestedName: string): Promise<void> {
       steps: dbGuide.steps?.length ? dbGuide.steps : (localGuide?.steps ?? []),
       errors: dbGuide.errors?.length ? dbGuide.errors : (localGuide?.errors ?? []),
       tips: dbGuide.tips?.length ? dbGuide.tips : (localGuide?.tips ?? []),
+      links: dbGuide.links?.length ? dbGuide.links : (localGuide?.links ?? []),
     };
 
     renderGuideContent(canonicalName, mergedGuide);
@@ -2913,6 +2916,61 @@ function renderNoGuideAvailable(exerciseName?: string): void {
       .join('');
     tipSec.style.display = '';
   }
+
+  const linkSec = document.getElementById(GUIDE_DOM_IDS.LINK_SEC);
+  if (linkSec) linkSec.style.display = 'none';
+}
+
+function toSafeExternalHref(rawValue: string): string | null {
+  const value = rawValue.trim();
+  if (!value) return null;
+
+  const withProtocol = /^https?:\/\//i.test(value) ? value : `https://${value}`;
+  try {
+    const url = new URL(withProtocol);
+    const protocol = url.protocol.toLowerCase();
+    if (protocol !== 'http:' && protocol !== 'https:') return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
+function cleanGuideList(values?: string[]): string[] {
+  return (values || []).map(s => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
+}
+
+function setInnerHtmlById(elementId: string, html: string): void {
+  const element = document.getElementById(elementId);
+  if (element) element.innerHTML = html;
+}
+
+function setSectionVisible(sectionId: string, visible: boolean): void {
+  const section = document.getElementById(sectionId);
+  if (section) section.style.display = visible ? '' : 'none';
+}
+
+function renderGuideTipsList(items: string[], itemClass: 'ok' | 'err', icon: string, emptyMessage: string): string {
+  if (!items.length) {
+    return `<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>${emptyMessage}</span></div>`;
+  }
+  return items
+    .map((value) => `<div class="guide-tip ${itemClass}"><span class="tip-icon">${icon}</span><span>${escHtml(value)}</span></div>`)
+    .join('');
+}
+
+function renderGuideLinksList(links: string[]): string {
+  if (!links.length) {
+    return '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Aún no hay links externos para este ejercicio.</span></div>';
+  }
+
+  return links.map((link: string) => {
+    const href = toSafeExternalHref(link);
+    if (!href) {
+      return `<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>${escHtml(link)}</span></div>`;
+    }
+    return `<div class="guide-tip ok"><span class="tip-icon">🔗</span><a class="guide-link-item" href="${escHtml(href)}" target="_blank" rel="noopener noreferrer">${escHtml(link)}</a></div>`;
+  }).join('');
 }
 
 /**
@@ -2920,9 +2978,10 @@ function renderNoGuideAvailable(exerciseName?: string): void {
  * @param guide - Guide data object
  */
 function renderGuideDetails(guide: ExerciseGuide): void {
-  const steps = (guide.steps || []).map(s => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
-  const errors = (guide.errors || []).map(s => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
-  const tips = (guide.tips || []).map(s => (typeof s === 'string' ? s.trim() : '')).filter(Boolean);
+  const steps = cleanGuideList(guide.steps);
+  const errors = cleanGuideList(guide.errors);
+  const tips = cleanGuideList(guide.tips);
+  const links = cleanGuideList(guide.links);
 
   // Update emoji
   const emojiElement = document.getElementById(GUIDE_DOM_IDS.EMOJI);
@@ -2943,45 +3002,32 @@ function renderGuideDetails(guide: ExerciseGuide): void {
   }
 
   // Update steps
-  const stepsElement = document.getElementById(GUIDE_DOM_IDS.STEPS);
-  if (stepsElement) {
-    stepsElement.innerHTML = steps.length
+  setInnerHtmlById(
+    GUIDE_DOM_IDS.STEPS,
+    steps.length
       ? steps.map((step: string, index: number) =>
           `<div class="guide-step"><div class="step-num">${index + 1}</div><div class="step-text">${escHtml(step)}</div></div>`
         ).join('')
-      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Sin pasos de ejecución documentados aún para este ejercicio.</span></div>';
-  }
+      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Sin pasos de ejecución documentados aún para este ejercicio.</span></div>'
+  );
 
   // Update errors
-  const errorsElement = document.getElementById(GUIDE_DOM_IDS.ERRORS);
-  if (errorsElement) {
-    errorsElement.innerHTML = errors.length
-      ? errors.map((error: string) =>
-          `<div class="guide-tip err"><span class="tip-icon">❌</span><span>${escHtml(error)}</span></div>`
-        ).join('')
-      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Aún no hay errores comunes registrados para este ejercicio.</span></div>';
-  }
+  setInnerHtmlById(
+    GUIDE_DOM_IDS.ERRORS,
+    renderGuideTipsList(errors, 'err', '❌', 'Aún no hay errores comunes registrados para este ejercicio.')
+  );
 
   // Update tips
-  const tipsElement = document.getElementById(GUIDE_DOM_IDS.TIPS);
-  if (tipsElement) {
-    tipsElement.innerHTML = tips.length
-      ? tips.map((tip: string) =>
-          `<div class="guide-tip ok"><span class="tip-icon">✅</span><span>${escHtml(tip)}</span></div>`
-        ).join('')
-      : '<div class="guide-tip empty"><span class="tip-icon">ℹ️</span><span>Tips pro en preparación para este ejercicio.</span></div>';
-  }
+  setInnerHtmlById(
+    GUIDE_DOM_IDS.TIPS,
+    renderGuideTipsList(tips, 'ok', '✅', 'Tips pro en preparación para este ejercicio.')
+  );
 
   // Show error and tip sections
-  const errSec = document.getElementById(GUIDE_DOM_IDS.ERR_SEC);
-  if (errSec) {
-    errSec.style.display = '';
-  }
-
-  const tipSec = document.getElementById(GUIDE_DOM_IDS.TIP_SEC);
-  if (tipSec) {
-    tipSec.style.display = '';
-  }
+  setSectionVisible(GUIDE_DOM_IDS.ERR_SEC, true);
+  setSectionVisible(GUIDE_DOM_IDS.TIP_SEC, true);
+  setInnerHtmlById(GUIDE_DOM_IDS.LINKS, renderGuideLinksList(links));
+  setSectionVisible(GUIDE_DOM_IDS.LINK_SEC, true);
 }
 
 /**
