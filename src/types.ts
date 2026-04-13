@@ -98,6 +98,7 @@ export interface UserProfile {
   id: string;
   name: string;
   color: string;
+  is_disabled?: boolean;
   created_at?: string;
 }
 

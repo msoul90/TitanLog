@@ -75,9 +75,13 @@ async function authenticateActor(
   const token = getBearerToken(req);
   if (!token) return { error: 'missing_bearer_token' };
 
-  // Standard Supabase pattern: user-context client validates the JWT via /auth/v1/user
+  // Validate JWT in user context. Prefer the request apikey to avoid key drift between
+  // runtime env and current publishable key used by the client.
   const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const requestApiKey = req.headers.get('apikey')?.trim() || '';
+  const anonKey = requestApiKey || Deno.env.get('SUPABASE_ANON_KEY') || '';
+  if (!supabaseUrl || !anonKey) return { error: 'invalid_token' };
+
   const userClient = createClient(supabaseUrl, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
     global: { headers: { Authorization: `Bearer ${token}` } },

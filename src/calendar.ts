@@ -3,11 +3,20 @@
 // ============================================================
 
 import { Exercise } from './types.js';
-import { gD, MONTHS, DAYS_OF_WEEK as DAYS, appState, isPR, escHtml } from './app.js';
+import { gD, MONTHS, appState, isPR, escHtml } from './app.js';
 import { dk, gHiit, loadGymMonth, loadHiitMonth } from './db.js';
 
 // Alias for backward compatibility
 const MOS = MONTHS;
+const WEEKDAY_SHORT_MX = ['dom', 'lun', 'mar', 'mie', 'jue', 'vie', 'sab'] as const;
+
+function parseDateKeyAsLocalDate(key: string): Date {
+  const [yearRaw, monthRaw, dayRaw] = key.split('-');
+  const year = Number(yearRaw);
+  const month = Number(monthRaw);
+  const day = Number(dayRaw);
+  return new Date(year, month - 1, day);
+}
 
 // ── CALENDAR FUNCTIONS ──
 
@@ -53,16 +62,16 @@ function renderCal(): void { // NOSONAR
   // Clear existing content
   grid.innerHTML = '';
 
-  // Add day headers (L, M, X, J, V, S, D)
-  ['L', 'M', 'X', 'J', 'V', 'S', 'D'].forEach((d: string) => {
+  // Add day headers (D, L, M, X, J, V, S)
+  ['D', 'L', 'M', 'X', 'J', 'V', 'S'].forEach((d: string) => {
     const el = document.createElement('div');
     el.className = 'cl';
     el.textContent = d;
     grid.appendChild(el);
   });
 
-  // Calculate starting day of week (adjust Sunday from 0 to 6, Monday = 0)
-  const startDow = (first.getDay() + 6) % 7;
+  // Calculate starting day of week (Sunday = 0)
+  const startDow = first.getDay();
 
   // Add empty cells for days before the first day of month
   for (let i = 0; i < startDow; i++) {
@@ -143,10 +152,10 @@ function showCalDet(key: string, exs: Exercise[] | undefined, hiitSessions: Arra
   }
 
   // Create date object and title
-  const d = new Date(key);
+  const d = parseDateKeyAsLocalDate(key);
   const day = Number.parseInt(key.split('-')[2]!, 10);
-  const ttl = DAYS[d.getDay()]!.charAt(0).toUpperCase() + DAYS[d.getDay()]!.slice(1) +
-    ', ' + day + ' de ' + MOS[d.getMonth()];
+  const weekdayShort = WEEKDAY_SHORT_MX[d.getDay()] || 'dom';
+  const ttl = weekdayShort + ', ' + day + ' de ' + MOS[d.getMonth()];
 
   // Build HTML content
   const gymContent = gymSessions.length

@@ -10,6 +10,7 @@ const getSessionAdmin = vi.fn();
 const fetchMock = vi.fn();
 const manageUser = vi.fn();
 const invalidateCache = vi.fn();
+const confirmAction = vi.fn();
 
 vi.mock('../../dashboard/data', () => ({
   fetchProfiles: (...args: unknown[]) => fetchProfiles(...args),
@@ -38,6 +39,7 @@ vi.mock('../../dashboard/helpers', () => ({
     return /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(normalized) ? normalized : fallback;
   },
   showToast: (...args: unknown[]) => showToast(...args),
+  confirmAction: (...args: unknown[]) => confirmAction(...args),
 }));
 
 describe('dashboard admin page', () => {
@@ -74,6 +76,7 @@ describe('dashboard admin page', () => {
     getSessionAdmin.mockResolvedValue({ data: { session: { access_token: 'jwt-token-123' } }, error: null });
     manageUser.mockResolvedValue(undefined);
     invalidateCache.mockImplementation(() => {});
+    confirmAction.mockResolvedValue(true);
 
     fetchProfiles.mockResolvedValue([
       { id: 'u1', name: 'Ana', color: '#111' },
@@ -81,7 +84,6 @@ describe('dashboard admin page', () => {
     ]);
     fetchAdmins.mockResolvedValue(['u2']);
     fetchSuperAdmins.mockResolvedValue(['u1']);
-    vi.stubGlobal('confirm', vi.fn(() => true));
   });
 
   it('renderiza tabla y filtra por busqueda', async () => {
@@ -271,7 +273,7 @@ describe('dashboard admin page', () => {
   });
 
   it('toggleAdmin cancela cuando usuario rechaza quitarse su propio acceso', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => false));
+    confirmAction.mockResolvedValue(false);
 
     adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
     await adminPage.loadAdmin();
@@ -289,7 +291,7 @@ describe('dashboard admin page', () => {
   });
 
   it('toggleAdmin llama signOut cuando usuario revoca su propio acceso y confirma', async () => {
-    vi.stubGlobal('confirm', vi.fn(() => true));
+    confirmAction.mockResolvedValue(true);
     const signOut = vi.fn(async () => {});
 
     adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
@@ -345,6 +347,7 @@ describe('dashboard admin page', () => {
   });
 
   it('acciones de usuario deshabilitan y eliminan desde botones de fila', async () => {
+    confirmAction.mockResolvedValue(true);
     adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
     await adminPage.loadAdmin();
 
@@ -355,6 +358,10 @@ describe('dashboard admin page', () => {
     await Promise.resolve();
 
     expect(manageUser).toHaveBeenCalledWith('u2', 'disable');
+    expect(confirmAction).toHaveBeenCalledWith(expect.objectContaining({
+      title: expect.stringContaining('Deshabilitar'),
+      confirmText: 'Deshabilitar',
+    }));
     expect(invalidateCache).toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith('Usuario deshabilitado', 'success');
 
@@ -363,6 +370,11 @@ describe('dashboard admin page', () => {
     await Promise.resolve();
 
     expect(manageUser).toHaveBeenCalledWith('u2', 'delete');
+    expect(confirmAction).toHaveBeenCalledWith(expect.objectContaining({
+      title: expect.stringContaining('Eliminar permanentemente'),
+      requireText: 'ELIMINAR',
+      inputPlaceholder: 'ELIMINAR',
+    }));
     expect(showToast).toHaveBeenCalledWith('Usuario eliminado', 'error');
   });
 

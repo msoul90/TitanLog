@@ -9,7 +9,7 @@ import {
   toggleExercise,
 } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
-import { colorForMuscle, daysAgo, escapeHtml, muscleGroup, showToast } from '../helpers';
+import { colorForMuscle, confirmAction, daysAgo, escapeHtml, muscleGroup, showToast } from '../helpers';
 import { ChartCtor, ChartLike, ExerciseCatalogEntry, ExerciseRecommendation } from '../types';
 
 declare const Chart: ChartCtor;
@@ -702,7 +702,14 @@ function renderRecommendationContent(rec: ExerciseRecommendation): string {
 }
 
 async function handleDeleteRec(recId: number): Promise<void> {
-  if (!globalThis.confirm('¿Eliminar esta recomendación?')) return;
+  const confirmed = await confirmAction({
+    title: 'Eliminar recomendación',
+    message: 'Esta recomendación se eliminará del catálogo.',
+    confirmText: 'Eliminar',
+    cancelText: 'Cancelar',
+    tone: 'danger',
+  });
+  if (!confirmed) return;
   if (!selectedExercise) return;
 
   try {

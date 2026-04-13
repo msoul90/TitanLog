@@ -10,6 +10,7 @@ type MockState = {
   signOutThrow: boolean;
   updateUserError: { message: string } | null;
   profileExists: boolean;
+  profileDisabled: boolean;
   profileInsertError: boolean;
   updateProfileError: boolean;
   updateProfileThrow: boolean;
@@ -46,6 +47,7 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls, rpcCalls } = vi.h
     signOutThrow: false,
     updateUserError: null,
     profileExists: true,
+    profileDisabled: false,
     profileInsertError: false,
     updateProfileError: false,
     updateProfileThrow: false,
@@ -100,7 +102,7 @@ function resolveMutationError(table: string, op: string): string | null {
 function resolveProfileSingleResult(op: string): SingleResult {
   if (op === 'select') {
     if (mockState.profileExists) {
-      return { data: { id: 'u1', name: 'Mario', color: '#aaff45' }, error: null };
+      return { data: { id: 'u1', name: 'Mario', color: '#aaff45', is_disabled: mockState.profileDisabled }, error: null };
     }
     return { data: null, error: { message: 'not found' } };
   }
@@ -284,6 +286,7 @@ describe('db.ts', () => {
     mockState.signOutThrow = false;
     mockState.updateUserError = null;
     mockState.profileExists = true;
+    mockState.profileDisabled = false;
     mockState.profileInsertError = false;
     mockState.updateProfileError = false;
     mockState.updateProfileThrow = false;
@@ -385,6 +388,18 @@ describe('db.ts', () => {
     await initLogin();
 
     expect(document.getElementById('uName')?.textContent).toBeTruthy();
+  });
+
+  it('enterApp bloquea acceso cuando el perfil está deshabilitado', async () => {
+    mockState.profileDisabled = true;
+    const { enterApp } = await import('../db.js');
+
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+
+    expect(signOutCalls.count).toBe(1);
+    expect((globalThis as any).renderToday).not.toHaveBeenCalled();
+    expect((document.getElementById('loginScreen') as HTMLElement).style.display).toBe('flex');
+    expect(document.getElementById('authErr')?.textContent).toContain('deshabilitada');
   });
 
   it('initLogin usa fallback si falla inserción de perfil', async () => {

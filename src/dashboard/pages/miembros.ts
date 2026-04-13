@@ -6,9 +6,34 @@ import { ChartCtor, ChartLike, GymSession, MemberBestPR, MemberData } from '../t
 declare const Chart: ChartCtor;
 
 let membersData: MemberData[] = [];
+let membersViewData: MemberData[] = [];
 let memberWeightChart: ChartLike | null = null;
 let memberExerciseChart: ChartLike | null = null;
 const DETAIL_SECTIONS_STATE_KEY = 'dashboard:miembros:detail-sections:v1';
+const MEMBERS_VIEW_STATE_KEY = 'dashboard:miembros:view:v1';
+
+type MemberStatusFilter = 'all' | 'active' | 'warn' | 'inactive';
+type MemberPrFilter = 'all' | 'with' | 'without';
+type MemberSortKey = 'name' | 'lastDate' | 'sesMonth' | 'activity28' | 'bestPR' | 'status';
+type SortDirection = 'asc' | 'desc';
+
+type MembersViewState = {
+  status: MemberStatusFilter;
+  pr: MemberPrFilter;
+  minSessions: number;
+  sortBy: MemberSortKey;
+  sortDir: SortDirection;
+};
+
+const defaultMembersViewState: MembersViewState = {
+  status: 'all',
+  pr: 'all',
+  minSessions: 0,
+  sortBy: 'lastDate',
+  sortDir: 'desc',
+};
+
+let membersViewState: MembersViewState = loadMembersViewState();
 
 function loadDetailSectionsState(): Record<string, boolean> {
   try {
@@ -47,20 +72,189 @@ function toNumber(value: string | number | null | undefined): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-export function initMiembrosPage(): void {
-  document.getElementById('topbar-search')?.addEventListener('input', (e: Event) => {
-    const q = ((e.target as HTMLInputElement | null)?.value || '').toLowerCase();
-    const filtered = membersData.filter((m) => (m.name || '').toLowerCase().includes(q));
-    renderMembersTable(filtered);
+function loadMembersViewState(): MembersViewState {
+  try {
+    const raw = sessionStorage.getItem(MEMBERS_VIEW_STATE_KEY);
+    if (!raw) return { ...defaultMembersViewState };
+    const parsed = JSON.parse(raw) as Partial<MembersViewState>;
+    const status = parsed.status;
+    const pr = parsed.pr;
+    const sortBy = parsed.sortBy;
+    const sortDir = parsed.sortDir;
+    const minSessions = Number(parsed.minSessions);
+
+    return {
+      status: status === 'active' || status === 'warn' || status === 'inactive' ? status : 'all',
+      pr: pr === 'with' || pr === 'without' ? pr : 'all',
+      minSessions: Number.isFinite(minSessions) && minSessions >= 0 ? minSessions : 0,
+      sortBy: sortBy === 'name' || sortBy === 'sesMonth' || sortBy === 'activity28' || sortBy === 'bestPR' || sortBy === 'status' ? sortBy : 'lastDate',
+      sortDir: sortDir === 'asc' ? 'asc' : 'desc',
+    };
+  } catch {
+    return { ...defaultMembersViewState };
+  }
+}
+
+function saveMembersViewState(): void {
+  try {
+    sessionStorage.setItem(MEMBERS_VIEW_STATE_KEY, JSON.stringify(membersViewState));
+  } catch {
+    // Ignore storage errors.
+  }
+}
+
+function getMemberStatus(member: MemberData): 'active' | 'warn' | 'inactive' {
+  if (!member.lastDate) return 'inactive';
+  const now = new Date();
+  const last = new Date(member.lastDate + 'T00:00:00');
+  const days = Math.floor((now.getTime() - last.getTime()) / 86400000);
+  if (days <= 3) return 'active';
+  if (days <= 7) return 'warn';
+  return 'inactive';
+}
+
+function statusRank(member: MemberData): number {
+  const status = getMemberStatus(member);
+  if (status === 'active') return 3;
+  if (status === 'warn') return 2;
+  return 1;
+}
+
+function activity28(member: MemberData): number {
+  return member.heatmap.reduce((acc, value) => acc + (value ? 1 : 0), 0);
+}
+
+function compareMembers(a: MemberData, b: MemberData): number {
+  const dir = membersViewState.sortDir === 'asc' ? 1 : -1;
+  let result = 0;
+  switch (membersViewState.sortBy) {
+    case 'name':
+      result = (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+      break;
+    case 'lastDate':
+      result = (a.lastDate || '').localeCompare(b.lastDate || '');
+      break;
+    case 'sesMonth':
+      result = a.sesMonth - b.sesMonth;
+      break;
+    case 'activity28':
+      result = activity28(a) - activity28(b);
+      break;
+    case 'bestPR':
+      result = (a.bestPR?.w || 0) - (b.bestPR?.w || 0);
+      break;
+    case 'status':
+      result = statusRank(a) - statusRank(b);
+      break;
+  }
+
+  if (result !== 0) return result * dir;
+  return (a.name || '').localeCompare(b.name || '', 'es', { sensitivity: 'base' });
+}
+
+function applyMembersFiltersAndSorting(): void {
+  const q = ((document.getElementById('topbar-search') as HTMLInputElement | null)?.value || '').trim().toLowerCase();
+
+  const filtered = membersData.filter((member) => {
+    if (q && !(member.name || '').toLowerCase().includes(q)) return false;
+
+    if (membersViewState.status !== 'all' && getMemberStatus(member) !== membersViewState.status) return false;
+
+    if (membersViewState.pr === 'with' && !member.bestPR) return false;
+    if (membersViewState.pr === 'without' && member.bestPR) return false;
+
+    if (member.sesMonth < membersViewState.minSessions) return false;
+    return true;
   });
 
+  membersViewData = [...filtered].sort(compareMembers);
+  renderMembersTable(membersViewData);
+  updateMembersSortUi();
+  saveMembersViewState();
+}
+
+function updateMembersSortUi(): void {
+  const sortButtons = document.querySelectorAll<HTMLButtonElement>('[data-members-sort]');
+  sortButtons.forEach((button) => {
+    const key = button.dataset.membersSort as MemberSortKey | undefined;
+    if (!key) return;
+    const isActive = key === membersViewState.sortBy;
+    button.classList.toggle('active-sort', isActive);
+    const direction = isActive ? (membersViewState.sortDir === 'asc' ? '↑' : '↓') : '';
+    const baseLabel = button.dataset.label || button.textContent || '';
+    button.textContent = direction ? `${baseLabel} ${direction}` : baseLabel;
+  });
+}
+
+function bindMembersControls(): void {
+  const statusFilter = document.getElementById('members-filter-status') as HTMLSelectElement | null;
+  const prFilter = document.getElementById('members-filter-pr') as HTMLSelectElement | null;
+  const sessionsFilter = document.getElementById('members-filter-sessions') as HTMLSelectElement | null;
+  const clearFiltersBtn = document.getElementById('members-clear-filters') as HTMLButtonElement | null;
+
+  if (statusFilter) statusFilter.value = membersViewState.status;
+  if (prFilter) prFilter.value = membersViewState.pr;
+  if (sessionsFilter) sessionsFilter.value = String(membersViewState.minSessions);
+
+  statusFilter?.addEventListener('change', () => {
+    const value = statusFilter.value;
+    membersViewState.status = value === 'active' || value === 'warn' || value === 'inactive' ? value : 'all';
+    applyMembersFiltersAndSorting();
+  });
+
+  prFilter?.addEventListener('change', () => {
+    const value = prFilter.value;
+    membersViewState.pr = value === 'with' || value === 'without' ? value : 'all';
+    applyMembersFiltersAndSorting();
+  });
+
+  sessionsFilter?.addEventListener('change', () => {
+    const parsed = Number(sessionsFilter.value);
+    membersViewState.minSessions = Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+    applyMembersFiltersAndSorting();
+  });
+
+  clearFiltersBtn?.addEventListener('click', () => {
+    membersViewState = { ...defaultMembersViewState };
+    const topSearch = document.getElementById('topbar-search') as HTMLInputElement | null;
+    if (topSearch) topSearch.value = '';
+    if (statusFilter) statusFilter.value = 'all';
+    if (prFilter) prFilter.value = 'all';
+    if (sessionsFilter) sessionsFilter.value = '0';
+    applyMembersFiltersAndSorting();
+  });
+
+  document.querySelectorAll<HTMLButtonElement>('[data-members-sort]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const key = button.dataset.membersSort as MemberSortKey | undefined;
+      if (!key) return;
+      if (membersViewState.sortBy === key) {
+        membersViewState.sortDir = membersViewState.sortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        membersViewState.sortBy = key;
+        membersViewState.sortDir = key === 'name' ? 'asc' : 'desc';
+      }
+      applyMembersFiltersAndSorting();
+    });
+  });
+}
+
+export function initMiembrosPage(): void {
+  document.getElementById('topbar-search')?.addEventListener('input', (e: Event) => {
+    if (!(e.target as HTMLInputElement | null)) return;
+    applyMembersFiltersAndSorting();
+  });
+
+  bindMembersControls();
+  updateMembersSortUi();
+
   document.getElementById('export-csv-btn')?.addEventListener('click', () => {
-    if (!membersData.length) {
+    if (!membersViewData.length) {
       showToast('Sin datos para exportar', 'error');
       return;
     }
     const header = ['Nombre', 'Última Sesión', 'Sesiones Mes', 'Mejor PR', 'Estado'];
-    const rows = membersData.map((m) => {
+    const rows = membersViewData.map((m) => {
       const pr = m.bestPR ? `${m.bestPR.name} ${m.bestPR.w}${m.bestPR.unit}` : '';
       const now = new Date();
       const last = m.lastDate ? new Date(m.lastDate + 'T00:00:00') : null;
@@ -142,7 +336,7 @@ export async function loadMiembros(): Promise<void> {
     return { ...p, lastDate, sesMonth, heatmap, bestPR, userSessions, gymUser };
   });
 
-  renderMembersTable(membersData);
+  applyMembersFiltersAndSorting();
 }
 
 function renderMembersTable(data: MemberData[]): void {
@@ -394,6 +588,47 @@ function renderExerciseTrend(gymUser: GymSession[], exerciseName: string): void 
   });
 }
 
+function renderExerciseHistory(gymUser: GymSession[]): void {
+  const historyEl = document.getElementById('detail-history-list');
+  if (!historyEl) return;
+
+  const rows = gymUser
+    .flatMap((session) => {
+      const exercises = session.exercises || [];
+      return exercises.map((exercise) => ({ sessionDate: session.date, exercise }));
+    })
+    .sort((a, b) => b.sessionDate.localeCompare(a.sessionDate));
+
+  if (!rows.length) {
+    historyEl.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🏋️</div><div class="empty-state-text">Sin historial de ejercicios</div></div>';
+    return;
+  }
+
+  historyEl.innerHTML = rows
+    .map(({ sessionDate, exercise }) => {
+      const weight = toNumber(exercise.weight);
+      const hasWeight = weight > 0;
+      const unit = escapeHtml(exercise.unit || 'kg');
+      const reps = escapeHtml(exercise.reps || '—');
+      const sets = exercise.sets != null && `${exercise.sets}`.trim() !== '' ? escapeHtml(`${exercise.sets}`) : '—';
+      const notes = exercise.notes ? `<div class="detail-history-notes">${escapeHtml(exercise.notes)}</div>` : '';
+
+      return `<div class="detail-history-row">
+        <div class="detail-history-meta">
+          <span class="detail-history-date">${niceDate(sessionDate)}</span>
+          <span class="detail-history-name">${escapeHtml(exercise.name || 'Ejercicio')}</span>
+        </div>
+        <div class="detail-history-stats">
+          <span class="detail-history-chip">Peso: ${hasWeight ? `${weight} ${unit}` : '—'}</span>
+          <span class="detail-history-chip">Series: ${sets}</span>
+          <span class="detail-history-chip">Reps: ${reps}</span>
+        </div>
+        ${notes}
+      </div>`;
+    })
+    .join('');
+}
+
 async function openMemberPanel(uid: string): Promise<void> {
   const member = membersData.find((m) => m.id === uid);
   if (!member) return;
@@ -405,6 +640,7 @@ async function openMemberPanel(uid: string): Promise<void> {
 
   const bestWeights = computeBestWeights(gymUser, prSetM);
   const firstExerciseName = renderMemberExerciseList(gymUser, bestWeights);
+  renderExerciseHistory(gymUser);
 
   if (firstExerciseName) {
     renderExerciseTrend(gymUser, firstExerciseName);

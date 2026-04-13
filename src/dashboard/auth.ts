@@ -144,8 +144,8 @@ async function checkAdmin(userId: string): Promise<boolean> {
   return Boolean(data);
 }
 
-async function loadProfile(userId: string): Promise<void> {
-  const { data } = await sb.from('profiles').select('name,color').eq('id', userId).single();
+async function loadProfile(userId: string): Promise<{ is_disabled?: boolean } | null> {
+  const { data } = await sb.from('profiles').select('name,color,is_disabled').eq('id', userId).single();
   const fallbackName = currentUser?.email?.split('@')[0] || 'Admin';
   const name = data?.name || fallbackName;
 
@@ -160,6 +160,8 @@ async function loadProfile(userId: string): Promise<void> {
       sidebarAvatar.style.color = avatarColor;
     }
   }
+
+  return data || null;
 }
 
 async function handleUser(user: AuthUser | null | undefined, onAuthorized: () => Promise<void> | void): Promise<void> {
@@ -168,6 +170,13 @@ async function handleUser(user: AuthUser | null | undefined, onAuthorized: () =>
     return;
   }
   currentUser = user;
+  const profile = await loadProfile(user.id);
+  if (profile?.is_disabled) {
+    await signOut();
+    setAuthError('Tu cuenta está deshabilitada. Contacta a un administrador.');
+    return;
+  }
+
   let isAdmin = false;
   try {
     isAdmin = await checkAdmin(user.id);
@@ -181,7 +190,6 @@ async function handleUser(user: AuthUser | null | undefined, onAuthorized: () =>
     showScreen('noaccess');
     return;
   }
-  await loadProfile(user.id);
   showScreen('app');
   await onAuthorized();
 }

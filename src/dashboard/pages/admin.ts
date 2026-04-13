@@ -1,6 +1,6 @@
 import { fetchAdmins, fetchProfiles, fetchSuperAdmins, invalidateCache, manageUser, sb } from '../data';
 import { SUPABASE_ANON, SUPABASE_URL } from '../config';
-import { escapeHtml, initials, safeColor, showToast } from '../helpers';
+import { confirmAction, escapeHtml, initials, safeColor, showToast } from '../helpers';
 import { AdminUserRow, AuthUser } from '../types';
 
 let adminData: AdminUserRow[] = [];
@@ -165,7 +165,7 @@ function renderAdminTable(data: AdminUserRow[]): void {
     if (isSuperAdmin && !u.isSuperAdmin && currentUser?.id !== u.id) {
       actionCell = `<td>
       <div class="admin-actions">
-        <button class="action-btn action-btn-warn action-user-toggle" data-uid="${userId}" data-disabled="0">Deshabilitar</button>
+        <button class="action-btn action-btn-warn action-user-toggle" data-uid="${userId}" data-disabled="0" data-name="${name}">Deshabilitar</button>
         <button class="action-btn action-btn-danger action-user-delete" data-uid="${userId}" data-name="${name}">Eliminar</button>
       </div>
     </td>`;
@@ -209,7 +209,7 @@ function renderAdminTable(data: AdminUserRow[]): void {
     if (isSuperAdmin && !u.isSuperAdmin && currentUser?.id !== u.id) {
       actionCell = `<td>
       <div class="admin-actions">
-        <button class="action-btn action-btn-success action-user-toggle" data-uid="${userId}" data-disabled="1">Habilitar</button>
+        <button class="action-btn action-btn-success action-user-toggle" data-uid="${userId}" data-disabled="1" data-name="${name}">Habilitar</button>
         <button class="action-btn action-btn-danger action-user-delete" data-uid="${userId}" data-name="${name}">Eliminar</button>
       </div>
     </td>`;
@@ -261,24 +261,42 @@ function renderAdminTable(data: AdminUserRow[]): void {
     });
 
     container.querySelectorAll('.action-user-toggle').forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
+      btn.addEventListener('click', async (e: Event) => {
         const target = e.target as HTMLButtonElement;
         const uid = target.dataset.uid;
         if (!uid) return;
         const isCurrentlyDisabled = target.dataset.disabled === '1';
+        if (!isCurrentlyDisabled) {
+          const userName = target.dataset.name || 'este usuario';
+          const confirmed = await confirmAction({
+            title: `Deshabilitar a "${userName}"`,
+            message: 'El usuario no podrá entrar ni al dashboard ni a la app hasta volver a habilitarlo.',
+            confirmText: 'Deshabilitar',
+            cancelText: 'Cancelar',
+            tone: 'danger',
+          });
+          if (!confirmed) return;
+        }
         void handleUserAction(uid, isCurrentlyDisabled ? 'enable' : 'disable');
       });
     });
 
     container.querySelectorAll('.action-user-delete').forEach((btn) => {
-      btn.addEventListener('click', (e: Event) => {
+      btn.addEventListener('click', async (e: Event) => {
         const target = e.target as HTMLButtonElement;
         const uid = target.dataset.uid;
         const userName = target.dataset.name || 'este usuario';
         if (!uid) return;
-        const confirmed = globalThis.confirm(
-          `¿Eliminar permanentemente a "${userName}"?\n\nEsta acción no se puede deshacer y borrará todos sus datos.`,
-        );
+        const confirmed = await confirmAction({
+          title: `Eliminar permanentemente a "${userName}"`,
+          message: 'Esta acción no se puede deshacer y borrará todos sus datos.',
+          confirmText: 'Eliminar',
+          cancelText: 'Cancelar',
+          tone: 'danger',
+          requireText: 'ELIMINAR',
+          inputLabel: 'Escribe ELIMINAR para confirmar',
+          inputPlaceholder: 'ELIMINAR',
+        });
         if (confirmed) void handleUserAction(uid, 'delete');
       });
     });
@@ -306,8 +324,14 @@ async function toggleAdmin(uid: string, grant: boolean, inputEl: HTMLInputElemen
   const currentUser = getCurrentUserRef();
 
   if (!grant && currentUser?.id === uid) {
-    const confirm = globalThis.confirm('¿Seguro que quieres quitarte acceso al dashboard? Perderás acceso inmediatamente.');
-    if (!confirm) {
+    const confirmed = await confirmAction({
+      title: '¿Quitar tu acceso al dashboard?',
+      message: 'Perderás acceso inmediatamente y se cerrará tu sesión actual.',
+      confirmText: 'Quitar acceso',
+      cancelText: 'Cancelar',
+      tone: 'danger',
+    });
+    if (!confirmed) {
       inputEl.checked = true;
       return;
     }

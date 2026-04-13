@@ -535,16 +535,16 @@ async function loadProfile(): Promise<void> {
 
       if (insertErr) {
         console.error('Error creating profile:', insertErr);
-        currentProfile = { id: currentUser!.id, name, color: '#aaff45' };
+        currentProfile = { id: currentUser!.id, name, color: '#aaff45', is_disabled: false };
       } else {
-        currentProfile = newP || { id: currentUser!.id, name, color: '#aaff45' };
+        currentProfile = newP || { id: currentUser!.id, name, color: '#aaff45', is_disabled: false };
       }
     }
   } catch (err) {
     console.error('Exception in loadProfile:', err);
     // Fallback profile
     const name = currentUser!.email?.split('@')[0] ?? 'usuario';
-    currentProfile = { id: currentUser!.id, name, color: '#aaff45' };
+    currentProfile = { id: currentUser!.id, name, color: '#aaff45', is_disabled: false };
   }
 }
 
@@ -943,6 +943,16 @@ async function enterApp(user: User): Promise<void> {
     showLoading(true);
 
     await loadProfile();
+    if (currentProfile?.is_disabled) {
+      await sb.auth.signOut();
+      clearCache();
+      showLoading(false);
+      const loginScreen = document.getElementById('loginScreen');
+      if (loginScreen) loginScreen.style.display = 'flex';
+      applySigninOnlyMode();
+      setAuthError('Tu cuenta está deshabilitada. Contacta a un administrador.');
+      return;
+    }
 
     // Load initial data for current month
     const now = new Date();

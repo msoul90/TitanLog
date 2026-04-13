@@ -238,4 +238,30 @@ describe('progress.ts', () => {
     expect(document.getElementById('progList')?.innerHTML).toContain('Registra ejercicios con peso');
     expect(document.getElementById('weekDots')?.innerHTML).toContain('week-dot');
   });
+
+  it('renderProg no depende de parsear fechas YYYY-MM-DD con Date(string)', () => {
+    gDMock.mockReturnValue({
+      '2026-04-06': [{ name: 'Press', ts: 1 }],
+      '2026-03-30': [{ name: 'Sentadilla', ts: 2 }],
+    });
+    gBWMock.mockReturnValue({});
+
+    const RealDate = globalThis.Date;
+    class StrictDate extends RealDate {
+      constructor(...args: ConstructorParameters<DateConstructor>) {
+        if (args.length === 1 && typeof args[0] === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(args[0])) {
+          throw new TypeError('Bare date string parsing is not allowed in this test');
+        }
+        super(...args);
+      }
+    }
+
+    (globalThis as unknown as { Date: DateConstructor }).Date = StrictDate as unknown as DateConstructor;
+    try {
+      expect(() => renderProg()).not.toThrow();
+      expect(document.getElementById('sWStr')?.textContent).toBeTruthy();
+    } finally {
+      (globalThis as unknown as { Date: DateConstructor }).Date = RealDate;
+    }
+  });
 });

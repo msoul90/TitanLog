@@ -58,6 +58,7 @@ describe('calendar.ts', () => {
     const det = document.getElementById('calDet');
     expect(det?.style.display).toBe('block');
     expect(det?.innerHTML).toContain('Press de pecho');
+    expect(det?.innerHTML).toContain('vie, 3 de abril');
   });
 
   it('showCalDet muestra sesiones HIIT aunque no haya gym', () => {
@@ -104,5 +105,18 @@ describe('calendar.ts', () => {
     const otherCells = Array.from(document.querySelectorAll('.cd:not([data-key="2026-04-03"])'));
     const selectedOthers = otherCells.filter((el) => el.classList.contains('sel'));
     expect(selectedOthers).toHaveLength(0);
+  });
+
+  it('renderCal inicia semana en domingo', () => {
+    renderCal();
+
+    const headers = Array.from(document.querySelectorAll('#calGrid .cl')).map((el) => el.textContent);
+    expect(headers).toEqual(['D', 'L', 'M', 'X', 'J', 'V', 'S']);
+
+    const dayCells = Array.from(document.querySelectorAll('#calGrid .cd'));
+    const leadingOthers = dayCells.findIndex((el) => !el.classList.contains('oth'));
+
+    // Abril 2026 comienza en miércoles; con domingo como inicio hay 3 celdas vacías previas.
+    expect(leadingOthers).toBe(3);
   });
 });

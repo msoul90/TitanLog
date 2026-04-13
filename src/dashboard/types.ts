@@ -12,6 +12,9 @@ export interface ExerciseEntry {
   name: string;
   weight?: NullableNumberInput;
   unit?: NullableTextInput;
+  sets?: NullableNumberInput;
+  reps?: NullableTextInput;
+  notes?: NullableTextInput;
 }
 
 export interface GymSession {

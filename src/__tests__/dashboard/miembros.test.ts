@@ -22,6 +22,23 @@ describe('dashboard miembros page', () => {
     document.documentElement.dataset.theme = 'dark';
     document.body.innerHTML = `
       <input id="topbar-search" />
+      <select id="members-filter-status">
+        <option value="all">Todos</option>
+        <option value="active">Activos</option>
+        <option value="warn">Advertencia</option>
+        <option value="inactive">Inactivos</option>
+      </select>
+      <select id="members-filter-pr">
+        <option value="all">Todos</option>
+        <option value="with">Con PR</option>
+        <option value="without">Sin PR</option>
+      </select>
+      <select id="members-filter-sessions">
+        <option value="0">0+</option>
+        <option value="1">1+</option>
+        <option value="4">4+</option>
+      </select>
+      <button id="members-clear-filters"></button>
       <button id="export-csv-btn"></button>
       <button id="detail-close"></button>
       <div id="detail-overlay"></div>
@@ -34,7 +51,19 @@ describe('dashboard miembros page', () => {
       <div id="detail-exercise-progress-body"></div>
       <button class="detail-section-toggle" data-target="detail-prs-body" aria-expanded="true"></button>
       <div id="detail-prs-body"></div>
-      <table><tbody id="members-tbody"></tbody></table>
+      <table>
+        <thead>
+          <tr>
+            <th><button data-members-sort="name" data-label="Miembro">Miembro</button></th>
+            <th><button data-members-sort="lastDate" data-label="Última sesión">Última sesión</button></th>
+            <th><button data-members-sort="sesMonth" data-label="Sesiones mes">Sesiones mes</button></th>
+            <th><button data-members-sort="activity28" data-label="Actividad 28d">Actividad 28d</button></th>
+            <th><button data-members-sort="bestPR" data-label="Mejor PR">Mejor PR</button></th>
+            <th><button data-members-sort="status" data-label="Estado">Estado</button></th>
+          </tr>
+        </thead>
+        <tbody id="members-tbody"></tbody>
+      </table>
       <div id="detail-name"></div>
       <div id="detail-email"></div>
       <div id="detail-avatar"></div>
@@ -266,5 +295,31 @@ describe('dashboard miembros page', () => {
     expect(() => toggle.click()).not.toThrow();
 
     setItemSpy.mockRestore();
+  });
+
+  it('aplica filtros y ordenamiento en la tabla de miembros', async () => {
+    fetchProfiles.mockResolvedValue([
+      { id: 'u1', name: 'Ana', color: '#4ab8ff' },
+      { id: 'u2', name: 'Luis', color: '#2ecc71' },
+    ]);
+    fetchGymSessions.mockResolvedValue([
+      { id: 'g1', user_id: 'u1', date: '2026-04-10', exercises: [{ name: 'Sentadilla', weight: 100, unit: 'kg' }] },
+      { id: 'g2', user_id: 'u1', date: '2026-04-08', exercises: [{ name: 'Peso muerto', weight: 120, unit: 'kg' }] },
+      { id: 'g3', user_id: 'u2', date: '2026-03-01', exercises: [] },
+    ]);
+    fetchHiitSessions.mockResolvedValue([]);
+
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
+
+    const sessionsFilter = document.getElementById('members-filter-sessions') as HTMLSelectElement;
+    sessionsFilter.value = '1';
+    sessionsFilter.dispatchEvent(new Event('change'));
+
+    expect(document.getElementById('members-tbody')?.innerHTML).toContain('Ana');
+    expect(document.getElementById('members-tbody')?.innerHTML).not.toContain('Luis');
+
+    (document.querySelector('[data-members-sort="name"]') as HTMLButtonElement).click();
+    expect((document.querySelector('[data-members-sort="name"]') as HTMLButtonElement).textContent).toContain('↑');
   });
 });

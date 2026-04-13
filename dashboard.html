@@ -169,7 +169,27 @@
     <!-- ── PAGE: MIEMBROS ────────────────────────────────────── -->
     <div id="page-miembros" class="page">
       <div class="flex-ac justify-between mb-16">
-        <div></div>
+        <div class="members-toolbar">
+          <select id="members-filter-status" class="search-input members-select" aria-label="Filtrar por estado">
+            <option value="all">Estado: Todos</option>
+            <option value="active">Estado: Activos</option>
+            <option value="warn">Estado: Advertencia</option>
+            <option value="inactive">Estado: Inactivos</option>
+          </select>
+          <select id="members-filter-sessions" class="search-input members-select" aria-label="Filtrar por sesiones del mes">
+            <option value="0">Sesiones mes: 0+</option>
+            <option value="1">Sesiones mes: 1+</option>
+            <option value="4">Sesiones mes: 4+</option>
+            <option value="8">Sesiones mes: 8+</option>
+            <option value="12">Sesiones mes: 12+</option>
+          </select>
+          <select id="members-filter-pr" class="search-input members-select" aria-label="Filtrar por PR">
+            <option value="all">PR: Todos</option>
+            <option value="with">Con PR</option>
+            <option value="without">Sin PR</option>
+          </select>
+          <button class="topbar-btn" id="members-clear-filters" type="button">Limpiar filtros</button>
+        </div>
         <button class="topbar-btn" id="export-csv-btn" style="border-color:var(--border2)">
           ⬇ Exportar CSV
         </button>
@@ -179,12 +199,12 @@
           <table class="data-table" id="members-table">
             <thead>
               <tr>
-                <th>Miembro</th>
-                <th>Última sesión</th>
-                <th>Sesiones mes</th>
-                <th>Actividad 28d</th>
-                <th>Mejor PR</th>
-                <th>Estado</th>
+                <th><button class="section-action" id="members-sort-name" data-members-sort="name" data-label="Miembro" type="button">Miembro</button></th>
+                <th><button class="section-action" id="members-sort-last" data-members-sort="lastDate" data-label="Última sesión" type="button">Última sesión</button></th>
+                <th><button class="section-action" id="members-sort-sessions" data-members-sort="sesMonth" data-label="Sesiones mes" type="button">Sesiones mes</button></th>
+                <th><button class="section-action" id="members-sort-activity" data-members-sort="activity28" data-label="Actividad 28d" type="button">Actividad 28d</button></th>
+                <th><button class="section-action" id="members-sort-pr" data-members-sort="bestPR" data-label="Mejor PR" type="button">Mejor PR</button></th>
+                <th><button class="section-action" id="members-sort-status" data-members-sort="status" data-label="Estado" type="button">Estado</button></th>
               </tr>
             </thead>
             <tbody id="members-tbody"></tbody>
@@ -343,6 +363,9 @@
             <div style="width:10px;height:10px;border-radius:2px;background:var(--accent)"></div>
             <span class="text-xs text3">Más</span>
           </div>
+          <div class="text-xs text3 heatmap-help heatmap-help-main">
+            Cada celda representa un dia. En esta vista: columnas = semanas y filas = dias (Lun-Dom). Cuanto mas intenso el color, mayor actividad.
+          </div>
         </div>
       </div>
     </div>
@@ -494,6 +517,9 @@
       </button>
       <div class="detail-section-body" id="detail-activity-body">
         <div class="heatmap mb-20" id="detail-heatmap" style="margin-bottom:16px"></div>
+        <div class="text-xs text3 heatmap-help heatmap-help-detail">
+          Cada celda representa un dia de los ultimos 28. Cuanto mas intenso el color, mayor actividad.
+        </div>
       </div>
     </section>
 
@@ -528,6 +554,16 @@
       </button>
       <div class="detail-section-body" id="detail-prs-body">
         <div id="detail-prs-list"></div>
+      </div>
+    </section>
+
+    <section class="detail-section">
+      <button class="detail-section-toggle" data-target="detail-history-body" aria-expanded="true" type="button">
+        <span>Historial completo de ejercicios</span>
+        <span class="detail-toggle-icon" aria-hidden="true">▾</span>
+      </button>
+      <div class="detail-section-body" id="detail-history-body">
+        <div id="detail-history-list"></div>
       </div>
     </section>
   </div>

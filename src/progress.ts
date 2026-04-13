@@ -13,6 +13,10 @@ const PROGRESS_DOM_IDS = {
   WEEK_DOTS: 'weekDots',
   BC_SECTION: 'bcSection',
   PROGRESS_LIST: 'progList',
+  PROGRESS_DETAIL: 'progDetail',
+  PROGRESS_DETAIL_TITLE: 'progDetailTitle',
+  PROGRESS_DETAIL_BEST: 'progDetailBest',
+  PROGRESS_DETAIL_ROWS: 'progDetailRows',
   TOAST: 'toast',
   IMPORT_FILE: 'impFile'
 } as const;
@@ -71,6 +75,8 @@ interface ExerciseProgressMap {
   [exerciseName: string]: ExerciseProgressEntry[];
 }
 
+let selectedExerciseName: string | null = null;
+
 // ── UTILITY FUNCTIONS ──
 
 /**
@@ -120,6 +126,18 @@ function getMonWeek(date: Date): string {
   const weekNumber = Math.ceil((((workingDate.getTime() - yearStart.getTime()) / PROGRESS_CONSTANTS.MILLISECONDS_PER_DAY) + 1) / PROGRESS_CONSTANTS.WEEK_DAYS);
 
   return `${workingDate.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
+}
+
+function parseDateKeyAsLocalDate(dateKey: string): Date | null {
+  const parts = dateKey.split('-');
+  if (parts.length !== 3) return null;
+
+  const year = Number(parts[0]);
+  const month = Number(parts[1]);
+  const day = Number(parts[2]);
+  if (!Number.isInteger(year) || !Number.isInteger(month) || !Number.isInteger(day)) return null;
+
+  return new Date(year, month - 1, day);
 }
 
 // ── PROGRESS RENDERING ──
@@ -211,7 +229,9 @@ function calculateWeeklyStreak(exerciseData: Record<string, Exercise[]>, today: 
   const trainedWeeks = new Set<string>();
   for (const [dateKey, exercises] of Object.entries(exerciseData)) {
     if (exercises.length > 0) {
-      trainedWeeks.add(getMonWeek(new Date(dateKey)));
+      const localDate = parseDateKeyAsLocalDate(dateKey);
+      if (!localDate) continue;
+      trainedWeeks.add(getMonWeek(localDate));
     }
   }
 
@@ -271,7 +291,9 @@ function renderWeeklyDots(exerciseData: Record<string, Exercise[]>, today: Date)
   const trainedWeeks = new Set<string>();
   for (const [dateKey, exercises] of Object.entries(exerciseData)) {
     if (exercises.length > 0) {
-      trainedWeeks.add(getMonWeek(new Date(dateKey)));
+      const localDate = parseDateKeyAsLocalDate(dateKey);
+      if (!localDate) continue;
+      trainedWeeks.add(getMonWeek(localDate));
     }
   }
 
@@ -439,6 +461,7 @@ function generateMmcHistory(entries: [string, BodyWeightEntry][]): string {
 function renderExerciseProgress(exerciseData: Record<string, Exercise[]>): void {
   const exerciseMap = buildExerciseProgressMap(exerciseData);
   const progressListElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_LIST);
+  const detailElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL);
 
   if (!progressListElement) return;
 
@@ -446,6 +469,8 @@ function renderExerciseProgress(exerciseData: Record<string, Exercise[]>): void 
 
   if (!entries.length) {
     progressListElement.innerHTML = '<div class="empty"><div class="empty-ic">📊</div><div class="empty-tx">Registra ejercicios con peso<br>para ver el progreso aquí.</div></div>';
+    if (detailElement) detailElement.classList.add('is-hidden');
+    selectedExerciseName = null;
     return;
   }
 
@@ -454,6 +479,70 @@ function renderExerciseProgress(exerciseData: Record<string, Exercise[]>): void 
   }).join('');
 
   progressListElement.innerHTML = progressCards;
+
+  const fallbackExerciseName = entries[0]?.[0] || null;
+  if (!selectedExerciseName || !exerciseMap[selectedExerciseName]) {
+    selectedExerciseName = fallbackExerciseName;
+  }
+
+  progressListElement.querySelectorAll<HTMLButtonElement>('.prog-card-btn[data-exercise]').forEach((button) => {
+    button.addEventListener('click', () => {
+      const exerciseName = button.dataset.exercise || '';
+      if (!exerciseName) return;
+      selectedExerciseName = exerciseName;
+      renderExerciseProgressDetail(exerciseMap, exerciseName);
+      progressListElement.querySelectorAll<HTMLButtonElement>('.prog-card-btn').forEach((card) => {
+        card.classList.toggle('active', card.dataset.exercise === selectedExerciseName);
+      });
+    });
+  });
+
+  if (selectedExerciseName) {
+    renderExerciseProgressDetail(exerciseMap, selectedExerciseName);
+    progressListElement.querySelectorAll<HTMLButtonElement>('.prog-card-btn').forEach((card) => {
+      card.classList.toggle('active', card.dataset.exercise === selectedExerciseName);
+    });
+  }
+}
+
+function renderExerciseProgressDetail(exerciseMap: ExerciseProgressMap, exerciseName: string): void {
+  const detailElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL);
+  const titleElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL_TITLE);
+  const bestElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL_BEST);
+  const rowsElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL_ROWS);
+  if (!detailElement || !titleElement || !bestElement || !rowsElement) return;
+
+  const progressData = exerciseMap[exerciseName] || [];
+  if (!progressData.length) {
+    detailElement.classList.add('is-hidden');
+    return;
+  }
+
+  detailElement.classList.remove('is-hidden');
+  titleElement.textContent = escHtml(exerciseName);
+
+  const bestWeight = Math.max(...progressData.map((entry) => entry.weight));
+  const latestUnit = progressData.at(-1)?.unit || 'lb';
+  bestElement.textContent = `Máx: ${bestWeight} ${latestUnit}`;
+
+  const rows = [...progressData].reverse().slice(0, 24);
+  rowsElement.innerHTML = rows.map((entry, index) => {
+    const previous = rows[index + 1];
+    const delta = previous ? entry.weight - previous.weight : 0;
+    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'dn' : '';
+    const deltaText = previous ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)}` : '—';
+    const date = parseDateKeyAsLocalDate(entry.date);
+    const dayLabel = date ? `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}` : entry.date;
+
+    return `<div class="prog-detail-row">
+      <span class="prog-detail-date">${dayLabel}</span>
+      <span class="prog-detail-main">
+        <strong>${entry.weight}</strong>
+        <span>${entry.unit}</span>
+        <span class="prog-detail-delta ${deltaClass}">${deltaText}</span>
+      </span>
+    </div>`;
+  }).join('');
 }
 
 /**
@@ -511,13 +600,13 @@ function generateExerciseProgressCard(exerciseName: string, progressData: Exerci
 
   const latestUnit = latestEntry.unit || 'lb';
 
-  return `<div class="prog-card">
+  return `<button type="button" class="prog-card prog-card-btn" data-exercise="${escHtml(exerciseName)}" aria-label="Ver historial de ${escHtml(exerciseName)}">
     <div class="pc-top">
       <div class="pc-name">${escHtml(exerciseName)}</div>
       <div class="pc-best">🏆 Máx: ${maxWeight} ${escHtml(latestUnit)}</div>
     </div>
     <div class="pc-dots">${progressDots}</div>
-  </div>`;
+  </button>`;
 }
 
 // ── EXPORT / IMPORT ──

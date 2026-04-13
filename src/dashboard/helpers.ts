@@ -8,6 +8,134 @@ export function showToast(msg: string, type = ''): void {
   setTimeout(() => el.remove(), 2400);
 }
 
+type ConfirmDialogOptions = {
+  title: string;
+  message: string;
+  confirmText?: string;
+  cancelText?: string;
+  tone?: 'default' | 'danger';
+  requireText?: string;
+  inputLabel?: string;
+  inputPlaceholder?: string;
+};
+
+export function confirmAction(options: ConfirmDialogOptions): Promise<boolean> {
+  const fallbackMessage = `${options.title}\n\n${options.message}`.trim();
+  const canRenderModal = typeof document !== 'undefined' && Boolean(document.body);
+  const isJsdom = /jsdom/i.test(globalThis.navigator?.userAgent || '');
+
+  if (!canRenderModal || isJsdom) {
+    if (options.requireText) {
+      const typed = globalThis.prompt(
+        `${fallbackMessage}\n\nEscribe ${options.requireText} para confirmar.`,
+        '',
+      );
+      return Promise.resolve((typed || '').trim() === options.requireText);
+    }
+    return Promise.resolve(globalThis.confirm(fallbackMessage));
+  }
+
+  return new Promise<boolean>((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+
+    const dialog = document.createElement('div');
+    dialog.className = `confirm-dialog ${options.tone === 'danger' ? 'danger' : ''}`;
+    dialog.setAttribute('role', 'dialog');
+    dialog.setAttribute('aria-modal', 'true');
+
+    const titleEl = document.createElement('h3');
+    titleEl.className = 'confirm-title';
+    titleEl.textContent = options.title;
+
+    const msgEl = document.createElement('p');
+    msgEl.className = 'confirm-message';
+    msgEl.textContent = options.message;
+
+    const shouldRequireText = Boolean(options.requireText);
+    const requiredText = options.requireText || '';
+    let inputEl: HTMLInputElement | null = null;
+    let helperEl: HTMLDivElement | null = null;
+    let field: HTMLLabelElement | null = null;
+
+    if (shouldRequireText) {
+      field = document.createElement('label');
+      field.className = 'confirm-input-wrap';
+
+      const fieldLabel = document.createElement('span');
+      fieldLabel.className = 'confirm-input-label';
+      fieldLabel.textContent = options.inputLabel || `Escribe ${requiredText} para confirmar`;
+
+      inputEl = document.createElement('input');
+      inputEl.type = 'text';
+      inputEl.className = 'confirm-input';
+      inputEl.placeholder = options.inputPlaceholder || requiredText;
+      inputEl.setAttribute('autocomplete', 'off');
+
+      helperEl = document.createElement('div');
+      helperEl.className = 'confirm-input-hint';
+      helperEl.textContent = `Debes escribir exactamente ${requiredText}.`;
+
+      field.append(fieldLabel, inputEl, helperEl);
+    }
+
+    const actions = document.createElement('div');
+    actions.className = 'confirm-actions';
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'topbar-btn';
+    cancelBtn.textContent = options.cancelText || 'Cancelar';
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'topbar-btn' + (options.tone === 'danger' ? ' danger' : '');
+    confirmBtn.textContent = options.confirmText || 'Confirmar';
+
+    const updateConfirmState = () => {
+      if (!shouldRequireText || !inputEl) {
+        confirmBtn.disabled = false;
+        return;
+      }
+      const isMatch = inputEl.value.trim() === requiredText;
+      confirmBtn.disabled = !isMatch;
+      if (helperEl) helperEl.classList.toggle('is-ok', isMatch);
+    };
+
+    let settled = false;
+    const finish = (result: boolean) => {
+      if (settled) return;
+      settled = true;
+      overlay.remove();
+      document.removeEventListener('keydown', onKeyDown);
+      resolve(result);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') finish(false);
+    };
+
+    overlay.addEventListener('click', (e: MouseEvent) => {
+      if (e.target === overlay) finish(false);
+    });
+    cancelBtn.addEventListener('click', () => finish(false));
+    confirmBtn.addEventListener('click', () => finish(true));
+    if (inputEl) inputEl.addEventListener('input', updateConfirmState);
+
+    actions.append(cancelBtn, confirmBtn);
+    if (field) dialog.append(titleEl, msgEl, field, actions);
+    else dialog.append(titleEl, msgEl, actions);
+    overlay.appendChild(dialog);
+    document.body.appendChild(overlay);
+    document.addEventListener('keydown', onKeyDown);
+
+    updateConfirmState();
+
+    if (inputEl) inputEl.focus();
+    else confirmBtn.focus();
+  });
+}
+
 function toText(value: unknown): string {
   if (value == null) return '';
   if (typeof value === 'string') return value;

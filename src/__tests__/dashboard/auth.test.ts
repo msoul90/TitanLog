@@ -133,6 +133,22 @@ describe('dashboard auth', () => {
     expect(document.getElementById('noaccess-screen')?.style.display).toBe('flex');
   });
 
+  it('initAuth cierra sesion si el perfil está deshabilitado', async () => {
+    fromMock.mockImplementation((table: string) => {
+      if (table === 'profiles') return authChain({ name: 'Ana', color: '#123456', is_disabled: true });
+      return authChain(null);
+    });
+    getSession.mockResolvedValue({ data: { session: { user: { id: 'u10', email: 'u10@test.com' } } } });
+
+    const mod = await import('../../dashboard/auth');
+    await mod.initAuth(async () => {});
+
+    expect(signOutApi).toHaveBeenCalled();
+    expect(document.getElementById('auth-error')?.textContent).toContain('deshabilitada');
+    expect(document.getElementById('auth-screen')?.style.display).toBe('flex');
+    expect(mod.getCurrentUser()).toBeNull();
+  });
+
   it('signIn muestra errores inesperados de configuracion', async () => {
     signInWithPassword.mockRejectedValue(new Error('Configura VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY con las credenciales reales de Supabase.'));
 
