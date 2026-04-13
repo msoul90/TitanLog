@@ -5,6 +5,7 @@
 import { ExerciseGuide } from './types.js';
 import { GUIDES } from './data/exercise-guides.js';
 import { STRETCH_GUIDES } from './data/stretch-guides.js';
+import { filterEntriesBySearch, renderCatalogRows } from './helpers/guide-render.js';
 
 const toast = (msg: string): void => (globalThis as any).toast?.(msg);
 const openM = (modalId: string): void => (globalThis as any).openM?.(modalId);
@@ -86,32 +87,6 @@ const STRETCH_CATEGORY_LABELS: Record<string, string> = {
   both: 'Pre y Post'
 };
 
-function filterEntriesBySearch<T>(
-  entries: Array<[string, T]>,
-  normalizedFilter: string,
-  getHaystack: (name: string, item: T) => string
-): Array<[string, T]> {
-  if (!normalizedFilter) return entries;
-  return entries.filter(([name, item]) =>
-    normalizeExerciseName(getHaystack(name, item)).includes(normalizedFilter)
-  );
-}
-
-function renderCatalogRows<T>(
-  entries: Array<[string, T]>,
-  getRow: (name: string, item: T) => { icon: string; subtitleHtml: string; clickHandler: string }
-): string {
-  return entries.map(([name, item]) => {
-    const encodedName = encodeInlineValue(name);
-    const row = getRow(name, item);
-    return `<button type="button" class="cfg-row cfg-guide-row" onclick='${row.clickHandler}(decodeURIComponent("${encodedName}"))'>
-      <span class="cfg-ic" style="background:var(--accent-dim)">${escHtml(row.icon)}</span>
-      <span class="cfg-info"><span class="cfg-ttl">${escHtml(name)}</span><span class="cfg-sub cfg-guide-sub">${row.subtitleHtml}</span></span>
-      <span class="cfg-arr">›</span>
-    </button>`;
-  }).join('');
-}
-
 function renderStretchCatalog(filter: string = '', categoryFilter: string = 'all'): void {
   const listEl = document.getElementById(CONFIG_STRETCH_IDS.LIST);
   if (!listEl) return;
@@ -124,7 +99,7 @@ function renderStretchCatalog(filter: string = '', categoryFilter: string = 'all
     entries = entries.filter(([, s]) => s.category === categoryFilter || s.category === 'both');
   }
 
-  entries = filterEntriesBySearch(entries, normalizedFilter, (name, s) => [name, ...s.area].join(' '));
+  entries = filterEntriesBySearch(entries, normalizedFilter, (name, s) => [name, ...s.area].join(' '), normalizeExerciseName);
 
   if (entries.length === 0) {
     listEl.innerHTML = '<div class="cfg-guide-empty">No se encontraron estiramientos.</div>';
@@ -139,7 +114,7 @@ function renderStretchCatalog(filter: string = '', categoryFilter: string = 'all
       subtitleHtml: `${subtitle} ${categoryBadge}`,
       clickHandler: 'openStretch'
     };
-  });
+  }, escHtml, encodeInlineValue);
 }
 
 function filterStretchCatalog(value: string): void {
@@ -262,7 +237,7 @@ function renderGuidesCatalog(filter: string = ''): void {
     name,
     ...(guide.primary || []),
     ...(guide.secondary || [])
-  ].join(' '));
+  ].join(''), normalizeExerciseName);
 
   if (filteredEntries.length === 0) {
     listElement.innerHTML = '<div class="cfg-guide-empty">No se encontraron guías para tu búsqueda.</div>';
@@ -279,7 +254,7 @@ function renderGuidesCatalog(filter: string = ''): void {
       subtitleHtml: escHtml(subtitle || 'Ver técnica y consejos'),
       clickHandler: 'openGuide'
     };
-  });
+  }, escHtml, encodeInlineValue);
 }
 
 function filterGuidesCatalog(value: string): void {
