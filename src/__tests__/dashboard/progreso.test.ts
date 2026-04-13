@@ -2,10 +2,21 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const fetchBodyMetrics = vi.fn();
 const fetchProfiles = vi.fn();
+const { ChartCtor } = vi.hoisted(() => ({
+  ChartCtor: vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
+    this.destroy = vi.fn();
+    this.update = vi.fn();
+    this.options = {};
+  }),
+}));
 
 vi.mock('../../dashboard/data', () => ({
   fetchBodyMetrics: (...args: unknown[]) => fetchBodyMetrics(...args),
   fetchProfiles: (...args: unknown[]) => fetchProfiles(...args),
+}));
+
+vi.mock('chart.js/auto', () => ({
+  default: ChartCtor,
 }));
 
 describe('dashboard progreso page', () => {
@@ -20,12 +31,6 @@ describe('dashboard progreso page', () => {
       <table><tbody id="progress-tbody"></tbody></table>
     `;
 
-    const ChartCtor = vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
-      this.destroy = vi.fn();
-      this.update = vi.fn();
-      this.options = {};
-    });
-    (globalThis as unknown as { Chart: unknown }).Chart = ChartCtor;
   });
 
   it('renderiza graficas y tabla de metricas', async () => {
@@ -38,12 +43,12 @@ describe('dashboard progreso page', () => {
     const mod = await import('../../dashboard/pages/progreso');
     await mod.loadProgreso();
 
-    expect((globalThis as unknown as { Chart: ReturnType<typeof vi.fn> }).Chart).toHaveBeenCalledTimes(2);
+    expect(ChartCtor).toHaveBeenCalledTimes(2);
     expect(document.getElementById('progress-tbody')?.innerHTML).toContain('Ana');
     expect(document.getElementById('progress-tbody')?.innerHTML).toContain('kg');
 
     await mod.loadProgreso();
-    expect((globalThis as unknown as { Chart: ReturnType<typeof vi.fn> }).Chart).toHaveBeenCalledTimes(4);
+    expect(ChartCtor).toHaveBeenCalledTimes(4);
   });
 
   it('muestra estado vacio sin metricas', async () => {

@@ -1,3 +1,4 @@
+import { createClient } from '@supabase/supabase-js';
 import { getSupabaseConfigError, SUPABASE_ANON, SUPABASE_URL } from './config';
 import type { AdminRecord, BodyMetric, ExerciseCatalogEntry, ExerciseRecommendation, GymSession, HiitSession, Profile } from './types';
 
@@ -22,14 +23,10 @@ type DashboardSupabaseClient = {
   };
 };
 
-type SupabaseGlobal = {
-  createClient(url: string, key: string): DashboardSupabaseClient;
-};
-
-const supabaseRuntime = (globalThis as typeof globalThis & { supabase?: SupabaseGlobal }).supabase;
-const hasSupabaseRuntime = Boolean(supabaseRuntime?.createClient);
-const dashboardSupabaseError = getSupabaseConfigError() || (hasSupabaseRuntime ? null : 'No se pudo cargar el cliente de Supabase.');
-const rawClient = dashboardSupabaseError || !supabaseRuntime ? null : supabaseRuntime.createClient(SUPABASE_URL, SUPABASE_ANON);
+const dashboardSupabaseError = getSupabaseConfigError();
+const rawClient: DashboardSupabaseClient | null = dashboardSupabaseError
+  ? null
+  : (createClient(SUPABASE_URL, SUPABASE_ANON) as unknown as DashboardSupabaseClient);
 
 export const sb: DashboardSupabaseClient = new Proxy({} as DashboardSupabaseClient, {
   get(_target, property, receiver) {

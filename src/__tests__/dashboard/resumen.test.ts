@@ -4,6 +4,13 @@ const fetchGymSessions = vi.fn();
 const fetchHiitSessions = vi.fn();
 const fetchProfiles = vi.fn();
 const setActiveChart = vi.fn();
+const { ChartCtor } = vi.hoisted(() => ({
+  ChartCtor: vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
+    this.destroy = vi.fn();
+    this.update = vi.fn();
+    this.options = {};
+  }),
+}));
 
 vi.mock('../../dashboard/data', () => ({
   fetchGymSessions: (...args: unknown[]) => fetchGymSessions(...args),
@@ -18,6 +25,10 @@ vi.mock('../../dashboard/theme', async () => {
     setActiveChart: (...args: unknown[]) => setActiveChart(...args),
   };
 });
+
+vi.mock('chart.js/auto', () => ({
+  default: ChartCtor,
+}));
 
 describe('dashboard resumen page', () => {
   beforeEach(() => {
@@ -39,12 +50,6 @@ describe('dashboard resumen page', () => {
       <div id="pr-feed"></div>
     `;
 
-    const ChartCtor = vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
-      this.destroy = vi.fn();
-      this.update = vi.fn();
-      this.options = {};
-    });
-    (globalThis as unknown as { Chart: unknown }).Chart = ChartCtor;
   });
 
   afterEach(() => {

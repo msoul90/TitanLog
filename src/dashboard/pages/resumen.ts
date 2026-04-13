@@ -1,9 +1,8 @@
+import Chart from 'chart.js/auto';
 import { fetchGymSessions, fetchHiitSessions, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors, setActiveChart } from '../theme';
 import { daysAgo, escapeHtml, niceDate, today } from '../helpers';
-import { ChartCtor, ChartLike, DashboardSession, ExerciseEntry, GymSession, Profile } from '../types';
-
-declare const Chart: ChartCtor;
+import { ChartLike, DashboardSession, ExerciseEntry, GymSession, Profile } from '../types';
 
 let chartSessions: ChartLike | null = null;
 

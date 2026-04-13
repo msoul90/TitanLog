@@ -16,10 +16,10 @@ describe('dashboard theme', () => {
     expect(getTheme()).toBe('light');
   });
 
-  it('getTheme usa matchMedia cuando no hay valor guardado', () => {
+  it('getTheme usa light por defecto cuando no hay valor guardado', () => {
     localStorage.removeItem('tl-theme');
     vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })));
-    expect(getTheme()).toBe('dark');
+    expect(getTheme()).toBe('light');
   });
 
   it('applyTheme actualiza dataset e iconos si existen', () => {

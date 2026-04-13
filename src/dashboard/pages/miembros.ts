@@ -1,12 +1,12 @@
+import Chart from 'chart.js/auto';
 import { fetchBodyMetrics, fetchGymSessions, fetchHiitSessions, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
 import { daysAgo, escapeHtml, initials, niceDate, safeColor, sanitizeCsvCell, showToast, statusBadge, today } from '../helpers';
-import { ChartCtor, ChartLike, GymSession, MemberBestPR, MemberData } from '../types';
-
-declare const Chart: ChartCtor;
+import { ChartLike, GymSession, MemberBestPR, MemberData } from '../types';
 
 let membersData: MemberData[] = [];
 let membersViewData: MemberData[] = [];
+let membersById = new Map<string, MemberData>();
 let memberWeightChart: ChartLike | null = null;
 let memberExerciseChart: ChartLike | null = null;
 const DETAIL_SECTIONS_STATE_KEY = 'dashboard:miembros:detail-sections:v1';
@@ -124,6 +124,17 @@ function activity28(member: MemberData): number {
   return member.heatmap.reduce((acc, value) => acc + (value ? 1 : 0), 0);
 }
 
+function sortDirectionIndicator(isActive: boolean): string {
+  if (!isActive) return '';
+  return membersViewState.sortDir === 'asc' ? '↑' : '↓';
+}
+
+function memberStatusLabel(status: MemberStatusFilter): string {
+  if (status === 'active') return 'Activo';
+  if (status === 'warn') return 'Advertencia';
+  return 'Inactivo';
+}
+
 function compareMembers(a: MemberData, b: MemberData): number {
   const dir = membersViewState.sortDir === 'asc' ? 1 : -1;
   let result = 0;
@@ -180,7 +191,7 @@ function updateMembersSortUi(): void {
     if (!key) return;
     const isActive = key === membersViewState.sortBy;
     button.classList.toggle('active-sort', isActive);
-    const direction = isActive ? (membersViewState.sortDir === 'asc' ? '↑' : '↓') : '';
+    const direction = sortDirectionIndicator(isActive);
     const baseLabel = button.dataset.label || button.textContent || '';
     button.textContent = direction ? `${baseLabel} ${direction}` : baseLabel;
   });
@@ -240,49 +251,73 @@ function bindMembersControls(): void {
 }
 
 export function initMiembrosPage(): void {
-  document.getElementById('topbar-search')?.addEventListener('input', (e: Event) => {
-    if (!(e.target as HTMLInputElement | null)) return;
-    applyMembersFiltersAndSorting();
-  });
+  const topbarSearch = document.getElementById('topbar-search');
+  if (topbarSearch && topbarSearch.dataset.boundMiembros !== '1') {
+    topbarSearch.addEventListener('input', (e: Event) => {
+      if (!(e.target as HTMLInputElement | null)) return;
+      applyMembersFiltersAndSorting();
+    });
+    topbarSearch.dataset.boundMiembros = '1';
+  }
 
   bindMembersControls();
   updateMembersSortUi();
 
-  document.getElementById('export-csv-btn')?.addEventListener('click', () => {
-    if (!membersViewData.length) {
-      showToast('Sin datos para exportar', 'error');
-      return;
-    }
-    const header = ['Nombre', 'Última Sesión', 'Sesiones Mes', 'Mejor PR', 'Estado'];
-    const rows = membersViewData.map((m) => {
-      const pr = m.bestPR ? `${m.bestPR.name} ${m.bestPR.w}${m.bestPR.unit}` : '';
-      const now = new Date();
-      const last = m.lastDate ? new Date(m.lastDate + 'T00:00:00') : null;
-      const days = last ? Math.floor((now.getTime() - last.getTime()) / 86400000) : 999;
-      let status = 'Inactivo';
-      if (days <= 3) status = 'Activo';
-      else if (days <= 7) status = 'Advertencia';
-      return [
-        sanitizeCsvCell(m.name || ''),
-        sanitizeCsvCell(m.lastDate || ''),
-        sanitizeCsvCell(m.sesMonth),
-        sanitizeCsvCell(pr),
-        sanitizeCsvCell(status),
-      ].join(',');
+  const exportCsvBtn = document.getElementById('export-csv-btn');
+  if (exportCsvBtn && exportCsvBtn.dataset.boundMiembros !== '1') {
+    exportCsvBtn.addEventListener('click', () => {
+      if (!membersViewData.length) {
+        showToast('Sin datos para exportar', 'error');
+        return;
+      }
+      const header = ['Nombre', 'Última Sesión', 'Sesiones Mes', 'Mejor PR', 'Estado'];
+      const rows = membersViewData.map((m) => {
+        const pr = m.bestPR ? `${m.bestPR.name} ${m.bestPR.w}${m.bestPR.unit}` : '';
+        const status = getMemberStatus(m);
+        const statusText = memberStatusLabel(status);
+        return [
+          sanitizeCsvCell(m.name || ''),
+          sanitizeCsvCell(m.lastDate || ''),
+          sanitizeCsvCell(m.sesMonth),
+          sanitizeCsvCell(pr),
+          sanitizeCsvCell(statusText),
+        ].join(',');
+      });
+      const csv = [header.join(','), ...rows].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'miembros.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      showToast('CSV exportado', 'success');
     });
-    const csv = [header.join(','), ...rows].join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'miembros.csv';
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('CSV exportado', 'success');
-  });
+    exportCsvBtn.dataset.boundMiembros = '1';
+  }
 
-  document.getElementById('detail-close')?.addEventListener('click', closePanel);
-  document.getElementById('detail-overlay')?.addEventListener('click', closePanel);
+  const detailClose = document.getElementById('detail-close');
+  if (detailClose && detailClose.dataset.boundMiembros !== '1') {
+    detailClose.addEventListener('click', closePanel);
+    detailClose.dataset.boundMiembros = '1';
+  }
+
+  const detailOverlay = document.getElementById('detail-overlay');
+  if (detailOverlay && detailOverlay.dataset.boundMiembros !== '1') {
+    detailOverlay.addEventListener('click', closePanel);
+    detailOverlay.dataset.boundMiembros = '1';
+  }
+
+  const membersTbody = document.getElementById('members-tbody');
+  if (membersTbody && membersTbody.dataset.boundMiembros !== '1') {
+    membersTbody.addEventListener('click', (e: Event) => {
+      const target = e.target as HTMLElement | null;
+      const row = target?.closest('tr[data-uid]') as HTMLTableRowElement | null;
+      const uid = row?.dataset.uid || '';
+      if (uid) void openMemberPanel(uid);
+    });
+    membersTbody.dataset.boundMiembros = '1';
+  }
 
   const sectionsState = loadDetailSectionsState();
   document.querySelectorAll('.detail-section-toggle').forEach((btn) => {
@@ -292,6 +327,8 @@ export function initMiembrosPage(): void {
       applyDetailSectionState(trigger, sectionsState[targetId] ?? true);
     }
 
+    if (trigger.dataset.boundMiembros === '1') return;
+
     btn.addEventListener('click', () => {
       const expanded = trigger.getAttribute('aria-expanded') !== 'false';
       const nextExpanded = !expanded;
@@ -300,6 +337,7 @@ export function initMiembrosPage(): void {
       sectionsState[targetId] = nextExpanded;
       saveDetailSectionsState(sectionsState);
     });
+    trigger.dataset.boundMiembros = '1';
   });
 }
 
@@ -335,8 +373,60 @@ export async function loadMiembros(): Promise<void> {
 
     return { ...p, lastDate, sesMonth, heatmap, bestPR, userSessions, gymUser };
   });
+  membersById = new Map(membersData.map((m) => [m.id, m]));
 
   applyMembersFiltersAndSorting();
+}
+
+function getMemberRenderKey(member: MemberData): string {
+  const pr = member.bestPR ? `${member.bestPR.name}|${member.bestPR.w}|${member.bestPR.unit}` : 'no-pr';
+  return [
+    member.id,
+    member.name || '',
+    member.color || '',
+    member.lastDate || '',
+    member.sesMonth,
+    member.heatmap.join(''),
+    pr,
+  ].join('::');
+}
+
+function buildMemberRowHtml(member: MemberData): string {
+  const color = safeColor(member.color, '#4ab8ff');
+  const name = escapeHtml(member.name || '—');
+  const avatar = escapeHtml(initials(member.name));
+  const userId = escapeHtml(member.id);
+  const heatCells = member.heatmap
+    .map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}"></div>`)
+    .join('');
+  const pr = member.bestPR ? `${escapeHtml(member.bestPR.name)} ${member.bestPR.w}${escapeHtml(member.bestPR.unit)}` : '—';
+  const prTitle = member.bestPR ? `${escapeHtml(member.bestPR.name)} ${member.bestPR.w}${escapeHtml(member.bestPR.unit)}` : 'Sin PR';
+  return `<tr data-uid="${userId}">
+      <td><div class="avatar-cell">
+        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
+        <span class="avatar-name">${name}</span>
+      </div></td>
+      <td>${niceDate(member.lastDate)}</td>
+      <td class="text-mono">${member.sesMonth}</td>
+      <td class="members-activity-cell"><div class="heatmap heatmap-28d">${heatCells}</div></td>
+      <td class="text-sm text2 members-pr-cell"><span class="member-pr-text" title="${prTitle}">${pr}</span></td>
+      <td>${statusBadge(member.lastDate)}</td>
+    </tr>`;
+}
+
+function createMemberRowElement(member: MemberData, renderKey: string): HTMLTableRowElement {
+  const template = document.createElement('template');
+  template.innerHTML = buildMemberRowHtml(member).trim();
+  const row = template.content.firstElementChild as HTMLTableRowElement | null;
+  if (!row) {
+    const fallback = document.createElement('tr');
+    fallback.dataset.uid = member.id;
+    fallback.innerHTML = '<td colspan="6"></td>';
+    fallback.dataset.renderKey = renderKey;
+    return fallback;
+  }
+  row.dataset.renderKey = renderKey;
+  return row;
 }
 
 function renderMembersTable(data: MemberData[]): void {
@@ -349,33 +439,26 @@ function renderMembersTable(data: MemberData[]): void {
     return;
   }
 
-  tbody.innerHTML = data
-    .map((m) => {
-      const color = safeColor(m.color, '#4ab8ff');
-      const name = escapeHtml(m.name || '—');
-      const avatar = escapeHtml(initials(m.name));
-      const userId = escapeHtml(m.id);
-      const heatCells = m.heatmap
-        .map((v: number) => `<div class="heatmap-cell ${v ? 'h4' : ''}"></div>`)
-        .join('');
-      const pr = m.bestPR ? `${escapeHtml(m.bestPR.name)} ${m.bestPR.w}${escapeHtml(m.bestPR.unit)}` : '—';
-      const prTitle = m.bestPR ? `${escapeHtml(m.bestPR.name)} ${m.bestPR.w}${escapeHtml(m.bestPR.unit)}` : 'Sin PR';
-      return `<tr data-uid="${userId}">
-      <td><div class="avatar-cell">
-        <div class="avatar" style="background:${color + '33'};color:${color}">${avatar}</div>
-        <span class="avatar-name">${name}</span>
-      </div></td>
-      <td>${niceDate(m.lastDate)}</td>
-      <td class="text-mono">${m.sesMonth}</td>
-      <td class="members-activity-cell"><div class="heatmap heatmap-28d">${heatCells}</div></td>
-      <td class="text-sm text2 members-pr-cell"><span class="member-pr-text" title="${prTitle}">${pr}</span></td>
-      <td>${statusBadge(m.lastDate)}</td>
-    </tr>`;
-    })
-    .join('');
+  const existingRows = new Map<string, HTMLTableRowElement>();
+  tbody.querySelectorAll<HTMLTableRowElement>('tr[data-uid]').forEach((row) => {
+    const uid = row.dataset.uid || '';
+    if (uid) existingRows.set(uid, row);
+  });
 
-  tbody.querySelectorAll('tr').forEach((tr) => {
-    tr.addEventListener('click', () => openMemberPanel((tr as HTMLElement).dataset.uid || ''));
+  const keepUids = new Set<string>();
+  data.forEach((member) => {
+    const uid = member.id;
+    keepUids.add(uid);
+    const renderKey = getMemberRenderKey(member);
+    const existing = existingRows.get(uid);
+    const nextRow = existing?.dataset.renderKey === renderKey
+      ? existing
+      : createMemberRowElement(member, renderKey);
+    tbody.appendChild(nextRow);
+  });
+
+  existingRows.forEach((row, uid) => {
+    if (!keepUids.has(uid)) row.remove();
   });
 }
 
@@ -480,9 +563,12 @@ async function renderMemberWeightChart(uid: string): Promise<void> {
     return n > 0 ? n : null;
   });
   const c = chartColors();
+  const canvas = document.getElementById('chart-member-weight') as HTMLCanvasElement | null;
+
+  if (!canvas) return;
 
   if (memberWeightChart) memberWeightChart.destroy();
-  memberWeightChart = new Chart(document.getElementById('chart-member-weight'), {
+  memberWeightChart = new Chart(canvas, {
     type: 'line',
     data: {
       labels: wLabels,
@@ -559,7 +645,7 @@ function renderExerciseTrend(gymUser: GymSession[], exerciseName: string): void 
   const titleEl = document.getElementById('detail-exercise-progress-title');
   if (titleEl) titleEl.textContent = `Evolucion: ${exerciseName}`;
 
-  const canvas = document.getElementById('chart-member-exercise');
+  const canvas = document.getElementById('chart-member-exercise') as HTMLCanvasElement | null;
   if (!canvas) return;
 
   const { labels, data, unit } = buildExerciseTimeline(gymUser, exerciseName);
@@ -630,7 +716,7 @@ function renderExerciseHistory(gymUser: GymSession[]): void {
 }
 
 async function openMemberPanel(uid: string): Promise<void> {
-  const member = membersData.find((m) => m.id === uid);
+  const member = membersById.get(uid);
   if (!member) return;
 
   renderMemberHeader(member);

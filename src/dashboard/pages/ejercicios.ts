@@ -1,3 +1,4 @@
+import Chart from 'chart.js/auto';
 import {
   deleteRecommendation,
   fetchAdminCatalog,
@@ -10,9 +11,7 @@ import {
 } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
 import { colorForMuscle, confirmAction, daysAgo, escapeHtml, muscleGroup, showToast } from '../helpers';
-import { ChartCtor, ChartLike, ExerciseCatalogEntry, ExerciseRecommendation } from '../types';
-
-declare const Chart: ChartCtor;
+import { ChartLike, ExerciseCatalogEntry, ExerciseRecommendation } from '../types';
 
 // ── state ──────────────────────────────────────────────────
 let chartTopEx: ChartLike | null = null;

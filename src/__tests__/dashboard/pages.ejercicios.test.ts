@@ -8,6 +8,14 @@ const toggleExercise = vi.fn();
 const saveRecommendation = vi.fn();
 const deleteRecommendation = vi.fn();
 const showToast = vi.fn();
+const confirmAction = vi.fn(async () => true);
+const { ChartCtor } = vi.hoisted(() => ({
+  ChartCtor: vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
+    this.destroy = vi.fn();
+    this.update = vi.fn();
+    this.options = {};
+  }),
+}));
 
 vi.mock('../../dashboard/data', () => ({
   fetchGymSessions: (...args: unknown[]) => fetchGymSessions(...args),
@@ -26,10 +34,15 @@ vi.mock('../../dashboard/theme', () => ({
 
 vi.mock('../../dashboard/helpers', () => ({
   colorForMuscle: () => '#0aa',
+  confirmAction: (...args: unknown[]) => confirmAction(...args),
   daysAgo: () => '2025-01-01',
   escapeHtml: (text: string) => text,
   muscleGroup: (name: string) => (name.toLowerCase().includes('sentadilla') ? 'Piernas' : 'General'),
   showToast: (...args: unknown[]) => showToast(...args),
+}));
+
+vi.mock('chart.js/auto', () => ({
+  default: ChartCtor,
 }));
 
 function baseCatalog() {
@@ -127,13 +140,6 @@ describe('dashboard ejercicios page', () => {
       <button id="rec-submit"></button>
     `;
 
-    const ChartCtor = vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
-      this.destroy = vi.fn();
-      this.update = vi.fn();
-      this.options = {};
-    });
-
-    (globalThis as unknown as { Chart: unknown }).Chart = ChartCtor;
   });
 
   it('loadEjercicios renderiza graficos y tabla', async () => {
@@ -161,7 +167,7 @@ describe('dashboard ejercicios page', () => {
 
     expect(fetchGymSessions).toHaveBeenCalled();
     expect(fetchAdminCatalog).toHaveBeenCalled();
-    expect((globalThis as unknown as { Chart: ReturnType<typeof vi.fn> }).Chart).toHaveBeenCalledTimes(2);
+    expect(ChartCtor).toHaveBeenCalledTimes(2);
     expect(document.getElementById('exercises-tbody')?.innerHTML).toContain('Sentadilla');
     expect(document.getElementById('exercises-tbody')?.innerHTML).toContain('Bench press');
 

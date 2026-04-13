@@ -1,9 +1,8 @@
+import Chart from 'chart.js/auto';
 import { fetchBodyMetrics, fetchProfiles } from '../data';
 import { baseChartOptions, chartColors } from '../theme';
 import { escapeHtml, initials, niceDate, safeColor } from '../helpers';
-import { BodyMetric, ChartCtor, ChartLike, Profile } from '../types';
-
-declare const Chart: ChartCtor;
+import { BodyMetric, ChartLike, Profile } from '../types';
 
 let chartWeightAvg: ChartLike | null = null;
 let chartFatAvg: ChartLike | null = null;

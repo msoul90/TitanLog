@@ -80,9 +80,9 @@ export interface AdminUserRow extends Profile {
 export interface ChartLike {
   destroy(): void;
   update(): void;
-  options: Record<string, unknown>;
+  options: unknown;
   data?: {
-    datasets?: Array<Record<string, unknown>>;
+    datasets?: unknown[];
   };
 }
 

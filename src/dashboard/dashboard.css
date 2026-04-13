@@ -9,9 +9,9 @@
   --sidebar-w: 240px;
   --topbar-h: 60px;
   --transition: 0.2s ease;
-  --font-body: 'DM Sans', sans-serif;
-  --font-head: 'Bricolage Grotesque', sans-serif;
-  --font-mono: 'DM Mono', monospace;
+  --font-body: 'Aptos', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-head: 'Trebuchet MS', 'Aptos', 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: 'Cascadia Mono', 'Consolas', 'SFMono-Regular', 'Liberation Mono', monospace;
 }
 
 [data-theme="dark"] {
@@ -1125,9 +1125,16 @@ tr.row-disabled td { opacity: 0.55; }
 
 .topbar-btn.danger,
 .confirm-dialog.danger .topbar-btn.danger {
-  color: #ffb6b6;
-  border-color: rgba(255, 107, 107, 0.55);
-  background: rgba(255, 107, 107, 0.13);
+  color: #7a1f1f;
+  border-color: rgba(180, 30, 30, 0.35);
+  background: #fff1f1;
+}
+
+[data-theme="dark"] .topbar-btn.danger,
+[data-theme="dark"] .confirm-dialog.danger .topbar-btn.danger {
+  color: #ffd6d6;
+  border-color: rgba(255, 140, 140, 0.5);
+  background: rgba(122, 31, 31, 0.42);
 }
 
 /* ─── EMPTY STATE ────────────────────────────────────────────── */

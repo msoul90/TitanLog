@@ -7,7 +7,7 @@ export function setActiveChart(chart: any): void {
 export function getTheme(): 'dark' | 'light' {
   const stored = localStorage.getItem('tl-theme');
   if (stored === 'dark' || stored === 'light') return stored;
-  return globalThis.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'light';
 }
 
 export function applyTheme(theme: 'dark' | 'light'): void {
@@ -26,7 +26,7 @@ export function applyTheme(theme: 'dark' | 'light'): void {
 }
 
 export function toggleTheme(): void {
-  const current = (document.documentElement.dataset.theme || 'dark') as 'dark' | 'light';
+  const current = (document.documentElement.dataset.theme || 'light') as 'dark' | 'light';
   const next = current === 'dark' ? 'light' : 'dark';
   applyTheme(next);
   if (activeChart) updateChartTheme(activeChart);

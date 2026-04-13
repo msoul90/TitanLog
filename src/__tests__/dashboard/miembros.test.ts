@@ -5,12 +5,23 @@ const fetchGymSessions = vi.fn();
 const fetchHiitSessions = vi.fn();
 const fetchProfiles = vi.fn();
 const fetchBodyMetrics = vi.fn();
+const { ChartCtor } = vi.hoisted(() => ({
+  ChartCtor: vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
+    this.destroy = vi.fn();
+    this.update = vi.fn();
+    this.options = {};
+  }),
+}));
 
 vi.mock('../../dashboard/data', () => ({
   fetchGymSessions: (...args: unknown[]) => fetchGymSessions(...args),
   fetchHiitSessions: (...args: unknown[]) => fetchHiitSessions(...args),
   fetchProfiles: (...args: unknown[]) => fetchProfiles(...args),
   fetchBodyMetrics: (...args: unknown[]) => fetchBodyMetrics(...args),
+}));
+
+vi.mock('chart.js/auto', () => ({
+  default: ChartCtor,
 }));
 
 describe('dashboard miembros page', () => {
@@ -79,13 +90,6 @@ describe('dashboard miembros page', () => {
     `;
 
     sessionStorage.clear();
-
-    const ChartCtor = vi.fn(function ChartCtor(this: { destroy: unknown; update: unknown; options: unknown }) {
-      this.destroy = vi.fn();
-      this.update = vi.fn();
-      this.options = {};
-    });
-    (globalThis as unknown as { Chart: unknown }).Chart = ChartCtor;
 
     const urlApi = globalThis.URL as unknown as {
       createObjectURL?: (obj: Blob) => string;
@@ -277,11 +281,13 @@ describe('dashboard miembros page', () => {
       expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion por ejercicio');
     });
 
-    const chartMock = (globalThis as typeof globalThis & { Chart: unknown }).Chart as {
-      mock: { instances: Array<{ destroy: ReturnType<typeof vi.fn> }> };
-    };
-    expect(chartMock.mock.instances.length).toBeGreaterThan(0);
-    expect(chartMock.mock.instances.some((instance) => instance.destroy.mock.calls.length > 0)).toBe(true);
+    expect(ChartCtor.mock.instances.length).toBeGreaterThan(0);
+    expect(
+      ChartCtor.mock.instances.some((instance) => {
+        const chartInstance = instance as { destroy: ReturnType<typeof vi.fn> };
+        return chartInstance.destroy.mock.calls.length > 0;
+      }),
+    ).toBe(true);
   });
 
   it('tolera error al guardar estado de secciones en sessionStorage', async () => {
