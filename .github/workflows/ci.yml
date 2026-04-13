@@ -54,7 +54,14 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Run app tests
-        run: npm run test -- "src/__tests__/*.test.ts"
+        shell: bash
+        run: |
+          mapfile -t tests < <(find src/__tests__ -maxdepth 1 -name "*.test.ts" | sort)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "No app tests found in src/__tests__"
+            exit 1
+          fi
+          npm run test -- "${tests[@]}"
 
       - name: Build
         run: npm run build
@@ -80,7 +87,14 @@ jobs:
         run: npm ci --ignore-scripts
 
       - name: Run dashboard tests
-        run: npm run test -- "src/__tests__/dashboard/*.test.ts"
+        shell: bash
+        run: |
+          mapfile -t tests < <(find src/__tests__/dashboard -maxdepth 1 -name "*.test.ts" | sort)
+          if [ ${#tests[@]} -eq 0 ]; then
+            echo "No dashboard tests found in src/__tests__/dashboard"
+            exit 1
+          fi
+          npm run test -- "${tests[@]}"
 
       - name: Build
         run: npm run build
