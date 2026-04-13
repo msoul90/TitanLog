@@ -112,8 +112,8 @@ const dbGetBodyWeightData = typeof (globalThis as any).gBW === 'function'
 
 // Global variables defined in db.ts
 // Inicializados como null; db.ts los sobreescribe vía window en el navegador
-let currentUser: UserProfile | null = null;
-let currentProfile: UserProfile | null = null;
+const currentUser: UserProfile | null = null;
+const currentProfile: UserProfile | null = null;
 
 // STORAGE (sessionStorage — fallback temporal para import/demo offline)
 

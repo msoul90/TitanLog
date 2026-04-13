@@ -29,9 +29,13 @@ type MockState = {
   gymMonthData: Array<{ date: string; exercises: any[]; id: string }>;
   bwMonthData: Array<{ date: string; weight: number; weight_unit: string; fat_pct?: number; muscle_pct?: number; id: string }>;
   hiitMonthData: Array<{ date: string; name: string; id: string; exercises: any[] }>;
+  catalogRpcError: boolean;
+  catalogRows: Array<{ slug?: string; canonical_name?: string; muscle_group?: string; aliases?: string[] }>;
+  guideRpcError: boolean;
+  guideRpcData: unknown;
 };
 
-const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() => {
+const { mockState, resetPasswordArgs, fromCalls, signOutCalls, rpcCalls } = vi.hoisted(() => {
   const state: MockState = {
     sessionUser: null,
     sessionError: false,
@@ -61,6 +65,10 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
     gymMonthData: [],
     bwMonthData: [],
     hiitMonthData: [],
+    catalogRpcError: false,
+    catalogRows: [],
+    guideRpcError: false,
+    guideRpcData: null,
   };
 
   return {
@@ -68,6 +76,7 @@ const { mockState, resetPasswordArgs, fromCalls, signOutCalls } = vi.hoisted(() 
     resetPasswordArgs: [] as Array<{ email: string; options?: { redirectTo?: string } }>,
     fromCalls: [] as Array<{ table: string; op: string; payload?: unknown; eq?: Array<{ field: string; value: unknown }> }>,
     signOutCalls: { count: 0 },
+    rpcCalls: [] as Array<{ fn: string; args?: Record<string, unknown> }>,
   };
 });
 
@@ -207,6 +216,18 @@ vi.mock('@supabase/supabase-js', () => {
   return {
     createClient: vi.fn(() => ({
       from: vi.fn((table: string) => createBuilder(table)),
+      rpc: vi.fn(async (fn: string, args?: Record<string, unknown>) => {
+        rpcCalls.push({ fn, args });
+        if (fn === 'list_exercise_catalog_light') {
+          if (mockState.catalogRpcError) return { data: null, error: { message: 'catalog rpc failed' } };
+          return { data: mockState.catalogRows, error: null };
+        }
+        if (fn === 'get_exercise_guide') {
+          if (mockState.guideRpcError) return { data: null, error: { message: 'guide rpc failed' } };
+          return { data: mockState.guideRpcData, error: null };
+        }
+        return { data: null, error: null };
+      }),
       auth: {
         getSession: vi.fn(async () => ({
           ...(mockState.sessionError
@@ -282,9 +303,14 @@ describe('db.ts', () => {
     mockState.gymMonthData = [];
     mockState.bwMonthData = [];
     mockState.hiitMonthData = [];
+    mockState.catalogRpcError = false;
+    mockState.catalogRows = [];
+    mockState.guideRpcError = false;
+    mockState.guideRpcData = null;
     resetPasswordArgs.length = 0;
     fromCalls.length = 0;
     signOutCalls.count = 0;
+    rpcCalls.length = 0;
 
     document.body.innerHTML = `
       <div id="loginScreen" style="display:none"></div>
@@ -871,5 +897,81 @@ describe('db.ts', () => {
     await enterApp({ id: 'u1', email: 'mail@test.com' });
 
     expect((globalThis as any).toast).toHaveBeenCalled();
+  });
+
+  it('enterApp carga catalogo ligero y autocomplete devuelve datos', async () => {
+    mockState.catalogRows = [
+      {
+        slug: 'sentadilla',
+        canonical_name: 'Sentadilla',
+        muscle_group: 'Piernas',
+        aliases: ['Back Squat', 'Sentadillas'],
+      },
+      {
+        slug: 'peso-muerto',
+        canonical_name: 'Peso Muerto',
+        muscle_group: 'Espalda',
+        aliases: [],
+      },
+    ];
+
+    const { enterApp, getExerciseCatalogForAutocomplete } = await import('../db.js');
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+
+    const catalog = getExerciseCatalogForAutocomplete();
+    expect(catalog).not.toBeNull();
+    expect(catalog?.map((item) => item.n)).toContain('Sentadilla');
+    expect(catalog?.map((item) => item.n)).toContain('Peso Muerto');
+  });
+
+  it('getExerciseGuideFromDB usa slug del catalogo y cachea respuesta', async () => {
+    mockState.catalogRows = [
+      {
+        slug: 'sentadilla',
+        canonical_name: 'Sentadilla',
+        muscle_group: 'Piernas',
+        aliases: ['Back Squat'],
+      },
+    ];
+    mockState.guideRpcData = {
+      name: 'Sentadilla',
+      muscle_group: 'Piernas',
+      steps: ['Baja controlado'],
+      errors: ['Redondear espalda'],
+      tips: ['Respira profundo'],
+      links: ['https://example.com/sentadilla'],
+    };
+
+    const { enterApp, getExerciseGuideFromDB } = await import('../db.js');
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+
+    const first = await getExerciseGuideFromDB('Back Squat');
+    const second = await getExerciseGuideFromDB('Back Squat');
+
+    expect(first?.name).toBe('Sentadilla');
+    expect(first?.guide.steps).toContain('Baja controlado');
+    expect(second?.name).toBe('Sentadilla');
+    expect(rpcCalls.filter((call) => call.fn === 'get_exercise_guide')).toHaveLength(1);
+  });
+
+  it('getExerciseGuideFromDB devuelve null cuando no hay slug o rpc falla', async () => {
+    mockState.catalogRows = [
+      {
+        slug: 'press-banca',
+        canonical_name: 'Press Banca',
+        muscle_group: 'Pecho',
+        aliases: [],
+      },
+    ];
+    mockState.guideRpcError = true;
+
+    const { enterApp, getExerciseGuideFromDB } = await import('../db.js');
+    await enterApp({ id: 'u1', email: 'mail@test.com' });
+
+    const withoutSlug = await getExerciseGuideFromDB('Ejercicio inexistente');
+    const withRpcError = await getExerciseGuideFromDB('Press Banca');
+
+    expect(withoutSlug).toBeNull();
+    expect(withRpcError).toBeNull();
   });
 });

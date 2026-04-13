@@ -18,7 +18,6 @@ declare const Chart: ChartCtor;
 let chartTopEx: ChartLike | null = null;
 let chartMuscle: ChartLike | null = null;
 let catalogData: ExerciseCatalogEntry[] = [];
-let activeTab: 'stats' | 'catalog' = 'stats';
 let selectedExercise: ExerciseCatalogEntry | null = null;
 let recommendations: ExerciseRecommendation[] = [];
 let catalogSearchQuery = '';
@@ -213,7 +212,6 @@ function resetCatalogFiltersAndSort(): void {
 
 // ── tab switch ─────────────────────────────────────────────
 function switchTab(tab: 'stats' | 'catalog'): void {
-  activeTab = tab;
   document.getElementById('tab-stats')?.classList.toggle('active', tab === 'stats');
   document.getElementById('tab-catalog')?.classList.toggle('active', tab === 'catalog');
   document.getElementById('panel-stats')?.classList.toggle('is-hidden', tab !== 'stats');

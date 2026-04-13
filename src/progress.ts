@@ -185,7 +185,7 @@ function calculateDailyStreak(exerciseData: Record<string, Exercise[]>, today: D
   let streak = 0;
   const streakDate = new Date(today);
 
-  while (true) {
+  for (;;) {
     const dateKey = dk(streakDate);
     const dayExercises = exerciseData[dateKey];
 
@@ -217,7 +217,7 @@ function calculateWeeklyStreak(exerciseData: Record<string, Exercise[]>, today: 
 
   // Count consecutive weeks backwards from current week
   let weekStreak = 0;
-  let checkDate = new Date(today);
+  const checkDate = new Date(today);
 
   // Go to Monday of current week (Monday = 0 in our calculation)
   const dayOfWeek = (checkDate.getDay() + 6) % 7;
@@ -279,7 +279,7 @@ function renderWeeklyDots(exerciseData: Record<string, Exercise[]>, today: Date)
   if (!dotContainer) return;
 
   const dots: string[] = [];
-  let dotDate = new Date(today);
+  const dotDate = new Date(today);
 
   // Go to Monday of current week
   const dayOfWeek = (dotDate.getDay() + 6) % 7;
@@ -834,7 +834,7 @@ function createTuesdayDemoWorkout(): Exercise[] {
  * @param message - Message to display
  * @param type - Toast type ('success', 'error', 'info')
  */
-function showToast(message: string, type: string = 'info'): void {
+function showToast(message: string, _type: string = 'info'): void {
   const toastElement = document.getElementById(PROGRESS_DOM_IDS.TOAST);
   if (!toastElement) return;
 

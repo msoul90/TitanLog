@@ -10,7 +10,7 @@ export default defineConfig({
       exclude: ['src/**/*.test.ts', 'src/types.ts'],
       thresholds: {
         perFile: true,
-        lines: 80,
+        lines: 85,
       },
     },
   },

@@ -22,7 +22,7 @@ vi.mock('../db.js', () => ({
   loadHiitMonth: hoisted.loadHiitMonthMock,
 }));
 
-// @ts-ignore Vitest resolves .js imports to TS sources at runtime.
+// @ts-expect-error Vitest resolves .js imports to TS sources at runtime.
 import { addHiitEx, openHiitModal, renderHiit, renderHiitProgress, selectRPE, saveHiitSessionModal, editHiitSession, deleteHiitSession, hiitChangeDay, adjustHiitTimer, toggleHiitTimer, resetHiitTimer, initHiit } from '../hiit.js';
 
 describe('hiit.ts', () => {
