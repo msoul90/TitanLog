@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as miembrosPage from '../../dashboard/pages/miembros';
 
 const fetchGymSessions = vi.fn();
 const fetchHiitSessions = vi.fn();
@@ -16,7 +17,6 @@ describe('dashboard miembros page', () => {
   let createdBlob: Blob | null = null;
 
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
 
     document.documentElement.dataset.theme = 'dark';
@@ -82,9 +82,8 @@ describe('dashboard miembros page', () => {
   });
 
   it('renderiza tabla, filtra y exporta csv', async () => {
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     expect(document.getElementById('members-tbody')?.innerHTML).toContain('Ana');
 
@@ -97,9 +96,8 @@ describe('dashboard miembros page', () => {
   });
 
   it('abre panel de detalle al hacer click en fila', async () => {
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     const row = document.querySelector('#members-tbody tr') as HTMLTableRowElement;
     row.click();
@@ -121,9 +119,8 @@ describe('dashboard miembros page', () => {
     ]);
     fetchHiitSessions.mockResolvedValue([]);
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     expect(document.querySelector('#members-tbody img')).toBeNull();
     expect(document.getElementById('members-tbody')?.innerHTML).toContain('&lt;img');
@@ -141,8 +138,7 @@ describe('dashboard miembros page', () => {
       'detail-weight-body': false,
     }));
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
+    miembrosPage.initMiembrosPage();
 
     const toggle = document.querySelector('[data-target="detail-weight-body"]') as HTMLButtonElement;
     const body = document.getElementById('detail-weight-body') as HTMLDivElement;
@@ -155,9 +151,8 @@ describe('dashboard miembros page', () => {
     fetchGymSessions.mockResolvedValue([]);
     fetchHiitSessions.mockResolvedValue([]);
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     expect(document.getElementById('members-tbody')?.innerHTML).toContain('Sin miembros');
 
@@ -168,8 +163,7 @@ describe('dashboard miembros page', () => {
   it('tolera estado corrupto en sessionStorage y persiste toggles de secciones', async () => {
     sessionStorage.setItem('dashboard:miembros:detail-sections:v1', '{invalid json');
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
+    miembrosPage.initMiembrosPage();
 
     const toggle = document.querySelector('[data-target="detail-activity-body"]') as HTMLButtonElement;
     const body = document.getElementById('detail-activity-body') as HTMLDivElement;
@@ -188,9 +182,8 @@ describe('dashboard miembros page', () => {
     fetchHiitSessions.mockResolvedValue([{ id: 'h1', user_id: 'u1', date: '2026-04-09', name: 'AMRAP', rounds: 5, rpe: 8 }]);
     fetchBodyMetrics.mockResolvedValue([]);
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     const row = document.querySelector('#members-tbody tr') as HTMLTableRowElement;
     row.click();
@@ -206,9 +199,8 @@ describe('dashboard miembros page', () => {
   });
 
   it('al hacer click en PR abre evolucion y expande seccion colapsada', async () => {
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     const toggle = document.querySelector('[data-target="detail-exercise-progress-body"]') as HTMLButtonElement;
     const body = document.getElementById('detail-exercise-progress-body') as HTMLDivElement;
@@ -242,9 +234,8 @@ describe('dashboard miembros page', () => {
       { id: 'b2', user_id: 'u2', date: '2026-04-08', weight: 70 },
     ]);
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
-    await mod.loadMiembros();
+    miembrosPage.initMiembrosPage();
+    await miembrosPage.loadMiembros();
 
     const rows = document.querySelectorAll('#members-tbody tr');
     (rows[0] as HTMLTableRowElement).click();
@@ -269,8 +260,7 @@ describe('dashboard miembros page', () => {
       throw new Error('quota');
     });
 
-    const mod = await import('../../dashboard/pages/miembros');
-    mod.initMiembrosPage();
+    miembrosPage.initMiembrosPage();
 
     const toggle = document.querySelector('[data-target="detail-activity-body"]') as HTMLButtonElement;
     expect(() => toggle.click()).not.toThrow();

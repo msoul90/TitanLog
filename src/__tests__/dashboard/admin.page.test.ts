@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as adminPage from '../../dashboard/pages/admin';
 
 const fetchProfiles = vi.fn();
 const fetchAdmins = vi.fn();
@@ -41,7 +42,6 @@ vi.mock('../../dashboard/helpers', () => ({
 
 describe('dashboard admin page', () => {
   beforeEach(() => {
-    vi.resetModules();
     vi.clearAllMocks();
 
     document.body.innerHTML = `
@@ -86,10 +86,9 @@ describe('dashboard admin page', () => {
 
   it('renderiza tabla y filtra por busqueda', async () => {
     const signOut = vi.fn(async () => {});
-    const mod = await import('../../dashboard/pages/admin');
 
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
+    await adminPage.loadAdmin();
 
     expect(document.getElementById('admin-tbody')?.innerHTML).toContain('Ana');
     expect(document.getElementById('admin-tbody')?.innerHTML).toContain('Super Admin');
@@ -105,10 +104,9 @@ describe('dashboard admin page', () => {
 
   it('concede y revoca acceso admin', async () => {
     const signOut = vi.fn(async () => {});
-    const mod = await import('../../dashboard/pages/admin');
 
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
+    await adminPage.loadAdmin();
 
     const toggles = Array.from(document.querySelectorAll('.admin-toggle')) as HTMLInputElement[];
     const target = toggles.find((t) => t.dataset.uid === 'u2');
@@ -130,9 +128,8 @@ describe('dashboard admin page', () => {
     fetchProfiles.mockResolvedValue([{ id: 'u1', name: '<img src=x onerror=alert(1)>', color: 'url(javascript:alert(1))' }]);
     fetchAdmins.mockResolvedValue(['u1']);
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     expect(document.querySelector('#admin-tbody img')).toBeNull();
     expect(document.getElementById('admin-tbody')?.innerHTML).toContain('&lt;img');
@@ -140,9 +137,8 @@ describe('dashboard admin page', () => {
   });
 
   it('invita usuarios via edge function', async () => {
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     const grant = document.getElementById('invite-grant-dashboard') as HTMLInputElement;
@@ -169,9 +165,8 @@ describe('dashboard admin page', () => {
   });
 
   it('submitInvite muestra error cuando email es invalido', async () => {
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'emailsinarroba';
@@ -190,9 +185,8 @@ describe('dashboard admin page', () => {
       return Promise.resolve({ data: null, error: null });
     });
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'nuevo@test.com';
@@ -207,9 +201,8 @@ describe('dashboard admin page', () => {
   it('submitInvite muestra error cuando no hay token de sesion', async () => {
     getSessionAdmin.mockResolvedValue({ data: { session: null }, error: null });
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'nuevo@test.com';
@@ -225,9 +218,8 @@ describe('dashboard admin page', () => {
   it('submitInvite muestra error cuando fetch lanza excepcion', async () => {
     fetchMock.mockRejectedValue(new Error('function error'));
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'nuevo@test.com';
@@ -242,9 +234,8 @@ describe('dashboard admin page', () => {
   it('submitInvite muestra error cuando getSession devuelve error', async () => {
     getSessionAdmin.mockResolvedValue({ data: { session: null }, error: { message: 'session error' } });
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'nuevo@test.com';
@@ -264,9 +255,8 @@ describe('dashboard admin page', () => {
       json: async () => ({ error: 'invite failed' }),
     });
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const email = document.getElementById('invite-email') as HTMLInputElement;
     email.value = 'nuevo@test.com';
@@ -283,9 +273,8 @@ describe('dashboard admin page', () => {
   it('toggleAdmin cancela cuando usuario rechaza quitarse su propio acceso', async () => {
     vi.stubGlobal('confirm', vi.fn(() => false));
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const toggles = Array.from(document.querySelectorAll('.admin-toggle')) as HTMLInputElement[];
     const selfToggle = toggles.find((t) => t.dataset.uid === 'u1');
@@ -303,9 +292,8 @@ describe('dashboard admin page', () => {
     vi.stubGlobal('confirm', vi.fn(() => true));
     const signOut = vi.fn(async () => {});
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut });
+    await adminPage.loadAdmin();
 
     const toggles = Array.from(document.querySelectorAll('.admin-toggle')) as HTMLInputElement[];
     const selfToggle = toggles.find((t) => t.dataset.uid === 'u1');
@@ -323,9 +311,8 @@ describe('dashboard admin page', () => {
   });
 
   it('toggleAdmin muestra error y revierte checkbox cuando rpc falla', async () => {
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     rpc.mockImplementation((fn: unknown) => {
       if (fn === 'set_gym_admin') return Promise.resolve({ data: null, error: { message: 'permiso denegado' } });
@@ -351,17 +338,15 @@ describe('dashboard admin page', () => {
     fetchAdmins.mockResolvedValue([]);
     fetchSuperAdmins.mockResolvedValue([]);
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     expect(document.getElementById('admin-tbody')?.innerHTML).toContain('Sin usuarios');
   });
 
   it('acciones de usuario deshabilitan y eliminan desde botones de fila', async () => {
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     const disableBtn = document.querySelector('.action-user-toggle[data-uid="u2"]') as HTMLButtonElement;
     const deleteBtn = document.querySelector('.action-user-delete[data-uid="u2"]') as HTMLButtonElement;
@@ -387,9 +372,8 @@ describe('dashboard admin page', () => {
       { id: 'u2', name: 'Luis', color: '#222', is_disabled: true },
     ]);
 
-    const mod = await import('../../dashboard/pages/admin');
-    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
-    await mod.loadAdmin();
+    adminPage.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await adminPage.loadAdmin();
 
     expect(document.getElementById('admin-disabled-section')?.classList.contains('is-hidden')).toBe(false);
     expect(document.getElementById('admin-disabled-count')?.textContent).toBe('1');
