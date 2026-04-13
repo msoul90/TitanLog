@@ -394,6 +394,30 @@
           </table>
         </div>
       </div>
+
+      <details class="card mt-16 is-hidden" id="admin-disabled-section" open>
+        <summary class="admin-disabled-summary">
+          <span class="card-title mb-0">Usuarios deshabilitados</span>
+          <span class="badge badge-inactive badge-side" id="admin-disabled-count">0</span>
+        </summary>
+        <div class="text-sm text3 mt-8 mb-12" style="padding:0 2px">
+          Estos usuarios no pueden iniciar sesión. Puedes habilitarlos o eliminarlos permanentemente.
+        </div>
+        <div class="table-scroll">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Usuario</th>
+                <th>Email</th>
+                <th>Rol</th>
+                <th>Acceso dashboard</th>
+                <th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="admin-disabled-tbody"></tbody>
+          </table>
+        </div>
+      </details>
     </div>
 
     <!-- ── PAGE: CONFIG ──────────────────────────────────────── -->

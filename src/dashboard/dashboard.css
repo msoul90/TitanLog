@@ -611,6 +611,37 @@ input, button { outline: none; }
 .admin-actions { display: flex; gap: 6px; align-items: center; }
 tr.row-disabled td { opacity: 0.55; }
 
+/* ─── DISABLED USERS SECTION ────────────────────────────────── */
+#admin-disabled-section {
+  border: 1px dashed rgba(180,30,30,0.35);
+}
+[data-theme="dark"] #admin-disabled-section {
+  border-color: rgba(255,107,107,0.3);
+}
+.admin-disabled-summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 18px;
+  user-select: none;
+}
+.admin-disabled-summary::-webkit-details-marker { display: none; }
+.admin-disabled-summary::after {
+  content: '▾';
+  margin-left: auto;
+  color: var(--text3);
+  font-size: 0.85rem;
+  transition: transform 0.16s ease;
+}
+#admin-disabled-section[open] .admin-disabled-summary::after {
+  transform: rotate(180deg);
+}
+#admin-disabled-section > *:not(summary) {
+  padding: 0 18px 14px;
+}
+
 /* ─── AVATAR ─────────────────────────────────────────────────── */
 .avatar {
   width: 34px; height: 34px;

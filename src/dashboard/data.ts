@@ -287,14 +287,24 @@ export async function manageUser(targetUserId: string, action: 'disable' | 'enab
     throw new Error('Sesion expirada. Cierra y vuelve a iniciar sesion.');
   }
 
-  const { data, error } = await sb.functions.invoke('manage-user', {
-    body: { target_user_id: targetUserId, action },
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (error) throw error;
+  let response: Response;
+  try {
+    response = await fetch(`${SUPABASE_URL}/functions/v1/manage-user`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${accessToken}`,
+        'apikey': SUPABASE_ANON,
+      },
+      body: JSON.stringify({ target_user_id: targetUserId, action }),
+    });
+  } catch (fetchErr: unknown) {
+    const msg = fetchErr instanceof Error ? fetchErr.message : 'Error de red desconocido';
+    throw new Error('Error de red al contactar la función: ' + msg);
+  }
 
-  const result = (data as { ok?: boolean; error?: string } | null) || null;
-  if (!result?.ok) {
-    throw new Error(result?.error || 'Error desconocido');
+  const result = (await response.json()) as { ok?: boolean; error?: string } | null;
+  if (!response.ok || !result?.ok) {
+    throw new Error(result?.error || `Error ${response.status}`);
   }
 }
