@@ -245,7 +245,7 @@ async function loadStats(): Promise<void> {
   const sorted = Object.entries(exStats).sort((a, b) => b[1].count - a[1].count);
   const top12 = sorted.slice(0, 12);
   const c = chartColors();
-  const topExercisesCanvas = document.querySelector<HTMLCanvasElement>('#chart-top-exercises');
+  const topExercisesCanvas = document.getElementById('chart-top-exercises') as HTMLCanvasElement | null;
 
   if (chartTopEx) chartTopEx.destroy();
   if (topExercisesCanvas) {
@@ -260,8 +260,7 @@ async function loadStats(): Promise<void> {
             borderColor: c.accent,
             borderWidth: 1,
             borderRadius: 4,
-            _colorKey: 'accent',
-          } as any,
+          },
         ],
       },
       options: {
@@ -279,7 +278,7 @@ async function loadStats(): Promise<void> {
     groupCounts[g] = (groupCounts[g] || 0) + d.count;
   });
   const groupEntries = Object.entries(groupCounts).sort((a, b) => b[1] - a[1]);
-  const muscleGroupCanvas = document.querySelector<HTMLCanvasElement>('#chart-muscle-group');
+  const muscleGroupCanvas = document.getElementById('chart-muscle-group') as HTMLCanvasElement | null;
 
   if (chartMuscle) chartMuscle.destroy();
   if (muscleGroupCanvas) {

@@ -44,8 +44,7 @@ function renderHeatmap12w(container: HTMLElement, sessionCounts: Record<string, 
 
   const cur = new Date(startDate);
   for (let week = 0; week < 12; week++) {
-    const weekCells = cells[week];
-    if (!weekCells) continue;
+    const weekCells = cells[week]!;
     for (let dow = 0; dow < 7; dow++) {
       weekCells[dow] = sessionCounts[cur.toISOString().slice(0, 10)] || 0;
       cur.setDate(cur.getDate() + 1);

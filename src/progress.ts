@@ -283,6 +283,23 @@ function updateStatisticsDisplay(monthlyStats: MonthlyStats, dailyStreak: number
 }
 
 /**
+ * Generates HTML for a single weekly dot
+ * @param hasTraining - Whether the week has training sessions
+ * @param isCurrentWeek - Whether this is the current week
+ * @param weekNumber - Week number for display
+ * @returns HTML string for the week dot
+ */
+function buildWeekDotElement(hasTraining: boolean, isCurrentWeek: boolean, weekNumber: number): string {
+  let cssClass = 'week-dot';
+  if (hasTraining && !isCurrentWeek) cssClass += ' done streak';
+  else if (hasTraining && isCurrentWeek) cssClass += ' done';
+  else if (isCurrentWeek) cssClass += ' current';
+
+  const displayText = hasTraining ? '✓' : `S${weekNumber}`;
+  return `<div class="${cssClass}" title="Semana ${weekNumber}">${displayText}</div>`;
+}
+
+/**
  * Renders the weekly training dots visualization
  * @param exerciseData - Exercise data object
  * @param today - Current date
@@ -314,18 +331,9 @@ function renderWeeklyDots(exerciseData: Record<string, Exercise[]>, today: Date)
     const weekKey = getMonWeek(dotDate);
     const isCurrentWeek = weekIndex === PROGRESS_CONSTANTS.MAX_PROGRESS_DOTS - 1;
     const hasTraining = trainedWeeks.has(weekKey);
-
-    // Extract week number for display
     const weekNumber = Number.parseInt(weekKey.split('-W')[1] ?? '0', 10);
 
-    let cssClass = 'week-dot';
-    if (hasTraining && !isCurrentWeek) cssClass += ' done streak';
-    else if (hasTraining && isCurrentWeek) cssClass += ' done';
-    else if (isCurrentWeek) cssClass += ' current';
-
-    const displayText = hasTraining ? '✓' : `S${weekNumber}`;
-    dots.push(`<div class="${cssClass}" title="Semana ${weekNumber}">${displayText}</div>`);
-
+    dots.push(buildWeekDotElement(hasTraining, isCurrentWeek, weekNumber));
     dotDate.setDate(dotDate.getDate() + PROGRESS_CONSTANTS.WEEK_DAYS);
   }
 
@@ -505,6 +513,29 @@ function renderExerciseProgress(exerciseData: Record<string, Exercise[]>): void 
   }
 }
 
+/**
+ * Determines the CSS class for a delta value
+ * @param delta - The delta value
+ * @returns CSS class name for styling
+ */
+function getDeltaClass(delta: number): string {
+  if (delta > 0) return 'up';
+  if (delta < 0) return 'dn';
+  return '';
+}
+
+/**
+ * Formats the delta text with proper sign and precision
+ * @param delta - The delta value
+ * @param hasPrevious - Whether there is a previous entry
+ * @returns Formatted delta text
+ */
+function getDeltaText(delta: number, hasPrevious: boolean): string {
+  if (!hasPrevious) return '—';
+  const sign = delta > 0 ? '+' : '';
+  return `${sign}${delta.toFixed(1)}`;
+}
+
 function renderExerciseProgressDetail(exerciseMap: ExerciseProgressMap, exerciseName: string): void {
   const detailElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL);
   const titleElement = document.getElementById(PROGRESS_DOM_IDS.PROGRESS_DETAIL_TITLE);
@@ -529,8 +560,8 @@ function renderExerciseProgressDetail(exerciseMap: ExerciseProgressMap, exercise
   rowsElement.innerHTML = rows.map((entry, index) => {
     const previous = rows[index + 1];
     const delta = previous ? entry.weight - previous.weight : 0;
-    const deltaClass = delta > 0 ? 'up' : delta < 0 ? 'dn' : '';
-    const deltaText = previous ? `${delta > 0 ? '+' : ''}${delta.toFixed(1)}` : '—';
+    const deltaClass = getDeltaClass(delta);
+    const deltaText = getDeltaText(delta, !!previous);
     const date = parseDateKeyAsLocalDate(entry.date);
     const dayLabel = date ? `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}` : entry.date;
 

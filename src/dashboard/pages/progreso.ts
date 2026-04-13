@@ -73,8 +73,8 @@ export async function loadProgreso(): Promise<void> {
 
   const labels = dates.map(niceDate);
   const c = chartColors();
-  const weightCanvas = document.querySelector<HTMLCanvasElement>('#chart-weight-avg');
-  const fatCanvas = document.querySelector<HTMLCanvasElement>('#chart-fat-avg');
+  const weightCanvas = document.getElementById('chart-weight-avg') as HTMLCanvasElement | null;
+  const fatCanvas = document.getElementById('chart-fat-avg') as HTMLCanvasElement | null;
 
   if (chartWeightAvg) chartWeightAvg.destroy();
   if (weightCanvas) {

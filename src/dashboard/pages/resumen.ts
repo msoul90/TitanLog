@@ -89,7 +89,7 @@ export async function loadResumen(): Promise<void> {
   });
   const values = Object.values(sessionsByDay);
   const c = chartColors();
-  const sessionsCanvas = document.querySelector<HTMLCanvasElement>('#chart-sessions');
+  const sessionsCanvas = document.getElementById('chart-sessions') as HTMLCanvasElement | null;
 
   if (chartSessions) chartSessions.destroy();
   if (sessionsCanvas) {
@@ -104,8 +104,7 @@ export async function loadResumen(): Promise<void> {
             borderColor: c.accent,
             borderWidth: 1,
             borderRadius: 4,
-            _colorKey: 'accent',
-          } as any,
+          },
         ],
       },
       options: baseChartOptions(),
