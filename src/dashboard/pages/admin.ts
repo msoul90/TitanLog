@@ -254,8 +254,9 @@ function renderAdminTable(data: AdminUserRow[]): void {
     container.querySelectorAll('.admin-toggle').forEach((input) => {
       input.addEventListener('change', (e: Event) => {
         const target = e.target as HTMLInputElement | null;
-        if (!target?.dataset.uid) return;
-        void toggleAdmin(target.dataset.uid, target.checked, target);
+        const uid = target?.dataset.uid;
+        if (!uid || !target) return;
+        void toggleAdmin(uid, target.checked, target);
       });
     });
 
@@ -285,7 +286,7 @@ function renderAdminTable(data: AdminUserRow[]): void {
 }
 
 async function handleUserAction(uid: string, action: 'disable' | 'enable' | 'delete'): Promise<void> {
-  const messages: Record<string, string> = {
+  const messages: Record<'disable' | 'enable' | 'delete', string> = {
     disable: 'Usuario deshabilitado',
     enable: 'Usuario habilitado',
     delete: 'Usuario eliminado',

@@ -71,12 +71,19 @@ function createAdminClient(): ReturnType<typeof createClient> | null {
 
 async function authenticateActor(
   req: Request,
-  admin: ReturnType<typeof createClient>,
 ): Promise<{ actorId: string } | { error: 'missing_bearer_token' | 'invalid_token' }> {
   const token = getBearerToken(req);
   if (!token) return { error: 'missing_bearer_token' };
 
-  const { data: authData, error: authError } = await admin.auth.getUser(token);
+  // Standard Supabase pattern: user-context client validates the JWT via /auth/v1/user
+  const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+  const anonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
+  const userClient = createClient(supabaseUrl, anonKey, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${token}` } },
+  });
+
+  const { data: authData, error: authError } = await userClient.auth.getUser();
   if (authError || !authData.user) return { error: 'invalid_token' };
   return { actorId: authData.user.id };
 }
@@ -159,7 +166,7 @@ async function handleManage(req: Request): Promise<Response> {
     return jsonResponse(500, { error: 'missing_supabase_env' });
   }
 
-  const authResult = await authenticateActor(req, admin);
+  const authResult = await authenticateActor(req);
   if ('error' in authResult) {
     return jsonResponse(401, { error: authResult.error });
   }

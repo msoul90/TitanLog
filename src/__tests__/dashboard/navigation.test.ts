@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { applyNavigationState, initNavigation } from '../../dashboard/navigation';
+import type { PageKey } from '../../dashboard/config';
 
 function mountDom() {
   document.body.innerHTML = `

@@ -5,21 +5,22 @@ const fetchAdmins = vi.fn();
 const fetchSuperAdmins = vi.fn();
 const showToast = vi.fn();
 const rpc = vi.fn();
-const invoke = vi.fn();
 const getSessionAdmin = vi.fn();
+const fetchMock = vi.fn();
+const manageUser = vi.fn();
+const invalidateCache = vi.fn();
 
 vi.mock('../../dashboard/data', () => ({
   fetchProfiles: (...args: unknown[]) => fetchProfiles(...args),
   fetchAdmins: (...args: unknown[]) => fetchAdmins(...args),
   fetchSuperAdmins: (...args: unknown[]) => fetchSuperAdmins(...args),
+  manageUser: (...args: unknown[]) => manageUser(...args),
+  invalidateCache: (...args: unknown[]) => invalidateCache(...args),
   sb: {
     auth: {
       getSession: (...args: unknown[]) => getSessionAdmin(...args),
     },
     rpc: (...args: unknown[]) => rpc(...args),
-    functions: {
-      invoke: (...args: unknown[]) => invoke(...args),
-    },
   },
 }));
 
@@ -54,14 +55,25 @@ describe('dashboard admin page', () => {
         <button id="invite-submit" type="submit">Invitar</button>
       </form>
       <table><tbody id="admin-tbody"></tbody></table>
+      <section id="admin-disabled-section" class="is-hidden">
+        <span id="admin-disabled-count"></span>
+        <table><tbody id="admin-disabled-tbody"></tbody></table>
+      </section>
     `;
     rpc.mockImplementation((fn: unknown) => {
       if (fn === 'can_invite') return Promise.resolve({ data: true, error: null });
       if (fn === 'is_super_admin') return Promise.resolve({ data: true, error: null });
       return Promise.resolve({ data: null, error: null });
     });
-    invoke.mockResolvedValue({ data: { invited_email: 'nuevo@test.com', default_password_masked: 'Ele******26' }, error: null });
+    fetchMock.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: async () => ({ invited_email: 'nuevo@test.com', default_password_masked: 'Ele******26' }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
     getSessionAdmin.mockResolvedValue({ data: { session: { access_token: 'jwt-token-123' } }, error: null });
+    manageUser.mockResolvedValue(undefined);
+    invalidateCache.mockImplementation(() => {});
 
     fetchProfiles.mockResolvedValue([
       { id: 'u1', name: 'Ana', color: '#111' },
@@ -141,16 +153,19 @@ describe('dashboard admin page', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(invoke).toHaveBeenCalledWith('invite-user', {
-      body: {
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/functions/v1/invite-user'), {
+      method: 'POST',
+      headers: expect.objectContaining({
+        Authorization: 'Bearer jwt-token-123',
+      }),
+      body: JSON.stringify({
         email: 'nuevo@test.com',
         grant_dashboard_access: true,
-      },
-      headers: {
-        Authorization: 'Bearer jwt-token-123',
-      },
+      }),
     });
-    expect(showToast).toHaveBeenCalledWith('Usuario creado: nuevo@test.com. Password temporal configurado: Ele******26', 'success');
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith('Usuario creado: nuevo@test.com. Password temporal configurado: Ele******26', 'success');
+    });
   });
 
   it('submitInvite muestra error cuando email es invalido', async () => {
@@ -164,7 +179,7 @@ describe('dashboard admin page', () => {
 
     await Promise.resolve();
 
-    expect(invoke).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith('Ingresa un email valido', 'error');
   });
 
@@ -185,7 +200,7 @@ describe('dashboard admin page', () => {
 
     await Promise.resolve();
 
-    expect(invoke).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith('No tienes permisos para invitar usuarios', 'error');
   });
 
@@ -203,12 +218,12 @@ describe('dashboard admin page', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(invoke).not.toHaveBeenCalled();
+    expect(fetchMock).not.toHaveBeenCalled();
     expect(showToast).toHaveBeenCalledWith(expect.stringContaining('Error al invitar'), 'error');
   });
 
-  it('submitInvite muestra error cuando invoke lanza excepcion', async () => {
-    invoke.mockRejectedValue(new Error('function error'));
+  it('submitInvite muestra error cuando fetch lanza excepcion', async () => {
+    fetchMock.mockRejectedValue(new Error('function error'));
 
     const mod = await import('../../dashboard/pages/admin');
     mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
@@ -222,6 +237,47 @@ describe('dashboard admin page', () => {
     await Promise.resolve();
 
     expect(showToast).toHaveBeenCalledWith('Error al invitar: function error', 'error');
+  });
+
+  it('submitInvite muestra error cuando getSession devuelve error', async () => {
+    getSessionAdmin.mockResolvedValue({ data: { session: null }, error: { message: 'session error' } });
+
+    const mod = await import('../../dashboard/pages/admin');
+    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await mod.loadAdmin();
+
+    const email = document.getElementById('invite-email') as HTMLInputElement;
+    email.value = 'nuevo@test.com';
+    (document.getElementById('invite-form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith('Error al invitar: Error desconocido', 'error');
+  });
+
+  it('submitInvite muestra error cuando edge function responde no-ok', async () => {
+    fetchMock.mockResolvedValue({
+      ok: false,
+      status: 500,
+      json: async () => ({ error: 'invite failed' }),
+    });
+
+    const mod = await import('../../dashboard/pages/admin');
+    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await mod.loadAdmin();
+
+    const email = document.getElementById('invite-email') as HTMLInputElement;
+    email.value = 'nuevo@test.com';
+    (document.getElementById('invite-form') as HTMLFormElement).dispatchEvent(new Event('submit'));
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    await vi.waitFor(() => {
+      expect(showToast).toHaveBeenCalledWith('Error al invitar: invite failed', 'error');
+    });
   });
 
   it('toggleAdmin cancela cuando usuario rechaza quitarse su propio acceso', async () => {
@@ -300,5 +356,50 @@ describe('dashboard admin page', () => {
     await mod.loadAdmin();
 
     expect(document.getElementById('admin-tbody')?.innerHTML).toContain('Sin usuarios');
+  });
+
+  it('acciones de usuario deshabilitan y eliminan desde botones de fila', async () => {
+    const mod = await import('../../dashboard/pages/admin');
+    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await mod.loadAdmin();
+
+    const disableBtn = document.querySelector('.action-user-toggle[data-uid="u2"]') as HTMLButtonElement;
+    const deleteBtn = document.querySelector('.action-user-delete[data-uid="u2"]') as HTMLButtonElement;
+    disableBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(manageUser).toHaveBeenCalledWith('u2', 'disable');
+    expect(invalidateCache).toHaveBeenCalled();
+    expect(showToast).toHaveBeenCalledWith('Usuario deshabilitado', 'success');
+
+    deleteBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(manageUser).toHaveBeenCalledWith('u2', 'delete');
+    expect(showToast).toHaveBeenCalledWith('Usuario eliminado', 'error');
+  });
+
+  it('renderiza seccion de deshabilitados y permite habilitar usuario', async () => {
+    fetchProfiles.mockResolvedValue([
+      { id: 'u1', name: 'Ana', color: '#111' },
+      { id: 'u2', name: 'Luis', color: '#222', is_disabled: true },
+    ]);
+
+    const mod = await import('../../dashboard/pages/admin');
+    mod.initAdminPage({ getCurrentUser: () => ({ id: 'u1', email: 'a@test.com' }), signOut: async () => {} });
+    await mod.loadAdmin();
+
+    expect(document.getElementById('admin-disabled-section')?.classList.contains('is-hidden')).toBe(false);
+    expect(document.getElementById('admin-disabled-count')?.textContent).toBe('1');
+
+    const enableBtn = document.querySelector('#admin-disabled-tbody .action-user-toggle[data-uid="u2"]') as HTMLButtonElement;
+    enableBtn.click();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(manageUser).toHaveBeenCalledWith('u2', 'enable');
+    expect(showToast).toHaveBeenCalledWith('Usuario habilitado', 'success');
   });
 });

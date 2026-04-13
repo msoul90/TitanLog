@@ -8,13 +8,14 @@ const loadActividad = vi.fn(async () => {});
 const loadAdmin = vi.fn(async () => {});
 const loadConfig = vi.fn(async () => {});
 const initMiembrosPage = vi.fn();
+const initEjerciciosPage = vi.fn();
 const initAdminPage = vi.fn();
 const initConfigPage = vi.fn();
 
 vi.mock('../../dashboard/pages/resumen', () => ({ loadResumen }));
 vi.mock('../../dashboard/pages/miembros', () => ({ loadMiembros, initMiembrosPage }));
 vi.mock('../../dashboard/pages/progreso', () => ({ loadProgreso }));
-vi.mock('../../dashboard/pages/ejercicios', () => ({ loadEjercicios }));
+vi.mock('../../dashboard/pages/ejercicios', () => ({ loadEjercicios, initEjerciciosPage }));
 vi.mock('../../dashboard/pages/actividad', () => ({ loadActividad }));
 vi.mock('../../dashboard/pages/admin', () => ({ loadAdmin, initAdminPage }));
 vi.mock('../../dashboard/pages/config', () => ({ loadConfig, initConfigPage }));
@@ -31,6 +32,7 @@ describe('dashboard pages coordinator', () => {
     mod.initPages(options);
 
     expect(initMiembrosPage).toHaveBeenCalledTimes(1);
+    expect(initEjerciciosPage).toHaveBeenCalledTimes(1);
     expect(initAdminPage).toHaveBeenCalledWith(options);
     expect(initConfigPage).toHaveBeenCalledWith(options);
   });

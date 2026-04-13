@@ -7,10 +7,10 @@ const signOutApi = vi.fn();
 const updateUser = vi.fn();
 const fromMock = vi.fn();
 const rpcMock = vi.fn();
-const getDashboardSupabaseErrorMock = vi.fn(() => null);
+const getDashboardSupabaseErrorMock = vi.fn<() => string | null>(() => null);
 
 vi.mock('../../dashboard/data', () => ({
-  getDashboardSupabaseError: (...args: unknown[]) => getDashboardSupabaseErrorMock(...args),
+  getDashboardSupabaseError: () => getDashboardSupabaseErrorMock(),
   sb: {
     from: (...args: unknown[]) => fromMock(...args),
     rpc: (...args: unknown[]) => rpcMock(...args),

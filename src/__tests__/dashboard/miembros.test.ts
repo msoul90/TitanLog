@@ -257,7 +257,9 @@ describe('dashboard miembros page', () => {
       expect(document.getElementById('detail-exercise-progress-title')?.textContent).toContain('Evolucion por ejercicio');
     });
 
-    const chartMock = globalThis.Chart as unknown as { mock: { instances: Array<{ destroy: ReturnType<typeof vi.fn> }> } };
+    const chartMock = (globalThis as typeof globalThis & { Chart: unknown }).Chart as {
+      mock: { instances: Array<{ destroy: ReturnType<typeof vi.fn> }> };
+    };
     expect(chartMock.mock.instances.length).toBeGreaterThan(0);
     expect(chartMock.mock.instances.some((instance) => instance.destroy.mock.calls.length > 0)).toBe(true);
   });
